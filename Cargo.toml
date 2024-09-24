@@ -1,0 +1,15 @@
+[workspace]
+members = ["crates/avs"]
+
+[workspace.package]
+version = "0.0.1"
+authors = ["Lay3r Labs Team"]
+edition = "2021"
+rust-version = "1.81.0"
+license = "MIT"
+#homepage = ""
+repository = "https://github.com/Lay3rLabs/avs-toolkit"
+
+[workspace.dependencies]
+wstd = "0.4.0"
+wasi = "=0.13.1"
