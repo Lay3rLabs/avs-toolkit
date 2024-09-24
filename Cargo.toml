@@ -9,9 +9,17 @@ license       = "MIT"
 repository    = "https://github.com/Lay3rLabs/avs-toolkit"
 
 [workspace.dependencies]
+lavs-mock-operators = { path = "contracts/mock-operators" }
+lavs-tasks = { path = "contracts/tasks" }
+lavs-verifier-simple = { path = "contracts/verifier-simple" }
+
+lavs-apis = { path = "packages/apis" }
+lavs-orch = { path = "packages/orch" }
+
 cosmwasm-schema  = "1.5.7"
 cosmwasm-std     = { version = "1.5.7", features = ["cosmwasm_1_4"] }
 
+cw-orch = { version = "0.23.0" }
 cw-orch-core = { version = "1" }
 cw-storage-plus  = "1.2.0"
 cw-utils         = "1.0.3"
