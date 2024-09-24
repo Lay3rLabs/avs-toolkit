@@ -13,3 +13,6 @@ repository = "https://github.com/Lay3rLabs/avs-toolkit"
 [workspace.dependencies]
 wstd = "0.4.0"
 wasi = "=0.13.1"
+slab = "0.4.9"
+wit-bindgen = "0.32.0"
+url = "2.5.2"

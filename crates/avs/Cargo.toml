@@ -12,3 +12,6 @@ repository = { workspace = true}
 [dependencies]
 wstd = { workspace = true }
 wasi = { workspace = true }
+slab = { workspace = true }
+wit-bindgen = { workspace = true }
+url = { workspace = true }
