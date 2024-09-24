@@ -3,7 +3,7 @@ use cw_orch::{interface, prelude::*};
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 type MigrateMsg = cosmwasm_std::Empty;
 
-pub const CONTRACT_ID: &str = "lavs_tasks";
+pub const CONTRACT_ID: &str = env!("CARGO_PKG_NAME");
 
 #[interface(InstantiateMsg, ExecuteMsg, QueryMsg, MigrateMsg, id = CONTRACT_ID)]
 pub struct Contract;
