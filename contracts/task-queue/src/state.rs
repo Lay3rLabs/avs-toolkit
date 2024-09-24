@@ -130,6 +130,16 @@ pub struct Task {
     pub result: Option<ResponseType>,
 }
 
+impl Task {
+    pub fn validate_status(&self, env: &Env) -> Status {
+        match self.status {
+            Status::Open {} if !self.timing.is_expired(env) => self.status.clone(),
+            Status::Expired {} | Status::Open {} => Status::Expired {},
+            Status::Completed { .. } => self.status.clone(),
+        }
+    }
+}
+
 #[cw_serde]
 pub struct Timing {
     /// Creation in UNIX seconds

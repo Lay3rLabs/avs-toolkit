@@ -158,7 +158,7 @@ mod execute {
 }
 
 mod query {
-    use lavs_apis::tasks::{ConfigResponse, TaskStatus};
+    use lavs_apis::tasks::ConfigResponse;
 
     use crate::msg::{
         CompletedTaskOverview, ListCompletedResponse, ListOpenResponse, OpenTaskOverview,
@@ -167,12 +167,14 @@ mod query {
 
     use super::*;
 
-    pub fn task(deps: Deps, _env: Env, id: u64) -> Result<TaskResponse, ContractError> {
+    pub fn task(deps: Deps, env: Env, id: u64) -> Result<TaskResponse, ContractError> {
         let task = TASKS.load(deps.storage, id)?;
+        let status = task.validate_status(&env);
+
         let r = TaskResponse {
             id,
             description: task.description,
-            status: task.status,
+            status,
             payload: task.payload,
             result: task.result,
         };
@@ -181,11 +183,8 @@ mod query {
 
     pub fn task_status(deps: Deps, env: Env, id: u64) -> Result<TaskStatusResponse, ContractError> {
         let task = TASKS.load(deps.storage, id)?;
-        let status = match task.status {
-            Status::Open {} if !task.timing.is_expired(&env) => TaskStatus::Open,
-            Status::Expired {} | Status::Open {} => TaskStatus::Expired,
-            Status::Completed { .. } => TaskStatus::Completed,
-        };
+        let status = task.validate_status(&env).into();
+
         let r = TaskStatusResponse {
             id,
             status,

@@ -7,6 +7,8 @@ use cosmwasm_schema::{cw_serde, QueryResponses};
 // TODO: try embedding these (enum with serde(untagged)) in the main types of the implementing contracts
 use cw_orch::{ExecuteFns, QueryFns};
 
+use crate::tasks::Status;
+
 // FIXME: hot to make these generic
 pub type ResponseType = serde_json::Value;
 
@@ -56,4 +58,14 @@ pub enum TaskStatus {
     Open,
     Completed,
     Expired,
+}
+
+impl From<Status> for TaskStatus {
+    fn from(status: Status) -> Self {
+        match status {
+            Status::Open { .. } => TaskStatus::Open,
+            Status::Completed { .. } => TaskStatus::Completed,
+            Status::Expired { .. } => TaskStatus::Expired,
+        }
+    }
 }
