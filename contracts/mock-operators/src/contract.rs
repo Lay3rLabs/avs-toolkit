@@ -65,6 +65,8 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     }
 }
 
+// Although the queries take a height parameter, they don't use it to query historical data.
+// This doesn't matter here since we're just mocking the operators, and they don't change.
 mod query {
     use super::*;
 
