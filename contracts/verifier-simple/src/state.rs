@@ -5,8 +5,11 @@ use lavs_apis::verifier_simple::TaskStatus;
 
 pub const CONFIG: Item<Config> = Item::new("config");
 
+// key is (task_queue_address, task_id)
 pub const TASKS: Map<(&Addr, u64), TaskMetadata> = Map::new("tasks");
+// key is (task_queue_address, task_id, result)
 pub const OPTIONS: Map<(&Addr, u64, &str), TaskOption> = Map::new("task_options");
+/// key is (task_queue_address, task_id, operator)
 pub const VOTES: Map<(&Addr, u64, &Addr), OperatorVote> = Map::new("operator_votes");
 
 #[cw_serde]
