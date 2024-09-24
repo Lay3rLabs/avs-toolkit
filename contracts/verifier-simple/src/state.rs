@@ -1,16 +1,16 @@
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, Env, StdError, Storage, Uint128};
 use cw_storage_plus::{Item, Map};
-use lavs_apis::verifier_simple::TaskStatus;
+use lavs_apis::{id::TaskId, verifier_simple::TaskStatus};
 
 pub const CONFIG: Item<Config> = Item::new("config");
 
 // key is (task_queue_address, task_id)
-pub const TASKS: Map<(&Addr, u64), TaskMetadata> = Map::new("tasks");
+pub const TASKS: Map<(&Addr, TaskId), TaskMetadata> = Map::new("tasks");
 // key is (task_queue_address, task_id, result)
-pub const OPTIONS: Map<(&Addr, u64, &str), TaskOption> = Map::new("task_options");
+pub const OPTIONS: Map<(&Addr, TaskId, &str), TaskOption> = Map::new("task_options");
 /// key is (task_queue_address, task_id, operator)
-pub const VOTES: Map<(&Addr, u64, &Addr), OperatorVote> = Map::new("operator_votes");
+pub const VOTES: Map<(&Addr, TaskId, &Addr), OperatorVote> = Map::new("operator_votes");
 
 #[cw_serde]
 pub struct Config {
@@ -52,7 +52,7 @@ pub struct OperatorVote {
 pub fn record_vote(
     storage: &mut dyn Storage,
     task_queue: &Addr,
-    task_id: u64,
+    task_id: TaskId,
     operator: &Addr,
     result: &str,
     power: Uint128,

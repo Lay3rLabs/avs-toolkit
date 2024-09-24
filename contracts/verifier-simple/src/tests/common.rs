@@ -1,5 +1,6 @@
 use cw_orch::environment::{ChainState, CwEnv};
 use cw_orch::prelude::*;
+use lavs_apis::id::TaskId;
 use serde_json::json;
 
 use lavs_apis::tasks::{Requestor, Status, TaskStatus, TimeoutInfo};
@@ -201,7 +202,7 @@ pub fn make_task<C: ChainState + TxHandler>(
     name: &str,
     timeout: impl Into<Option<u64>>,
     payload: &serde_json::Value,
-) -> u64 {
+) -> TaskId {
     let res = contract
         .create(name.to_string(), timeout.into(), payload.clone(), &[])
         .unwrap();
@@ -215,7 +216,7 @@ pub fn make_task<C: ChainState + TxHandler>(
 //
 // Note: both implement cw_orch::environment::IndexResponse
 #[track_caller]
-pub fn get_task_id(res: &impl IndexResponse) -> u64 {
+pub fn get_task_id(res: &impl IndexResponse) -> TaskId {
     res.event_attr_value("wasm", "task_id")
         .unwrap()
         .parse()

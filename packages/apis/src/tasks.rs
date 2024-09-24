@@ -2,6 +2,7 @@ use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Coin, Env};
 use cw_orch::{ExecuteFns, QueryFns};
 
+use crate::id::TaskId;
 pub use crate::interfaces::tasks::{
     TaskExecuteMsg, TaskExecuteMsgFns, TaskQueryMsg, TaskQueryMsgFns, TaskStatus,
     TaskStatusResponse,
@@ -72,7 +73,7 @@ pub enum CustomExecuteMsg {
     },
     Timeout {
         /// The task ID to complete
-        task_id: u64,
+        task_id: TaskId,
     },
 }
 
@@ -117,7 +118,7 @@ pub enum CustomQueryMsg {
     },
     /// Get specific task details
     #[returns(TaskResponse)]
-    Task { id: u64 },
+    Task { id: TaskId },
     /// Get task configuration
     #[returns(ConfigResponse)]
     Config {},
@@ -148,7 +149,7 @@ pub struct ListCompletedResponse {
 /// Minimal information about a task
 #[cw_serde]
 pub struct OpenTaskOverview {
-    pub id: u64,
+    pub id: TaskId,
     pub expires: u64,
     pub payload: RequestType,
 }
@@ -156,7 +157,7 @@ pub struct OpenTaskOverview {
 /// Minimal information about a task
 #[cw_serde]
 pub struct CompletedTaskOverview {
-    pub id: u64,
+    pub id: TaskId,
     pub completed: u64,
     pub result: ResponseType,
 }
@@ -180,7 +181,7 @@ pub struct TimeoutConfig {
 /// This is detailed information about a task, including the payload
 #[cw_serde]
 pub struct TaskResponse {
-    pub id: u64,
+    pub id: TaskId,
     pub description: String,
     pub status: Status,
     pub payload: RequestType,

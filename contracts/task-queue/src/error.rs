@@ -1,5 +1,6 @@
 use cosmwasm_std::StdError;
 use cw_utils::PaymentError;
+use lavs_apis::id::TaskId;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -35,5 +36,5 @@ pub enum ContractError {
     TaskNotExpired,
 
     #[error("Missing result for completed task {id}")]
-    MissingResultCompleted { id: u64 },
+    MissingResultCompleted { id: TaskId },
 }

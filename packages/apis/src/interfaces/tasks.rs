@@ -7,7 +7,7 @@ use cosmwasm_schema::{cw_serde, QueryResponses};
 // TODO: try embedding these (enum with serde(untagged)) in the main types of the implementing contracts
 use cw_orch::{ExecuteFns, QueryFns};
 
-use crate::tasks::Status;
+use crate::{id::TaskId, tasks::Status};
 
 // FIXME: hot to make these generic
 pub type ResponseType = serde_json::Value;
@@ -22,7 +22,7 @@ pub enum TaskExecuteMsg {
     /// This can only be called by the verifier contract
     Complete {
         /// The task ID to complete
-        task_id: u64,
+        task_id: TaskId,
         /// The result of the task
         response: ResponseType,
     },
@@ -36,13 +36,13 @@ pub enum TaskExecuteMsg {
 pub enum TaskQueryMsg {
     /// Get specific task details
     #[returns(TaskStatusResponse)]
-    TaskStatus { id: u64 },
+    TaskStatus { id: TaskId },
 }
 
 /// This is detailed information about a task, including the payload
 #[cw_serde]
 pub struct TaskStatusResponse {
-    pub id: u64,
+    pub id: TaskId,
     pub status: TaskStatus,
     /// We need the height to query the voting power
     pub created_height: u64,

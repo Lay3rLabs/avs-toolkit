@@ -75,6 +75,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<Binary, ContractErro
 
 mod execute {
     use cw_utils::nonpayable;
+    use lavs_apis::id::TaskId;
 
     use crate::state::{check_timeout, Timing};
 
@@ -103,7 +104,7 @@ mod execute {
         };
         let task_id = config.next_id;
         TASKS.save(deps.storage, task_id, &task)?;
-        config.next_id += 1;
+        config.next_id = TaskId::new(task_id.u64() + 1);
         CONFIG.save(deps.storage, &config)?;
 
         let res = Response::new()
@@ -116,7 +117,7 @@ mod execute {
         deps: DepsMut,
         env: Env,
         info: MessageInfo,
-        task_id: u64,
+        task_id: TaskId,
         response: ResponseType,
     ) -> Result<Response, ContractError> {
         nonpayable(&info)?;
@@ -141,7 +142,7 @@ mod execute {
         deps: DepsMut,
         env: Env,
         info: MessageInfo,
-        task_id: u64,
+        task_id: TaskId,
     ) -> Result<Response, ContractError> {
         nonpayable(&info)?;
 
@@ -158,7 +159,7 @@ mod execute {
 }
 
 mod query {
-    use lavs_apis::tasks::ConfigResponse;
+    use lavs_apis::{id::TaskId, tasks::ConfigResponse};
 
     use crate::msg::{
         CompletedTaskOverview, ListCompletedResponse, ListOpenResponse, OpenTaskOverview,
@@ -167,7 +168,7 @@ mod query {
 
     use super::*;
 
-    pub fn task(deps: Deps, env: Env, id: u64) -> Result<TaskResponse, ContractError> {
+    pub fn task(deps: Deps, env: Env, id: TaskId) -> Result<TaskResponse, ContractError> {
         let task = TASKS.load(deps.storage, id)?;
         let status = task.validate_status(&env);
 
@@ -181,7 +182,11 @@ mod query {
         Ok(r)
     }
 
-    pub fn task_status(deps: Deps, env: Env, id: u64) -> Result<TaskStatusResponse, ContractError> {
+    pub fn task_status(
+        deps: Deps,
+        env: Env,
+        id: TaskId,
+    ) -> Result<TaskStatusResponse, ContractError> {
         let task = TASKS.load(deps.storage, id)?;
         let status = task.validate_status(&env).into();
 

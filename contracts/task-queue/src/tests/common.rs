@@ -1,5 +1,6 @@
 use cw_orch::environment::{ChainState, CwEnv, Environment, IndexResponse, QueryHandler};
 use cw_orch::prelude::*;
+use lavs_apis::id::TaskId;
 use lavs_apis::tasks::TaskStatus;
 use serde_json::json;
 
@@ -67,7 +68,7 @@ where
     let start_two = get_time(contract.environment());
     contract.environment().next_block().unwrap();
     assert_ne!(start, start_two);
-    assert_eq!(two, one + 1);
+    assert_eq!(two, TaskId::new(one.u64() + 1));
 
     // query for open tasks
     let open = contract.list_open().unwrap();
@@ -157,7 +158,7 @@ where
         .create("Two".to_string(), None, payload.clone(), &[])
         .unwrap();
     let task_two = get_task_id(&two);
-    assert_eq!(task_two, 2u64);
+    assert_eq!(task_two, TaskId::new(2u64));
 }
 
 // These measurements are a bit different between multi-test and golem.
@@ -279,7 +280,7 @@ where
     // cannot complete unknown task ids
     let err = contract
         .call_as(&verifier)
-        .complete(two + 1, result.clone())
+        .complete(TaskId::new(two.u64() + 1), result.clone())
         .unwrap_err();
     assert!(err.root().to_string().contains("not found"));
 
@@ -367,7 +368,7 @@ pub fn make_task<C: ChainState + TxHandler>(
     name: &str,
     timeout: impl Into<Option<u64>>,
     payload: &serde_json::Value,
-) -> u64 {
+) -> TaskId {
     let res = contract
         .create(name.to_string(), timeout.into(), payload.clone(), &[])
         .unwrap();
@@ -381,7 +382,7 @@ pub fn make_task<C: ChainState + TxHandler>(
 //
 // Note: both implement cw_orch::environment::IndexResponse
 #[track_caller]
-pub fn get_task_id(res: &impl IndexResponse) -> u64 {
+pub fn get_task_id(res: &impl IndexResponse) -> TaskId {
     res.event_attr_value("wasm", "task_id")
         .unwrap()
         .parse()
