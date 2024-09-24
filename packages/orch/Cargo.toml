@@ -1,0 +1,21 @@
+[package]
+name = "lavs-orch"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Cw-orch helpers for lay3r contracts"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+daemon = ["cw-orch/daemon", "dep:bitcoin", "dep:dotenv", "dep:pretty_env_logger"]
+
+[dependencies]
+cw-orch = { workspace = true }
+cosmwasm-std = { workspace = true }
+
+# Needed for the cw-orch daemon keygen stuff..
+bitcoin = { version = "0.30.0", optional = true}
+dotenv = { version = "0.15.0", optional = true}
+pretty_env_logger = { version = "0.5.0", optional = true }
