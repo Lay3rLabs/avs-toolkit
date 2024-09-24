@@ -169,6 +169,7 @@ pub struct ConfigResponse {
 }
 
 /// All timeouts are defined in seconds
+/// This is configured from `TimeoutInfo`, which is passed in the instantiate message
 #[cw_serde]
 pub struct TimeoutConfig {
     pub default: u64,

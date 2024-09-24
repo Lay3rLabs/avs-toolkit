@@ -76,7 +76,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<Binary, ContractErro
 mod execute {
     use cw_utils::nonpayable;
 
-    use crate::state::Timing;
+    use crate::state::{check_timeout, Timing};
 
     use super::*;
 
@@ -89,7 +89,7 @@ mod execute {
         payload: RequestType,
     ) -> Result<Response, ContractError> {
         let mut config = CONFIG.load(deps.storage)?;
-        let timeout = config.timeout.check_timeout(timeout)?;
+        let timeout = check_timeout(&config.timeout, timeout)?;
         config.requestor.check_requestor(&info)?;
 
         let timing = Timing::new(&env, timeout);
@@ -199,7 +199,7 @@ mod query {
         let config = CONFIG.load(deps.storage)?;
         let r = ConfigResponse {
             requestor: config.requestor.into(),
-            timeout: config.timeout.into(),
+            timeout: config.timeout,
             verifier: config.verifier.into_string(),
         };
         Ok(r)

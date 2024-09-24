@@ -3,7 +3,7 @@ use cosmwasm_std::{Addr, Coin, Deps, Env, MessageInfo, StdError};
 use cw_storage_plus::{Item, Map};
 use cw_utils::must_pay;
 
-use lavs_apis::tasks::{Requestor, Status};
+use lavs_apis::tasks::{Requestor, Status, TimeoutConfig};
 
 use crate::error::ContractError;
 use crate::msg::{self, InstantiateMsg, RequestType, ResponseType};
@@ -22,7 +22,7 @@ pub struct Config {
 impl Config {
     pub fn validate(deps: Deps, input: InstantiateMsg) -> Result<Self, ContractError> {
         let requestor = RequestorConfig::validate(deps, input.requestor)?;
-        let timeout = TimeoutConfig::validate(input.timeout)?;
+        let timeout = validate_timeout_info(input.timeout)?;
         let verifier = deps.api.addr_validate(&input.verifier)?;
         Ok(Config {
             next_id: 1,
@@ -79,45 +79,26 @@ impl From<RequestorConfig> for Requestor {
     }
 }
 
-#[cw_serde]
-pub struct TimeoutConfig {
-    pub default: u64,
-    pub minimum: u64,
-    pub maximum: u64,
+pub fn validate_timeout_info(input: msg::TimeoutInfo) -> Result<TimeoutConfig, ContractError> {
+    let default = input.default;
+    let minimum = input.minimum.unwrap_or(default);
+    let maximum = input.maximum.unwrap_or(default);
+    if default < minimum || default > maximum || minimum > maximum {
+        return Err(ContractError::InvalidTimeoutInfo);
+    }
+    Ok(TimeoutConfig {
+        default,
+        minimum,
+        maximum,
+    })
 }
 
-impl TimeoutConfig {
-    pub fn validate(input: msg::TimeoutInfo) -> Result<Self, ContractError> {
-        let default = input.default;
-        let minimum = input.minimum.unwrap_or(default);
-        let maximum = input.maximum.unwrap_or(default);
-        if default < minimum || default > maximum || minimum > maximum {
-            return Err(ContractError::InvalidTimeoutInfo);
-        }
-        Ok(TimeoutConfig {
-            default,
-            minimum,
-            maximum,
-        })
-    }
-
-    pub fn check_timeout(&self, timeout: Option<u64>) -> Result<u64, ContractError> {
-        match timeout {
-            Some(t) if t < self.minimum => Err(ContractError::TimeoutTooShort(self.minimum)),
-            Some(t) if t > self.maximum => Err(ContractError::TimeoutTooLong(self.maximum)),
-            Some(t) => Ok(t),
-            None => Ok(self.default),
-        }
-    }
-}
-
-impl From<TimeoutConfig> for lavs_apis::tasks::TimeoutConfig {
-    fn from(val: TimeoutConfig) -> Self {
-        lavs_apis::tasks::TimeoutConfig {
-            default: val.default,
-            minimum: val.minimum,
-            maximum: val.maximum,
-        }
+pub fn check_timeout(config: &TimeoutConfig, timeout: Option<u64>) -> Result<u64, ContractError> {
+    match timeout {
+        Some(t) if t < config.minimum => Err(ContractError::TimeoutTooShort(config.minimum)),
+        Some(t) if t > config.maximum => Err(ContractError::TimeoutTooLong(config.maximum)),
+        Some(t) => Ok(t),
+        None => Ok(config.default),
     }
 }
 
