@@ -92,7 +92,7 @@ impl From<TaskExecuteMsg> for ExecuteMsg {
 #[derive(QueryResponses)]
 #[query_responses(nested)]
 pub enum QueryMsg {
-    /// Complete and any other pulblic APIs in the interface
+    /// Complete and any other public APIs in the interface
     #[serde(untagged)]
     Api(TaskQueryMsg),
     /// The messages unique to this implementation
