@@ -5,7 +5,7 @@ use cw_orch::prelude::*;
 use lavs_orch::{Addressable, AltSigner};
 
 use crate::interface::Contract;
-use crate::msg::{InstantiateMsg, QueryMsgFns};
+use crate::msg::{InstantiateMsg, InstantiateOperator, QueryMsgFns};
 
 pub const BECH_PREFIX: &str = "slay3r";
 
@@ -29,9 +29,9 @@ where
     let noop = chain.alt_signer(4);
 
     let operators = vec![
-        (op1.addr().to_string(), 100u64),
-        (op2.addr().to_string(), 200u64),
-        (op3.addr().to_string(), 300u64),
+        InstantiateOperator::new(op1.addr().to_string(), 100),
+        InstantiateOperator::new(op2.addr().to_string(), 200),
+        InstantiateOperator::new(op3.addr().to_string(), 300),
     ];
 
     // put real message here

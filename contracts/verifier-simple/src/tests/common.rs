@@ -7,7 +7,7 @@ use lavs_orch::{Addressable, AltSigner};
 
 use lavs_mock_operators::interface::Contract as MockOperatorsContract;
 use lavs_mock_operators::msg::{
-    InstantiateMsg as MockOperatorsInstantiateMsg, QueryMsgFns as MockOperatorsQueryMsgFns,
+    InstantiateMsg as MockOperatorsInstantiateMsg, InstantiateOperator, QueryMsgFns as MockOperatorsQueryMsgFns
 };
 use lavs_tasks::interface::Contract as TasksContract;
 use lavs_tasks::msg::{
@@ -39,7 +39,7 @@ where
     let invalid_op_node = chain.alt_signer(4);
 
     // Upload and instantiate operator contract with one operator
-    let operators = vec![(op_node.addr().to_string(), 20)];
+    let operators = vec![InstantiateOperator::new(op_node.addr().to_string(), 20)];
     let msg = MockOperatorsInstantiateMsg { operators };
     let operators = MockOperatorsContract::new(chain.clone());
     operators.upload().unwrap();
@@ -106,7 +106,7 @@ where
     ];
 
     // Upload and instantiate operator contract with one operator
-    let operators = op_nodes.iter().map(|n| (n.addr().to_string(), 1)).collect();
+    let operators = op_nodes.iter().map(|n| InstantiateOperator::new(n.addr().to_string(), 1)).collect();
     let msg = MockOperatorsInstantiateMsg { operators };
     let operators = MockOperatorsContract::new(chain.clone());
     operators.upload().unwrap();

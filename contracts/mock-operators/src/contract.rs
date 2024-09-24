@@ -6,7 +6,7 @@ use cosmwasm_std::{
 use cw2::set_contract_version;
 
 use crate::error::ContractError;
-use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use crate::msg::{ExecuteMsg, InstantiateMsg, InstantiateOperator, QueryMsg};
 use crate::state::{Config, OpInfo, CONFIG};
 
 // version info for migration info
@@ -26,9 +26,9 @@ pub fn instantiate(
     let operators = msg
         .operators
         .into_iter()
-        .map(|(addr, power)| {
+        .map(|InstantiateOperator{addr, voting_power}| {
             let op = deps.api.addr_validate(&addr)?;
-            let power = Uint128::from(power);
+            let power = Uint128::from(voting_power);
             total_power += power;
             Ok(OpInfo { op, power })
         })
