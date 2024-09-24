@@ -25,7 +25,6 @@ schemars = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
-# FIXME: let's make this just cw-orch-core in dependencies, and cw-orch for test
 cw-orch = { workspace = true }
 lavs-apis = { workspace = true }
 
