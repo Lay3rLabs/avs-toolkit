@@ -26,7 +26,7 @@ pub fn instantiate(
     let operators = msg
         .operators
         .into_iter()
-        .map(|InstantiateOperator{addr, voting_power}| {
+        .map(|InstantiateOperator { addr, voting_power }| {
             let op = deps.api.addr_validate(&addr)?;
             let power = Uint128::from(voting_power);
             total_power += power;
