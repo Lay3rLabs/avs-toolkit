@@ -10,8 +10,8 @@ use lavs_mock_operators::msg::{
     InstantiateMsg as MockOperatorsInstantiateMsg, InstantiateOperator,
     QueryMsgFns as MockOperatorsQueryMsgFns,
 };
-use lavs_tasks::interface::Contract as TasksContract;
-use lavs_tasks::msg::{
+use lavs_task_queue::interface::Contract as TasksContract;
+use lavs_task_queue::msg::{
     CustomExecuteMsgFns as TasksExecuteMsgFns, CustomQueryMsgFns as TasksQueryMsgFns,
     InstantiateMsg as TasksInstantiateMsg,
 };

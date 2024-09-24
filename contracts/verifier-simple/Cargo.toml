@@ -33,4 +33,4 @@ cw-multi-test = { workspace = true }
 lavs-orch = { workspace = true }
 cw-orch = { workspace = true }
 lavs-mock-operators = { workspace = true }
-lavs-tasks = { workspace = true }
+lavs-task-queue = { workspace = true }

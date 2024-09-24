@@ -10,7 +10,7 @@ repository    = "https://github.com/Lay3rLabs/avs-toolkit"
 
 [workspace.dependencies]
 lavs-mock-operators = { path = "contracts/mock-operators" }
-lavs-tasks = { path = "contracts/tasks" }
+lavs-task-queue = { path = "contracts/task-queue" }
 lavs-verifier-simple = { path = "contracts/verifier-simple" }
 
 lavs-apis = { path = "packages/apis" }

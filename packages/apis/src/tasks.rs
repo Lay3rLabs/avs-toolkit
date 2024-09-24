@@ -226,7 +226,7 @@ mod deployment {
     /// in eg. deployment scripts.
     /// Please use the full implementation in the contract itself for multitest.
 
-    pub const CONTRACT_ID: &str = "lavs_tasks";
+    pub const CONTRACT_ID: &str = "lavs_task_queue";
 
     #[interface(InstantiateMsg, ExecuteMsg, QueryMsg, Empty, id = CONTRACT_ID)]
     pub struct Contract;
