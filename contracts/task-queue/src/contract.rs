@@ -243,13 +243,16 @@ mod query {
                         status: Status::Completed { completed, .. },
                         ..
                     },
-                )) => Some(Ok(CompletedTaskOverview {
-                    id,
-                    completed,
-                    result: result.unwrap(),
-                })),
+                )) => match result {
+                    None => Some(Err(ContractError::MissingResultCompleted { id })),
+                    Some(result) => Some(Ok(CompletedTaskOverview {
+                        id,
+                        completed,
+                        result,
+                    })),
+                },
                 Ok(_) => None,
-                Err(e) => Some(Err(e)),
+                Err(e) => Some(Err(e.into())),
             })
             .collect::<Result<Vec<_>, _>>()?;
 

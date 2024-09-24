@@ -33,4 +33,7 @@ pub enum ContractError {
 
     #[error("Task is not yet expired")]
     TaskNotExpired,
+
+    #[error("Missing result for completed task {id}")]
+    MissingResultCompleted { id: u64 },
 }
