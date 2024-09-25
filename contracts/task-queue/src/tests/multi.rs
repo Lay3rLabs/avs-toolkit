@@ -60,7 +60,7 @@ fn sanity_check() {
         },
         verifier: verifier.to_string(),
     };
-    let init_res = tasker.instantiate(&msg, None, None).unwrap();
+    let init_res = tasker.instantiate(&msg, None, &[]).unwrap();
     let contract_addr = init_res.instantiated_contract_address().unwrap();
     assert_eq!(contract_addr, tasker.address().unwrap());
 }

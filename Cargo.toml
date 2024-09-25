@@ -16,15 +16,15 @@ lavs-verifier-simple = { path = "contracts/verifier-simple" }
 lavs-apis = { path = "packages/apis" }
 lavs-orch = { path = "packages/orch" }
 
-cosmwasm-schema  = "1.5.7"
-cosmwasm-std     = { version = "1.5.7", features = ["cosmwasm_1_4"] }
+cosmwasm-schema  = "2.1.4"
+cosmwasm-std     = "2.1.4" 
 
-cw-orch = { version = "0.23.0" }
-cw-orch-core = { version = "1" }
-cw-storage-plus  = "1.2.0"
-cw-utils         = "1.0.3"
-cw-controllers   = "1.1.2"
-cw2              = "1.1.2"
+cw-orch = "0.25.0"
+cw-orch-core = "2"
+cw-storage-plus  = "2.0.0"
+cw-utils         = "2.0.0"
+cw-controllers   = "2.0.0"
+cw2              = "2.0.0"
 schemars         = "0.8.17"
 serde            = { version = "1.0.199", default-features = false, features = ["derive"] }
 serde_json       = { version = "1.0.117" }
