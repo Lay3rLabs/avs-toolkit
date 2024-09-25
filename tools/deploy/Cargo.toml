@@ -8,6 +8,9 @@ description = "Deploy cli for lay3r contracts"
 
 [dependencies]
 lavs-orch = {path = "../../packages/orch", features = ["daemon"]}
+lavs-mock-operators = {path = "../../contracts/mock-operators"}
+lavs-verifier-simple = {path = "../../contracts/verifier-simple"}
+lavs-task-queue = {path = "../../contracts/task-queue"}
 cw-orch = { workspace = true}
 cosmwasm-std = { workspace = true }
 serde = { workspace = true }

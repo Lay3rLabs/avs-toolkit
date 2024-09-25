@@ -9,7 +9,6 @@ pub struct Args {
 
 impl Args {
     pub async fn new(args: CliArgs) -> Result<Self> {
-
         Ok(Self {
             command: args.command,
             chain_kind: args.chain_kind,
@@ -28,7 +27,7 @@ pub struct CliArgs {
     //#[arg(long, value_enum, default_value_t = LogLevel::Debug)]
     pub log_level: LogLevel,
 
-    /// Set the chain kind 
+    /// Set the chain kind
     #[arg(long, value_enum, default_value_t = ChainKind::Local)]
     pub chain_kind: ChainKind,
 
@@ -41,7 +40,7 @@ pub enum ChainKind {
     Local,
     Testnet,
     Mainnet,
-    Unspecified
+    Unspecified,
 }
 
 impl From<ChainKind> for cw_orch::environment::ChainKind {
@@ -54,7 +53,6 @@ impl From<ChainKind> for cw_orch::environment::ChainKind {
         }
     }
 }
-
 
 #[derive(Copy, Clone, Debug, clap::ValueEnum)]
 pub enum LogLevel {
