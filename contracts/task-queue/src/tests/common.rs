@@ -22,7 +22,7 @@ const VERIFIER_INDEX: u32 = 3;
 pub fn setup<Chain: CwEnv>(chain: Chain, msg: InstantiateMsg) -> TaskContract<Chain> {
     let tasker = TaskContract::new(chain);
     tasker.upload().unwrap();
-    tasker.instantiate(&msg, None, None).unwrap();
+    tasker.instantiate(&msg, None, &[]).unwrap();
     tasker
 }
 

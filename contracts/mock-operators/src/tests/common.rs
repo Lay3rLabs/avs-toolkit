@@ -12,7 +12,7 @@ pub const BECH_PREFIX: &str = "slay3r";
 pub fn setup<Chain: CwEnv>(chain: Chain, msg: InstantiateMsg) -> Contract<Chain> {
     let contract = Contract::new(chain);
     contract.upload().unwrap();
-    contract.instantiate(&msg, None, None).unwrap();
+    contract.instantiate(&msg, None, &[]).unwrap();
     contract
 }
 

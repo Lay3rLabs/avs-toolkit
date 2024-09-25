@@ -45,5 +45,6 @@ pub fn chain_info(kind: ChainKind) -> ChainInfo {
         ChainKind::Local => SLAY3R_LOCAL,
         ChainKind::Testnet => SLAY3R_DEV,
         ChainKind::Mainnet => panic!("Mainnet not supported"),
+        ChainKind::Unspecified => panic!("Unspecified chain kind"),
     }
 }

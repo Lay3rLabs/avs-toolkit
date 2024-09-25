@@ -25,7 +25,7 @@ pub const BECH_PREFIX: &str = "slay3r";
 pub fn setup<Chain: CwEnv>(chain: Chain, msg: InstantiateMsg) -> Contract<Chain> {
     let contract = Contract::new(chain);
     contract.upload().unwrap();
-    contract.instantiate(&msg, None, None).unwrap();
+    contract.instantiate(&msg, None, &[]).unwrap();
     contract
 }
 
@@ -45,7 +45,7 @@ where
     let msg = MockOperatorsInstantiateMsg { operators };
     let operators = MockOperatorsContract::new(chain.clone());
     operators.upload().unwrap();
-    operators.instantiate(&msg, None, None).unwrap();
+    operators.instantiate(&msg, None, &[]).unwrap();
 
     // Upload and instantiate verifier, connecting to the operator
     let msg = InstantiateMsg {
@@ -62,7 +62,7 @@ where
     };
     let tasker = TasksContract::new(chain.clone());
     tasker.upload().unwrap();
-    tasker.instantiate(&msg, None, None).unwrap();
+    tasker.instantiate(&msg, None, &[]).unwrap();
 
     // Create a task
     let payload = json!({"x": 17});
@@ -115,7 +115,7 @@ where
     let msg = MockOperatorsInstantiateMsg { operators };
     let operators = MockOperatorsContract::new(chain.clone());
     operators.upload().unwrap();
-    operators.instantiate(&msg, None, None).unwrap();
+    operators.instantiate(&msg, None, &[]).unwrap();
 
     // Upload and instantiate verifier, connecting to the operator
     let msg = InstantiateMsg {
@@ -132,7 +132,7 @@ where
     };
     let tasker = TasksContract::new(chain.clone());
     tasker.upload().unwrap();
-    tasker.instantiate(&msg, None, None).unwrap();
+    tasker.instantiate(&msg, None, &[]).unwrap();
 
     // check the operator config
     let total_power = operators.total_power_at_height(None).unwrap();
