@@ -31,7 +31,7 @@ async fn main() -> Result<()> {
         Command::DeployAvsContracts {  } => {
 
             tracing::info!("connectiing...");
-            let daemon = slay3r_connect(args.chain_kind.into())?;
+            let daemon = slay3r_connect(args.chain_kind.into()).await?;
             tracing::info!("{:?}", daemon.chain_info());
         }
     }
