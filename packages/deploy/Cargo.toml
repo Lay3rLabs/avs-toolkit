@@ -1,0 +1,11 @@
+[package]
+name = "lavs-deploy"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Deploy helpers for lay3r contracts"
+
+[dependencies]
+cw-orch = { workspace = true }
+cosmwasm-std = { workspace = true }

@@ -1,0 +1,21 @@
+[package]
+name = "lavs-deploy-cli"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Deploy cli for lay3r contracts"
+
+[dependencies]
+lavs-orch = {path = "../../packages/orch", features = ["daemon"]}
+cw-orch = { workspace = true}
+cosmwasm-std = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+clap = { workspace = true }
+futures = { workspace = true }
+tracing = { workspace = true }
+dotenvy = { workspace = true }
+tracing-subscriber = { workspace = true }
+anyhow = { workspace = true }
