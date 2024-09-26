@@ -1,7 +1,7 @@
 #![allow(async_fn_in_trait)]
 
 mod runtime;
-mod task_queue;
+pub mod task_queue;
 
 pub mod http;
 pub mod io;

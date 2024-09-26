@@ -1,4 +1,4 @@
-//! Copied from https://github.com/calvinrp/wstd/blob/refactor/src/runtime/polling.rs
+//! Copied from <https://github.com/calvinrp/wstd/blob/refactor/src/runtime/polling.rs>
 //!
 //! This module handles the conversion from `Pollable` -> `Future`. We do this
 //! by creating an equivalent implementation to the `polling` crate. Once

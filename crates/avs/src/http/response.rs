@@ -1,7 +1,7 @@
 use wasi::http::types::{IncomingBody as WasiIncomingBody, IncomingResponse};
 use wasi::io::streams::{InputStream, StreamError};
 
-use super::{Body, Headers, StatusCode, Trailers};
+use super::{Body, Headers, StatusCode};
 use crate::io::AsyncRead;
 
 /// An HTTP response
@@ -37,7 +37,7 @@ impl Response<IncomingBody> {
 
         let body = IncomingBody {
             content_length,
-            trailers: None,
+            //trailers: None,
             body_stream: Some(body_stream),
             _incoming_body: Some(incoming_body),
             _incoming_response: Some(incoming_response),
@@ -82,7 +82,7 @@ impl<B: Body> Response<B> {
 #[derive(Debug)]
 pub struct IncomingBody {
     content_length: Option<u64>,
-    trailers: Option<Trailers>,
+    //trailers: Option<Trailers>,
 
     // IMPORTANT: the order of these fields here matters.
     // Rust drops `struct` fields in the order that they are defined in

@@ -1,4 +1,5 @@
-//! Copied and modified from https://github.com/calvinrp/wstd/blob/refactor/src/runtime/reactor.rs
+//! Copied and modified from
+//! <https://github.com/calvinrp/wstd/blob/refactor/src/runtime/reactor.rs>
 
 use super::polling::{EventKey, Poller};
 

@@ -1,4 +1,4 @@
-//! Copied and modified from https://github.com/calvinrp/wstd/blob/refactor/src/runtime/block_on.rs
+//! Copied and modified from <https://github.com/calvinrp/wstd/blob/refactor/src/runtime/block_on.rs>
 
 //use super::Reactor;
 

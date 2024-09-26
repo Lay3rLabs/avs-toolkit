@@ -1,4 +1,4 @@
-//! Copied and modified from https://github.com/calvinrp/wstd/blob/refactor/src/runtime/mod.rs
+//! Copied and modified from <https://github.com/calvinrp/wstd/blob/refactor/src/runtime/mod.rs>
 //!
 //! Async event loop support.
 //!
