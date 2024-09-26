@@ -1,0 +1,25 @@
+[package]
+name = "deploy-cli"
+version = "0.0.0"
+edition = "2021"
+license = "Apache-2.0"
+
+[dependencies]
+### Remote dependencies ###
+# layer-climb = { git = "https://github.com/Lay3rLabs/climb.git", rev = "bf2ce73be2b46957c22885fda33466ec6b10e087"}
+layer-climb = { path = "../../../climb/packages/layer-climb"}
+### Local dependencies ###
+lavs-mock-operators = {path = "../../contracts/mock-operators"}
+lavs-verifier-simple = {path = "../../contracts/verifier-simple"}
+lavs-task-queue = {path = "../../contracts/task-queue"}
+### Workspace dependencies ###
+cosmwasm-std = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+clap = { workspace = true }
+futures = { workspace = true }
+tracing = { workspace = true }
+dotenvy = { workspace = true }
+tracing-subscriber = { workspace = true }
+anyhow = { workspace = true }
