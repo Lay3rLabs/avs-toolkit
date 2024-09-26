@@ -6,8 +6,7 @@ license = "Apache-2.0"
 
 [dependencies]
 ### Remote dependencies ###
-# layer-climb = { git = "https://github.com/Lay3rLabs/climb.git", rev = "bf2ce73be2b46957c22885fda33466ec6b10e087"}
-layer-climb = { path = "../../../climb/packages/layer-climb"}
+layer-climb = { git = "https://github.com/Lay3rLabs/climb.git", rev = "bf2ce73be2b46957c22885fda33466ec6b10e087"}
 ### Local dependencies ###
 lavs-mock-operators = {path = "../../contracts/mock-operators"}
 lavs-verifier-simple = {path = "../../contracts/verifier-simple"}

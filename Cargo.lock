@@ -2519,6 +2519,7 @@ dependencies = [
 [[package]]
 name = "layer-climb"
 version = "0.0.0"
+source = "git+https://github.com/Lay3rLabs/climb.git?rev=bf2ce73be2b46957c22885fda33466ec6b10e087#bf2ce73be2b46957c22885fda33466ec6b10e087"
 dependencies = [
  "layer-climb-address",
  "layer-climb-config",
@@ -2529,6 +2530,7 @@ dependencies = [
 [[package]]
 name = "layer-climb-address"
 version = "0.0.0"
+source = "git+https://github.com/Lay3rLabs/climb.git?rev=bf2ce73be2b46957c22885fda33466ec6b10e087#bf2ce73be2b46957c22885fda33466ec6b10e087"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2546,6 +2548,7 @@ dependencies = [
 [[package]]
 name = "layer-climb-config"
 version = "0.0.0"
+source = "git+https://github.com/Lay3rLabs/climb.git?rev=bf2ce73be2b46957c22885fda33466ec6b10e087#bf2ce73be2b46957c22885fda33466ec6b10e087"
 dependencies = [
  "anyhow",
  "serde",
@@ -2554,6 +2557,7 @@ dependencies = [
 [[package]]
 name = "layer-climb-core"
 version = "0.0.0"
+source = "git+https://github.com/Lay3rLabs/climb.git?rev=bf2ce73be2b46957c22885fda33466ec6b10e087#bf2ce73be2b46957c22885fda33466ec6b10e087"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2584,6 +2588,7 @@ dependencies = [
 [[package]]
 name = "layer-climb-proto"
 version = "0.0.0"
+source = "git+https://github.com/Lay3rLabs/climb.git?rev=bf2ce73be2b46957c22885fda33466ec6b10e087#bf2ce73be2b46957c22885fda33466ec6b10e087"
 dependencies = [
  "anyhow",
  "cosmos-sdk-proto 0.25.0",
