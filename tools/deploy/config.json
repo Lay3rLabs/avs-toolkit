@@ -11,7 +11,7 @@
         "testnet": {
             "chain_id": "slay3r-dev",
             "rpc_endpoint": "https://lcd.dev-cav3.net",
-            "grpc_endpoint": "https://grpc.dev-cav3.net:9090",
+            "grpc_endpoint": "https://grpc.dev-cav3.net:443",
             "gas_amount": "0.025",
             "gas_denom": "uslay",
             "address_kind": {"cosmos":{"prefix":"slay3r"}}
