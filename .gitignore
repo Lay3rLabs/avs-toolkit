@@ -31,9 +31,6 @@ main
 module
 node_modules
 
-# cargo component autogen stuff
-bindings.rs
-
 # Optional npm cache directory
 .npm
 
