@@ -1,10 +1,9 @@
+use crate::error::ContractError;
+use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 use cw2::set_contract_version;
-
-use crate::error::ContractError;
-use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 use crate::state::{Config, CONFIG};
 
@@ -80,9 +79,10 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 mod execute {
+
     use super::*;
 
-    use cosmwasm_std::{from_json, Addr, Decimal, Uint128, WasmMsg};
+    use cosmwasm_std::{from_json, Addr, Uint128, WasmMsg};
 
     use cw_utils::nonpayable;
     use lavs_apis::id::TaskId;
@@ -92,8 +92,10 @@ mod execute {
     use lavs_apis::interfaces::voting::{
         QueryMsg as OperatorQueryMsg, TotalPowerResponse, VotingPowerResponse,
     };
+    use lavs_apis::verifier_simple::TaskMetadata;
+    use verifier_helper::{check_vote_validity, initialize_task_metadata};
 
-    use crate::state::{record_vote, TaskMetadata, TASKS, VOTES};
+    use crate::state::{record_vote, TASKS, VOTES};
 
     pub fn executed_task(
         mut deps: DepsMut,
@@ -174,9 +176,6 @@ mod execute {
     ) -> Result<Option<(TaskMetadata, Uint128)>, ContractError> {
         // Operator has not submitted a vote yet
         let vote = VOTES.may_load(deps.storage, (task_queue, task_id, operator))?;
-        if vote.is_some() {
-            return Err(ContractError::OperatorAlreadyVoted(operator.to_string()));
-        }
 
         // get config for future queries
         let config = CONFIG.load(deps.storage)?;
@@ -197,10 +196,18 @@ mod execute {
                 height: Some(metadata.created_height),
             },
         )?;
-        if power.power.is_zero() {
-            return Err(ContractError::Unauthorized);
-        }
 
+        // I don't like it with these hardcoded strings, but that is just to get the
+        // discussion started
+        check_vote_validity(vote, power.power).map_err(|err| {
+            if let "Operator already voted" = err.as_str() {
+                ContractError::OperatorAlreadyVoted(operator.to_string())
+            } else {
+                ContractError::Unauthorized
+            }
+        })?;
+
+        // Return the metadata and voting power if all checks pass
         Ok(Some((metadata, power.power)))
     }
 
@@ -212,9 +219,10 @@ mod execute {
         task_id: TaskId,
     ) -> Result<TaskMetadata, ContractError> {
         let metadata = TASKS.may_load(deps.storage, (task_queue, task_id))?;
+
         match metadata {
             Some(meta) => {
-                // Ensure this is not yet expired (or completed)
+                // Ensure this is not yet expired or completed
                 match meta.status {
                     TaskStatus::Completed => Err(ContractError::TaskAlreadyCompleted),
                     TaskStatus::Expired => Err(ContractError::TaskExpired),
@@ -223,36 +231,35 @@ mod execute {
                 }
             }
             None => {
-                // We need to query the info from the task queue
+                // Query the task status from the task queue
                 let task_status: TaskStatusResponse = deps.querier.query_wasm_smart(
                     task_queue.to_string(),
                     &TaskQueryMsg::TaskStatus { id: task_id },
                 )?;
-                // Abort early if not still open
-                match task_status.status {
-                    TaskStatus::Completed => Err(ContractError::TaskAlreadyCompleted),
-                    TaskStatus::Expired => Err(ContractError::TaskExpired),
-                    TaskStatus::Open => {
-                        // If we create this, we need to calculate total vote power needed
-                        let total_power: TotalPowerResponse = deps.querier.query_wasm_smart(
-                            config.operators.to_string(),
-                            &OperatorQueryMsg::TotalPowerAtHeight {
-                                height: Some(task_status.created_height),
-                            },
-                        )?;
-                        // need to round up!
-                        let fraction = Decimal::percent(config.required_percentage as u64);
-                        let power_required = total_power.power.mul_ceil(fraction);
-                        let meta = TaskMetadata {
-                            power_required,
-                            status: TaskStatus::Open,
-                            created_height: task_status.created_height,
-                            expires_time: task_status.expires_time,
-                        };
-                        TASKS.save(deps.storage, (task_queue, task_id), &meta)?;
-                        Ok(meta)
-                    }
-                }
+
+                // Query total power needed for the task
+                let total_power: TotalPowerResponse = deps.querier.query_wasm_smart(
+                    config.operators.to_string(),
+                    &OperatorQueryMsg::TotalPowerAtHeight {
+                        height: Some(task_status.created_height),
+                    },
+                )?;
+
+                // Use the utility function to initialize the task metadata
+                let meta =
+                    initialize_task_metadata(task_status, total_power, config.required_percentage)
+                        .map_err(|err| {
+                            if let "Task is already completed" = err.as_str() {
+                                ContractError::TaskAlreadyCompleted
+                            } else {
+                                ContractError::TaskExpired
+                            }
+                        })?;
+
+                // Save the metadata in the contract state
+                TASKS.save(deps.storage, (task_queue, task_id), &meta)?;
+
+                Ok(meta)
             }
         }
     }

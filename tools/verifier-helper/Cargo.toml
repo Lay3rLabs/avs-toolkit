@@ -1,0 +1,12 @@
+[package]
+name = "verifier-helper"
+version = "0.0.0"
+edition = "2021"
+license = "Apache-2.0"
+
+[dependencies]
+cosmwasm-std = { workspace = true }
+lavs-apis = { workspace = true }
+
+[lib]
+crate-type = ["cdylib", "rlib"]

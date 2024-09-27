@@ -1,5 +1,5 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::Uint128;
+use cosmwasm_std::{Env, Uint128};
 use cw_orch::{ExecuteFns, QueryFns};
 
 use crate::id::TaskId;
@@ -92,6 +92,29 @@ pub struct OperatorVoteInfoResponse {
     /// The voting power of the operator for this task
     pub power: Uint128,
     /// The result this operator voted for
+    pub result: String,
+}
+
+/// Metadata for a task - indexed by (task_queue, task_id)
+#[cw_serde]
+pub struct TaskMetadata {
+    pub power_required: Uint128,
+    pub status: TaskStatus,
+    pub created_height: u64,
+    /// Measured in UNIX seconds
+    pub expires_time: u64,
+}
+
+impl TaskMetadata {
+    pub fn is_expired(&self, env: &Env) -> bool {
+        env.block.time.seconds() >= self.expires_time
+    }
+}
+
+/// Metadata for a given vote by an operator - indexed by (task_queue, task_id, operator)
+#[cw_serde]
+pub struct OperatorVote {
+    pub power: Uint128,
     pub result: String,
 }
 
