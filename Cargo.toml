@@ -1,5 +1,5 @@
 [workspace]
-members = ["packages/*", "contracts/*", "tools/deploy"]
+members = ["packages/*", "contracts/*", "wasi/*", "tools/deploy"]
 resolver = "2"
 
 [workspace.package]
@@ -7,6 +7,7 @@ edition       = "2021"
 version       = "0.1.0"
 license       = "MIT"
 repository    = "https://github.com/Lay3rLabs/avs-toolkit"
+rust-version = "1.80.0"
 
 [workspace.dependencies]
 lavs-mock-operators = { path = "contracts/mock-operators" }
@@ -27,7 +28,7 @@ cw-controllers   = "2.0.0"
 cw2              = "2.0.0"
 schemars         = "0.8.17"
 serde            = { version = "1.0.199", default-features = false, features = ["derive"] }
-serde_json       = { version = "1.0.117" }
+serde_json       = { version = "1.0.128" }
 thiserror        = "1.0.59"
 semver = "1.0.22"
 itertools = "0.12.1"
@@ -48,6 +49,9 @@ tracing-subscriber = "0.3.18"
 bip39 = "2.0.0"
 rand = "0.8"
 layer-climb = { git = "https://github.com/Lay3rLabs/climb.git", rev = "94b4c980c9acb6e456d00a81b096ead4ad170e09"}
+
+# wasi stuff
+wit-bindgen-rt = { version = "0.32.0", features = ["bitflags"] }
 
 [profile.release]
 codegen-units    = 1
