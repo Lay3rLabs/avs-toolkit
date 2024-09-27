@@ -22,6 +22,9 @@ schemas/
 .DS_Store
 .vscode
 .idea
+*.vim
+*.swo
+*.swp
 
 
 # node.js

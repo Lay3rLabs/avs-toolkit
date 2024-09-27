@@ -1,5 +1,5 @@
 [workspace]
-members = ["packages/*", "contracts/*"]
+members = ["contracts/*", "examples/*", "packages/*"]
 resolver = "2"
 
 [workspace.package]
@@ -7,6 +7,7 @@ edition       = "2021"
 version       = "0.1.0"
 license       = "MIT"
 repository    = "https://github.com/Lay3rLabs/avs-toolkit"
+rust-version  = "1.80.0"
 
 [workspace.dependencies]
 lavs-mock-operators = { path = "contracts/mock-operators" }
@@ -26,8 +27,10 @@ cw-utils         = "2.0.0"
 cw-controllers   = "2.0.0"
 cw2              = "2.0.0"
 schemars         = "0.8.17"
-serde            = { version = "1.0.199", default-features = false, features = ["derive"] }
-serde_json       = { version = "1.0.117" }
+#serde            = { version = "1.0.199", default-features = false, features = ["derive"] }
+#serde_json       = { version = "1.0.117" }
+serde = { version = "1.0.210", default-features = false, features = ["derive"] }
+serde_json = "1.0.128"
 thiserror        = "1.0.59"
 semver = "1.0.22"
 itertools = "0.12.1"
@@ -38,6 +41,13 @@ cw-multi-test = "0.20"
 derivative    = "2"
 test-case     = "3.3.1"
 clap = { version = "4.5.1", features = ["derive", "env"] }
+
+# wasm component deps
+avs = { path = "packages/avs" }
+slab = "0.4.9"
+url = "2.5.2"
+wasi = "=0.13.1"
+wit-bindgen = "0.32.0"
 
 [profile.release]
 codegen-units    = 1

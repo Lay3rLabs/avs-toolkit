@@ -1,0 +1,16 @@
+[package]
+name = "avs"
+description = "Bindings for creating Wasm component AVS applications on Layer."
+version = { workspace = true }
+edition = { workspace = true }
+#authors = { workspace = true }
+rust-version = { workspace = true }
+license = { workspace = true }
+repository = { workspace = true }
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+slab = { workspace = true }
+url = { workspace = true }
+wasi = { workspace = true }
