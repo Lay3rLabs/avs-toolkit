@@ -8,5 +8,6 @@ pub mod networks;
 
 pub use common::{Addressable, AltSigner};
 
-#[cfg(feature = "daemon")]
-pub use daemon::{daemon_setup, slay3r_connect};
+// Disabled for now
+// #[cfg(feature = "daemon")]
+// pub use daemon::{daemon_setup, slay3r_connect};

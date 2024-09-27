@@ -1,3 +1,4 @@
+/* Disabled for now
 use bitcoin::secp256k1::All;
 use cosmwasm_std::Addr;
 use cw_orch::daemon::sender::{Sender, SenderOptions};
@@ -37,3 +38,4 @@ pub fn slay3r_connect(kind: ChainKind) -> Daemon {
     let chain = DaemonBuilder::default().chain(info).build().unwrap();
     chain
 }
+*/
