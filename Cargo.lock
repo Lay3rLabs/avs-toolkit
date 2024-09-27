@@ -1407,6 +1407,7 @@ dependencies = [
  "anyhow",
  "clap 4.5.18",
  "cosmwasm-std 2.1.4",
+ "deadpool",
  "dotenvy",
  "futures",
  "lavs-mock-operators",
@@ -2532,7 +2533,7 @@ dependencies = [
 [[package]]
 name = "layer-climb"
 version = "0.0.0"
-source = "git+https://github.com/Lay3rLabs/climb.git?rev=94b4c980c9acb6e456d00a81b096ead4ad170e09#94b4c980c9acb6e456d00a81b096ead4ad170e09"
+source = "git+https://github.com/Lay3rLabs/climb.git?rev=ff3bfb6de20f52ba78dccf1545df11600f15f8e5#ff3bfb6de20f52ba78dccf1545df11600f15f8e5"
 dependencies = [
  "layer-climb-address",
  "layer-climb-config",
@@ -2543,7 +2544,7 @@ dependencies = [
 [[package]]
 name = "layer-climb-address"
 version = "0.0.0"
-source = "git+https://github.com/Lay3rLabs/climb.git?rev=94b4c980c9acb6e456d00a81b096ead4ad170e09#94b4c980c9acb6e456d00a81b096ead4ad170e09"
+source = "git+https://github.com/Lay3rLabs/climb.git?rev=ff3bfb6de20f52ba78dccf1545df11600f15f8e5#ff3bfb6de20f52ba78dccf1545df11600f15f8e5"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2567,7 +2568,7 @@ dependencies = [
 [[package]]
 name = "layer-climb-config"
 version = "0.0.0"
-source = "git+https://github.com/Lay3rLabs/climb.git?rev=94b4c980c9acb6e456d00a81b096ead4ad170e09#94b4c980c9acb6e456d00a81b096ead4ad170e09"
+source = "git+https://github.com/Lay3rLabs/climb.git?rev=ff3bfb6de20f52ba78dccf1545df11600f15f8e5#ff3bfb6de20f52ba78dccf1545df11600f15f8e5"
 dependencies = [
  "anyhow",
  "serde",
@@ -2576,7 +2577,7 @@ dependencies = [
 [[package]]
 name = "layer-climb-core"
 version = "0.0.0"
-source = "git+https://github.com/Lay3rLabs/climb.git?rev=94b4c980c9acb6e456d00a81b096ead4ad170e09#94b4c980c9acb6e456d00a81b096ead4ad170e09"
+source = "git+https://github.com/Lay3rLabs/climb.git?rev=ff3bfb6de20f52ba78dccf1545df11600f15f8e5#ff3bfb6de20f52ba78dccf1545df11600f15f8e5"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2608,7 +2609,7 @@ dependencies = [
 [[package]]
 name = "layer-climb-proto"
 version = "0.0.0"
-source = "git+https://github.com/Lay3rLabs/climb.git?rev=94b4c980c9acb6e456d00a81b096ead4ad170e09#94b4c980c9acb6e456d00a81b096ead4ad170e09"
+source = "git+https://github.com/Lay3rLabs/climb.git?rev=ff3bfb6de20f52ba78dccf1545df11600f15f8e5#ff3bfb6de20f52ba78dccf1545df11600f15f8e5"
 dependencies = [
  "anyhow",
  "cosmos-sdk-proto 0.25.0",

@@ -47,7 +47,10 @@ dotenvy = {version = "0.15.7", features = ["cli"]}
 tracing-subscriber = "0.3.18"
 bip39 = "2.0.0"
 rand = "0.8"
-layer-climb = { git = "https://github.com/Lay3rLabs/climb.git", rev = "94b4c980c9acb6e456d00a81b096ead4ad170e09"}
+layer-climb = { git = "https://github.com/Lay3rLabs/climb.git", rev = "ff3bfb6de20f52ba78dccf1545df11600f15f8e5"}
+# purposefully left in for now to make debugging easier, will remove eventually:
+# layer-climb = { path = "../climb/packages/layer-climb" }
+deadpool = "0.12.1"
 
 [profile.release]
 codegen-units    = 1
