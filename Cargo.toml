@@ -13,12 +13,14 @@ rust-version = "1.80.0"
 lavs-mock-operators = { path = "contracts/mock-operators" }
 lavs-task-queue = { path = "contracts/task-queue" }
 lavs-verifier-simple = { path = "contracts/verifier-simple" }
+verifier-helper = { path = "tools/verifier-helper"}
 
 lavs-apis = { path = "packages/apis" }
 lavs-orch = { path = "packages/orch" }
 
+
 cosmwasm-schema  = "2.1.4"
-cosmwasm-std     = "2.1.4" 
+cosmwasm-std     = "2.1.4"
 
 cw-orch = "0.25.0"
 cw-orch-core = "2"

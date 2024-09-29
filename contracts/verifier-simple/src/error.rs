@@ -1,6 +1,7 @@
 use cosmwasm_std::StdError;
 use cw_utils::PaymentError;
 use thiserror::Error;
+use verifier_helper::VerifierError;
 
 #[derive(Error, Debug)]
 pub enum ContractError {
@@ -9,6 +10,9 @@ pub enum ContractError {
 
     #[error("{0}")]
     Payment(#[from] PaymentError),
+
+    #[error("{0}")]
+    Verifier(#[from] VerifierError),
 
     #[error("Invalid percentage, must be between 1 and 100")]
     InvalidPercentage,
