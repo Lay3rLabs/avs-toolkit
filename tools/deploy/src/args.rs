@@ -33,10 +33,19 @@ pub struct CliArgs {
     #[arg(long, default_value_t = 3)]
     pub max_concurrent_accounts: u32,
 
-    /// minimum balance set for pre-funding all the concurrent accounts in the pool
-    /// set to 0 if you don't want any pre-funding at all
-    #[arg(long, default_value_t = 1_000_000)]
-    pub pre_fund_minimum: u128,
+    /// minimum balance required for all the concurrent accounts in the pool
+    /// set to 0 if you don't want any automatic minimum balance top-up
+    #[arg(long, default_value_t = 200_000)]
+    pub concurrent_minimum_balance_threshhold: u128,
+
+    /// amount sent to top-up accounts that fall below the minimum balance threshhold
+    #[arg(long, default_value_t = 2_000_000)]
+    pub concurrent_minimum_balance_amount: u128,
+
+    /// Will use the faucet account for the minimum balance top-up (if set)
+    /// if this is false, then the first derivation will be used instead
+    #[arg(long, default_value_t = true)]
+    pub concurrent_minimum_balance_from_faucet: bool,
 
     #[command(subcommand)]
     pub command: Command,
@@ -64,53 +73,42 @@ impl Args {
             cli_args.target_env
         ))?;
 
-        let client_pool: Pool<SigningClientPoolManager> = Pool::builder(
-            SigningClientPoolManager::new_mnemonic(mnemonic, chain_config.clone(), None),
-        )
-        .max_size(cli_args.max_concurrent_accounts.try_into()?)
-        .build()
-        .context("Failed to create client pool")?;
+        let mut client_pool_manager =
+            SigningClientPoolManager::new_mnemonic(mnemonic, chain_config.clone(), None);
 
-        // pre-fund accounts
-        if cli_args.pre_fund_minimum > 0 {
-            let faucet_signer = KeySigner::new_mnemonic_str(&configs.faucet.mnemonic, None)?;
-            let faucet = SigningClient::new(chain_config, faucet_signer).await?;
-            let faucet_balance = faucet
-                .querier
-                .balance(faucet.addr.clone(), None)
-                .await?
-                .unwrap_or_default();
-
-            tracing::info!(
-                "Prefunding {} accounts from faucet at {} with balance of {}",
-                cli_args.max_concurrent_accounts,
-                faucet.addr,
-                faucet_balance
-            );
-
-            let clients = futures::future::try_join_all(
-                (0..cli_args.max_concurrent_accounts)
-                    .into_iter()
-                    .map(|_| client_pool.get()),
-            )
-            .await
-            .map_err(|e| anyhow!("{e:?}"))?;
-
-            // these are sequential because we only have one faucet
-            for client in clients {
-                let balance = client
-                    .querier
-                    .balance(client.addr.clone(), None)
-                    .await?
-                    .unwrap_or_default();
-
-                if balance < cli_args.pre_fund_minimum {
-                    let amount = cli_args.pre_fund_minimum - balance;
-                    tracing::info!("pre-fund: sending {} to {}", amount, client.addr);
-                    faucet.transfer(None, amount, &client.addr, None).await?;
+        // set the pool minimum balance, if greater than 0
+        if cli_args.concurrent_minimum_balance_threshhold > 0 {
+            match cli_args.concurrent_minimum_balance_from_faucet {
+                true => {
+                    let faucet_signer =
+                        KeySigner::new_mnemonic_str(&configs.faucet.mnemonic, None)?;
+                    let faucet = SigningClient::new(chain_config, faucet_signer).await?;
+                    client_pool_manager = client_pool_manager
+                        .with_minimum_balance(
+                            cli_args.concurrent_minimum_balance_threshhold,
+                            cli_args.concurrent_minimum_balance_amount,
+                            Some(faucet),
+                            None,
+                        )
+                        .await?;
+                }
+                false => {
+                    client_pool_manager = client_pool_manager
+                        .with_minimum_balance(
+                            cli_args.concurrent_minimum_balance_threshhold,
+                            cli_args.concurrent_minimum_balance_amount,
+                            None,
+                            None,
+                        )
+                        .await?;
                 }
             }
         }
+
+        let client_pool: Pool<SigningClientPoolManager> = Pool::builder(client_pool_manager)
+            .max_size(cli_args.max_concurrent_accounts.try_into()?)
+            .build()
+            .context("Failed to create client pool")?;
 
         Ok(Self {
             command: cli_args.command,
