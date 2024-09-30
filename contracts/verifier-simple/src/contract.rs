@@ -109,8 +109,12 @@ mod execute {
         let _: ResponseType = from_json(&result)?;
 
         let vote = VOTES.may_load(deps.storage, (&task_queue, task_id, &operator))?;
-        let metadata = TASKS.may_load(deps.storage, (&task_queue, task_id))?;
         let config = CONFIG.load(deps.storage)?;
+
+        // Operator has not submitted a vote yet
+        if vote.is_some() {
+            return Err(ContractError::OperatorAlreadyVoted(operator.to_string()));
+        }
 
         // Verify this operator is allowed to vote and has not voted yet, and do some initialization
         let (mut task_data, power) = match ensure_valid_vote(
@@ -119,19 +123,12 @@ mod execute {
             &task_queue,
             task_id,
             &operator,
-            vote,
-            &metadata,
             config.required_percentage,
             &config.operators,
         )? {
             Some(x) => x,
             None => return Ok(Response::default()),
         };
-
-        // If metadata was newly created, save it
-        if metadata.is_none() {
-            TASKS.save(deps.storage, (&task_queue, task_id), &task_data)?;
-        }
 
         // Update the vote and check the total power on this result, also recording the operators vote
         let tally = record_vote(

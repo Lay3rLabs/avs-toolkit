@@ -2,9 +2,12 @@ use cosmwasm_std::{Addr, Decimal, DepsMut, Env, StdError, Uint128};
 use cw_utils::PaymentError;
 use lavs_apis::{
     id::TaskId,
-    interfaces::voting::{TotalPowerResponse, VotingPowerResponse},
+    interfaces::{
+        tasks::TasksStorage,
+        voting::{TotalPowerResponse, VotingPowerResponse},
+    },
     tasks::{TaskQueryMsg, TaskStatus, TaskStatusResponse},
-    verifier_simple::{OperatorVote, TaskMetadata},
+    verifier_simple::TaskMetadata,
 };
 
 use lavs_apis::interfaces::voting::QueryMsg as OperatorQueryMsg;
@@ -49,27 +52,17 @@ pub fn ensure_valid_vote(
     task_queue: &Addr,
     task_id: TaskId,
     operator: &Addr,
-    vote: Option<OperatorVote>,
-    metadata: &Option<TaskMetadata>,
     fraction_percent: u32,
     operators_addr: &Addr,
 ) -> Result<Option<(TaskMetadata, Uint128)>, VerifierError> {
-    // Operator has not submitted a vote yet
-    if vote.is_some() {
-        return Err(VerifierError::OperatorAlreadyVoted(operator.to_string()));
-    }
-
-    // get config for future queries
-
     // Load task info, or create it if not there
     // Error here means the contract is in expired or completed, return None rather than error
-    let metadata = match load_or_initialize_metadata(
+    let metadata = match handle_metadata(
         deps.branch(),
         env,
         operators_addr,
         task_queue,
         task_id,
-        metadata,
         fraction_percent,
     ) {
         Ok(x) => x,
@@ -91,15 +84,17 @@ pub fn ensure_valid_vote(
     Ok(Some((metadata, power.power)))
 }
 
-fn load_or_initialize_metadata(
+fn handle_metadata(
     deps: DepsMut,
     env: &Env,
     operator_addr: &Addr,
     task_queue: &Addr,
     task_id: TaskId,
-    metadata: &Option<TaskMetadata>,
     fraction_percent: u32,
 ) -> Result<TaskMetadata, VerifierError> {
+    let tasks_storage = TasksStorage::new("tasks");
+    let metadata = tasks_storage.get_tasks(deps.storage, (task_queue, task_id))?;
+
     match metadata {
         Some(meta) => {
             // Ensure this is not yet expired (or completed)
@@ -139,7 +134,7 @@ fn load_or_initialize_metadata(
                         created_height: task_status.created_height,
                         expires_time: task_status.expires_time,
                     };
-                    //TASKS.save(deps.storage, (task_queue, task_id), &meta)?;
+                    tasks_storage.save_tasks(deps.storage, (task_queue, task_id), meta.clone())?;
                     Ok(meta)
                 }
             }
