@@ -4,9 +4,9 @@ mod config;
 mod context;
 
 use anyhow::Result;
-use args::{CliArgs, Command};
+use args::{CliArgs, Command, TaskQueueCommand};
 use clap::Parser;
-use commands::deploy::deploy_contracts;
+use commands::{deploy::deploy_contracts, task_queue::TaskQueue};
 use context::AppContext;
 
 #[tokio::main]
@@ -32,7 +32,19 @@ async fn main() -> Result<()> {
         Command::DeployContracts { artifacts_path } => {
             deploy_contracts(ctx, artifacts_path).await?;
         }
-        Command::TaskQueue(_task_queue_args) => {}
+        Command::TaskQueue(task_queue_args) => {
+            let task_queue = TaskQueue::new(ctx.clone(), &task_queue_args).await?;
+
+            match task_queue_args.command {
+                TaskQueueCommand::AddTask {
+                    body,
+                    description,
+                    timeout,
+                } => {
+                    let _ = task_queue.add_task(body, description, timeout).await?;
+                }
+            }
+        }
     }
 
     Ok(())

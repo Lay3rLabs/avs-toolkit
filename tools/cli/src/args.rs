@@ -50,17 +50,29 @@ pub enum Command {
 
 #[derive(Clone, Args)]
 pub struct TaskQueueArgs {
+    /// Task queue address. If not provided, then it will be read
+    /// from the environment variable LOCAL_TASK_QUEUE_ADDRESS or TEST_TASK_QUEUE_ADDRESS
+    /// depending on the target environment
+    #[clap(long)]
+    pub address: Option<String>,
+
     #[command(subcommand)]
-    command: TaskQueueCommand,
+    pub command: TaskQueueCommand,
 }
 
 #[derive(Clone, Subcommand)]
 pub enum TaskQueueCommand {
     /// Commands for task queue
     AddTask {
-        // set the default
+        /// The body of the task, must be valid JSON
         #[clap(short, long)]
-        body: serde_json::Value,
+        body: String,
+        /// Human-readable description of the task
+        #[clap(short, long)]
+        description: String,
+        /// Specify a task timeout, or use the default
+        #[clap(short, long)]
+        timeout: Option<u64>,
     },
 }
 

@@ -8,6 +8,7 @@ license = "Apache-2.0"
 lavs-mock-operators = {workspace = true}
 lavs-verifier-simple = {workspace = true}
 lavs-task-queue = {workspace = true}
+lavs-apis = { workspace = true }
 layer-climb = {workspace = true}
 cosmwasm-std = { workspace = true }
 serde = { workspace = true }

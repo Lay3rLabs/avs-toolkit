@@ -1,8 +1,6 @@
 use crate::context::AppContext;
-use anyhow::{anyhow, bail, Result};
-use deadpool::managed::Pool;
+use anyhow::{bail, Result};
 use lavs_task_queue::msg::{Requestor, TimeoutInfo};
-use layer_climb::prelude::*;
 use std::path::PathBuf;
 use tokio::try_join;
 
@@ -15,11 +13,11 @@ pub async fn deploy_contracts(ctx: AppContext, artifacts_path: PathBuf) -> Resul
         operators: operators_code_id,
         task_queue: task_queue_code_id,
         verifier_simple: verifier_code_id,
-    } = CodeIds::upload(wasm_files, ctx.client_pool.clone()).await?;
+    } = CodeIds::upload(&ctx, wasm_files).await?;
 
     tracing::debug!("Contracts all uploaded successfully, instantiating...");
 
-    let client = ctx.client_pool.get().await.map_err(|e| anyhow!("{e:?}"))?;
+    let client = ctx.get_client().await?;
 
     let (operators_addr, tx_resp) = client
         .contract_instantiate(
@@ -139,10 +137,7 @@ struct CodeIds {
 }
 
 impl CodeIds {
-    pub async fn upload(
-        files: WasmFiles,
-        client_pool: Pool<SigningClientPoolManager>,
-    ) -> Result<Self> {
+    pub async fn upload(ctx: &AppContext, files: WasmFiles) -> Result<Self> {
         let WasmFiles {
             operators: operators_wasm,
             task_queue: task_queue_wasm,
@@ -151,9 +146,9 @@ impl CodeIds {
 
         let (operators_code_id, task_queue_code_id, verifier_code_id) = try_join!(
             {
-                let client_pool = client_pool.clone();
+                let ctx = ctx.clone();
                 async move {
-                    let client = client_pool.get().await.map_err(|e| anyhow!("{e:?}"))?;
+                    let client = ctx.get_client().await?;
 
                     tracing::debug!("Uploading Mock Operators from: {}", client.addr);
                     let (code_id, tx_resp) =
@@ -164,9 +159,9 @@ impl CodeIds {
                 }
             },
             {
-                let client_pool = client_pool.clone();
+                let ctx = ctx.clone();
                 async move {
-                    let client = client_pool.get().await.map_err(|e| anyhow!("{e:?}"))?;
+                    let client = ctx.get_client().await?;
 
                     tracing::debug!("Uploading Task Queue from: {}", client.addr);
                     let (code_id, tx_resp) =
@@ -177,9 +172,10 @@ impl CodeIds {
                 }
             },
             {
-                let client_pool = client_pool.clone();
+                let ctx = ctx.clone();
                 async move {
-                    let client = client_pool.get().await.map_err(|e| anyhow!("{e:?}"))?;
+                    let client = ctx.get_client().await?;
+
                     tracing::debug!("Uploading Simple Verifier from: {}", client.addr);
                     let (code_id, tx_resp) = client
                         .contract_upload_file(verifier_simple_wasm, None)
