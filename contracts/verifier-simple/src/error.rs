@@ -1,7 +1,7 @@
 use cosmwasm_std::StdError;
 use cw_utils::PaymentError;
+use lavs_helpers::verifier::VerifierError;
 use thiserror::Error;
-use verifier_helper::VerifierError;
 
 #[derive(Error, Debug)]
 pub enum ContractError {

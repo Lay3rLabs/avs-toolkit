@@ -2471,6 +2471,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "lavs-helpers"
+version = "0.1.0"
+dependencies = [
+ "cosmwasm-std 2.1.4",
+ "cw-storage-plus 2.0.0",
+ "cw-utils 2.0.0",
+ "lavs-apis",
+ "thiserror",
+]
+
+[[package]]
 name = "lavs-mock-operators"
 version = "0.1.0"
 dependencies = [
@@ -2530,6 +2541,7 @@ dependencies = [
  "cw-utils 2.0.0",
  "cw2 2.0.0",
  "lavs-apis",
+ "lavs-helpers",
  "lavs-mock-operators",
  "lavs-orch",
  "lavs-task-queue",
@@ -2537,7 +2549,6 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror",
- "verifier-helper",
 ]
 
 [[package]]
@@ -4505,17 +4516,6 @@ name = "vcpkg"
 version = "0.2.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "accd4ea62f7bb7a82fe23066fb0957d48ef677f6eeb8215f372f52e48bb32426"
-
-[[package]]
-name = "verifier-helper"
-version = "0.1.0"
-dependencies = [
- "cosmwasm-std 2.1.4",
- "cw-storage-plus 2.0.0",
- "cw-utils 2.0.0",
- "lavs-apis",
- "thiserror",
-]
 
 [[package]]
 name = "version_check"

@@ -87,7 +87,7 @@ mod execute {
     use cw_utils::nonpayable;
     use lavs_apis::id::TaskId;
     use lavs_apis::interfaces::tasks::{ResponseType, TaskExecuteMsg, TaskStatus};
-    use verifier_helper::ensure_valid_vote;
+    use lavs_helpers::verifier::ensure_valid_vote;
 
     use crate::state::{record_vote, TASKS, VOTES};
 

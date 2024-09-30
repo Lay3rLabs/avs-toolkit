@@ -1,5 +1,5 @@
 [package]
-name = "verifier-helper"
+name = "lavs-helpers"
 edition.workspace = true
 version.workspace = true
 license.workspace = true

@@ -16,7 +16,7 @@ lavs-verifier-simple = { path = "contracts/verifier-simple" }
 
 lavs-apis = { path = "packages/apis" }
 lavs-orch = { path = "packages/orch" }
-verifier-helper = { path = "packages/verifier-helper" }
+lavs-helpers = { path = "packages/helpers" }
 
 
 cosmwasm-schema  = "2.1.4"
