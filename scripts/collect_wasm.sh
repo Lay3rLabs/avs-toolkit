@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Remoes old artifacts, compile new ones (not in docker, but faster), and places in artifacts dir with checksum
+# Removes old artifacts, compile new ones (not in docker, but faster), and places in artifacts dir with checksum
 
 # clear out old data and prepare space
 rm -rf artifacts
