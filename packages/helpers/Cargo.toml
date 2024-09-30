@@ -1,0 +1,13 @@
+[package]
+name = "lavs-helpers"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+cosmwasm-std = { workspace = true }
+cw-storage-plus = { workspace = true }
+cw-utils = { workspace = true }
+thiserror = { workspace = true }
+lavs-apis = { workspace = true }

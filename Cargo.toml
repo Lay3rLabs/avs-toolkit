@@ -16,9 +16,11 @@ lavs-verifier-simple = { path = "contracts/verifier-simple" }
 
 lavs-apis = { path = "packages/apis" }
 lavs-orch = { path = "packages/orch" }
+lavs-helpers = { path = "packages/helpers" }
+
 
 cosmwasm-schema  = "2.1.4"
-cosmwasm-std     = "2.1.4" 
+cosmwasm-std     = "2.1.4"
 
 cw-orch = "0.25.0"
 cw-orch-core = "2"

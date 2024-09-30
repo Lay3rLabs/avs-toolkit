@@ -1,7 +1,7 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Addr, Env, StdError, Storage, Uint128};
+use cosmwasm_std::{Addr, StdError, Storage, Uint128};
 use cw_storage_plus::{Item, Map};
-use lavs_apis::{id::TaskId, verifier_simple::TaskStatus};
+use lavs_apis::{id::TaskId, verifier_simple::TaskMetadata};
 
 pub const CONFIG: Item<Config> = Item::new("config");
 
@@ -18,29 +18,12 @@ pub struct Config {
     pub required_percentage: u32,
 }
 
-/// Metadata for a task - indexed by (task_queue, task_id)
-#[cw_serde]
-pub struct TaskMetadata {
-    pub power_required: Uint128,
-    pub status: TaskStatus,
-    pub created_height: u64,
-    /// Measured in UNIX seconds
-    pub expires_time: u64,
-}
-
-impl TaskMetadata {
-    pub fn is_expired(&self, env: &Env) -> bool {
-        env.block.time.seconds() >= self.expires_time
-    }
-}
-
 /// Metadata for a task option with some votes - indexed by (task_queue, task_id, result)
 #[cw_serde]
 pub struct TaskOption {
     pub power: Uint128,
 }
 
-/// Metadata for a given vote by an operator - indexed by (task_queue, task_id, operator)
 #[cw_serde]
 pub struct OperatorVote {
     pub power: Uint128,
