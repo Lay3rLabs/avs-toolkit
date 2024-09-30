@@ -48,7 +48,10 @@ dotenvy = {version = "0.15.7", features = ["cli"]}
 tracing-subscriber = "0.3.18"
 bip39 = "2.0.0"
 rand = "0.8"
-layer-climb = { git = "https://github.com/Lay3rLabs/climb.git", rev = "94b4c980c9acb6e456d00a81b096ead4ad170e09"}
+layer-climb = { git = "https://github.com/Lay3rLabs/climb.git", rev = "9180b2a1d98e7159ff327f0201f299a063fa9023"}
+# purposefully left in for now to make debugging easier, will remove eventually:
+# layer-climb = { path = "../climb/packages/layer-climb" }
+deadpool = "0.12.1"
 
 # wasi stuff
 wit-bindgen-rt = { version = "0.32.0", features = ["bitflags"] }
