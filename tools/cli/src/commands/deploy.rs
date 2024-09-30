@@ -7,7 +7,7 @@ use std::path::PathBuf;
 use tokio::try_join;
 
 pub async fn deploy_contracts(ctx: AppContext, artifacts_path: PathBuf) -> Result<()> {
-    tracing::info!("Uploading contracts from {:?}", artifacts_path);
+    tracing::debug!("Uploading contracts from {:?}", artifacts_path);
 
     let wasm_files = WasmFiles::read(artifacts_path.clone()).await?;
 
@@ -17,7 +17,7 @@ pub async fn deploy_contracts(ctx: AppContext, artifacts_path: PathBuf) -> Resul
         verifier_simple: verifier_code_id,
     } = CodeIds::upload(wasm_files, ctx.client_pool.clone()).await?;
 
-    tracing::info!("Contracts all uploaded successfully, instantiating...");
+    tracing::debug!("Contracts all uploaded successfully, instantiating...");
 
     let client = ctx.client_pool.get().await.map_err(|e| anyhow!("{e:?}"))?;
 
@@ -37,8 +37,8 @@ pub async fn deploy_contracts(ctx: AppContext, artifacts_path: PathBuf) -> Resul
         )
         .await?;
 
-    tracing::info!("Mock Operators Tx Hash: {}", tx_resp.txhash);
-    tracing::info!("Mock Operators Address: {}", operators_addr);
+    tracing::debug!("Mock Operators Tx Hash: {}", tx_resp.txhash);
+    tracing::debug!("Mock Operators Address: {}", operators_addr);
 
     let (verifier_addr, tx_resp) = client
         .contract_instantiate(
@@ -54,8 +54,8 @@ pub async fn deploy_contracts(ctx: AppContext, artifacts_path: PathBuf) -> Resul
         )
         .await?;
 
-    tracing::info!("Verifier Simple Tx Hash: {}", tx_resp.txhash);
-    tracing::info!("Verifier Simple Address: {}", verifier_addr);
+    tracing::debug!("Verifier Simple Tx Hash: {}", tx_resp.txhash);
+    tracing::debug!("Verifier Simple Address: {}", verifier_addr);
 
     let (task_queue_addr, tx_resp) = client
         .contract_instantiate(
@@ -75,14 +75,14 @@ pub async fn deploy_contracts(ctx: AppContext, artifacts_path: PathBuf) -> Resul
         )
         .await?;
 
-    tracing::info!("Task Queue Tx Hash: {}", tx_resp.txhash);
-    tracing::info!("Task Queue Address: {}", task_queue_addr);
+    tracing::debug!("Task Queue Tx Hash: {}", tx_resp.txhash);
+    tracing::debug!("Task Queue Address: {}", task_queue_addr);
 
-    tracing::info!("");
-    tracing::info!("---- All contracts instantiated successfully ----");
-    tracing::info!("Mock Operators: {}", operators_addr);
-    tracing::info!("Verifier Simple: {}", verifier_addr);
-    tracing::info!("Task Queue: {}", task_queue_addr);
+    tracing::debug!("");
+    tracing::debug!("---- All contracts instantiated successfully ----");
+    tracing::debug!("Mock Operators: {}", operators_addr);
+    tracing::debug!("Verifier Simple: {}", verifier_addr);
+    tracing::debug!("Task Queue: {}", task_queue_addr);
 
     Ok(())
 }
@@ -155,11 +155,11 @@ impl CodeIds {
                 async move {
                     let client = client_pool.get().await.map_err(|e| anyhow!("{e:?}"))?;
 
-                    tracing::info!("Uploading Mock Operators from: {}", client.addr);
+                    tracing::debug!("Uploading Mock Operators from: {}", client.addr);
                     let (code_id, tx_resp) =
                         client.contract_upload_file(operators_wasm, None).await?;
-                    tracing::info!("Mock Operators Tx Hash: {}", tx_resp.txhash);
-                    tracing::info!("Mock Operators Code ID: {}", code_id);
+                    tracing::debug!("Mock Operators Tx Hash: {}", tx_resp.txhash);
+                    tracing::debug!("Mock Operators Code ID: {}", code_id);
                     anyhow::Ok(code_id)
                 }
             },
@@ -168,11 +168,11 @@ impl CodeIds {
                 async move {
                     let client = client_pool.get().await.map_err(|e| anyhow!("{e:?}"))?;
 
-                    tracing::info!("Uploading Task Queue from: {}", client.addr);
+                    tracing::debug!("Uploading Task Queue from: {}", client.addr);
                     let (code_id, tx_resp) =
                         client.contract_upload_file(task_queue_wasm, None).await?;
-                    tracing::info!("Task Queue Tx Hash: {}", tx_resp.txhash);
-                    tracing::info!("Task Queue Code ID: {}", code_id);
+                    tracing::debug!("Task Queue Tx Hash: {}", tx_resp.txhash);
+                    tracing::debug!("Task Queue Code ID: {}", code_id);
                     anyhow::Ok(code_id)
                 }
             },
@@ -180,12 +180,12 @@ impl CodeIds {
                 let client_pool = client_pool.clone();
                 async move {
                     let client = client_pool.get().await.map_err(|e| anyhow!("{e:?}"))?;
-                    tracing::info!("Uploading Simple Verifier from: {}", client.addr);
+                    tracing::debug!("Uploading Simple Verifier from: {}", client.addr);
                     let (code_id, tx_resp) = client
                         .contract_upload_file(verifier_simple_wasm, None)
                         .await?;
-                    tracing::info!("Simple Verifier Tx Hash: {}", tx_resp.txhash);
-                    tracing::info!("Simple Verifier Code ID: {}", code_id);
+                    tracing::debug!("Simple Verifier Tx Hash: {}", tx_resp.txhash);
+                    tracing::debug!("Simple Verifier Code ID: {}", code_id);
                     anyhow::Ok(code_id)
                 }
             }
