@@ -354,6 +354,7 @@ dependencies = [
  "deadpool",
  "dotenvy",
  "futures",
+ "lavs-apis",
  "lavs-mock-operators",
  "lavs-task-queue",
  "lavs-verifier-simple",

@@ -1,5 +1,7 @@
-use anyhow::{Context, Result};
-use deadpool::managed::Pool;
+use std::sync::Arc;
+
+use anyhow::{Context, Result, anyhow};
+use deadpool::managed::{Object, Pool};
 use layer_climb::{pool::SigningClientPoolManager, prelude::*};
 
 use crate::{
@@ -7,14 +9,17 @@ use crate::{
     config::Config,
 };
 
-// Getting a context requires parsing the args first
+// The context is relatively cheap to clone, so we can pass it around
+#[derive(Clone)]
 pub struct AppContext {
-    pub args: CliArgs,
+    pub args: Arc<CliArgs>,
+    pub chain_config: Arc<ChainConfig>,
     // pool of additional clients for concurrent operations
     pub client_pool: Pool<SigningClientPoolManager>,
 }
 
 impl AppContext {
+    // Getting a context requires parsing the args first
     pub async fn new(args: CliArgs) -> Result<Self> {
         let mnemonic_var = match args.target_env {
             TargetEnvironment::Local => "LOCAL_MNEMONIC",
@@ -45,7 +50,7 @@ impl AppContext {
                 true => {
                     let faucet_signer =
                         KeySigner::new_mnemonic_str(&configs.faucet.mnemonic, None)?;
-                    let faucet = SigningClient::new(chain_config, faucet_signer).await?;
+                    let faucet = SigningClient::new(chain_config.clone(), faucet_signer).await?;
                     client_pool_manager = client_pool_manager
                         .with_minimum_balance(
                             args.concurrent_minimum_balance_threshhold,
@@ -73,6 +78,12 @@ impl AppContext {
             .build()
             .context("Failed to create client pool")?;
 
-        Ok(Self { args, client_pool })
+        Ok(Self { args: Arc::new(args), chain_config: Arc::new(chain_config), client_pool })
     }
+
+    // small helper to make error handling nicer
+    pub async fn get_client(&self) -> Result<Object<SigningClientPoolManager>> {
+        self.client_pool.get().await.map_err(|e| anyhow!("{e:?}"))
+    }
+
 }
