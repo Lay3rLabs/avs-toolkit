@@ -1,10 +1,7 @@
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, StdError, Storage, Uint128};
 use cw_storage_plus::{Item, Map};
-use lavs_apis::{
-    id::TaskId,
-    verifier_simple::{OperatorVote, TaskMetadata},
-};
+use lavs_apis::{id::TaskId, verifier_simple::TaskMetadata};
 
 pub const CONFIG: Item<Config> = Item::new("config");
 
@@ -25,6 +22,12 @@ pub struct Config {
 #[cw_serde]
 pub struct TaskOption {
     pub power: Uint128,
+}
+
+#[cw_serde]
+pub struct OperatorVote {
+    pub power: Uint128,
+    pub result: String,
 }
 
 /// This assumes a previous check was made that the operator has not yet voted.

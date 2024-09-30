@@ -111,13 +111,6 @@ impl TaskMetadata {
     }
 }
 
-/// Metadata for a given vote by an operator - indexed by (task_queue, task_id, operator)
-#[cw_serde]
-pub struct OperatorVote {
-    pub power: Uint128,
-    pub result: String,
-}
-
 #[cfg(not(target_arch = "wasm32"))]
 pub use deployment::Contract;
 
