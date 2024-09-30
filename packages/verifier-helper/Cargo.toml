@@ -1,11 +1,9 @@
 [package]
 name = "verifier-helper"
-version = "0.1.0"
-authors = ["Ethan Frey <ethanfrey@noreply.github.com>"]
-edition = "2021"
-
-[lib]
-crate-type = ["cdylib", "rlib"]
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+repository.workspace = true
 
 [dependencies]
 cosmwasm-std = { workspace = true }
