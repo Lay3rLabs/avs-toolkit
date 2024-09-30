@@ -91,7 +91,7 @@ pub fn ensure_valid_vote(
     Ok(Some((metadata, power.power)))
 }
 
-pub fn load_or_initialize_metadata(
+fn load_or_initialize_metadata(
     deps: DepsMut,
     env: &Env,
     operator_addr: &Addr,
