@@ -50,7 +50,7 @@ pub enum Command {
 
 #[derive(Clone, Args)]
 pub struct TaskQueueArgs {
-    /// Task queue address. If not provided, then it will be read 
+    /// Task queue address. If not provided, then it will be read
     /// from the environment variable LOCAL_TASK_QUEUE_ADDRESS or TEST_TASK_QUEUE_ADDRESS
     /// depending on the target environment
     #[clap(long)]

@@ -137,10 +137,7 @@ struct CodeIds {
 }
 
 impl CodeIds {
-    pub async fn upload(
-        ctx: &AppContext,
-        files: WasmFiles,
-    ) -> Result<Self> {
+    pub async fn upload(ctx: &AppContext, files: WasmFiles) -> Result<Self> {
         let WasmFiles {
             operators: operators_wasm,
             task_queue: task_queue_wasm,
@@ -151,7 +148,7 @@ impl CodeIds {
             {
                 let ctx = ctx.clone();
                 async move {
-                    let client = ctx.get_client().await?; 
+                    let client = ctx.get_client().await?;
 
                     tracing::debug!("Uploading Mock Operators from: {}", client.addr);
                     let (code_id, tx_resp) =
@@ -164,7 +161,7 @@ impl CodeIds {
             {
                 let ctx = ctx.clone();
                 async move {
-                    let client = ctx.get_client().await?; 
+                    let client = ctx.get_client().await?;
 
                     tracing::debug!("Uploading Task Queue from: {}", client.addr);
                     let (code_id, tx_resp) =
@@ -177,7 +174,7 @@ impl CodeIds {
             {
                 let ctx = ctx.clone();
                 async move {
-                    let client = ctx.get_client().await?; 
+                    let client = ctx.get_client().await?;
 
                     tracing::debug!("Uploading Simple Verifier from: {}", client.addr);
                     let (code_id, tx_resp) = client

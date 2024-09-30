@@ -36,7 +36,11 @@ async fn main() -> Result<()> {
             let task_queue = TaskQueue::new(ctx.clone(), &task_queue_args).await?;
 
             match task_queue_args.command {
-                TaskQueueCommand::AddTask { body, description, timeout} => {
+                TaskQueueCommand::AddTask {
+                    body,
+                    description,
+                    timeout,
+                } => {
                     let _ = task_queue.add_task(body, description, timeout).await?;
                 }
             }

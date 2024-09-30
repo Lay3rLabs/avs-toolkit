@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use anyhow::{Context, Result, anyhow};
+use anyhow::{anyhow, Context, Result};
 use deadpool::managed::{Object, Pool};
 use layer_climb::{pool::SigningClientPoolManager, prelude::*};
 
@@ -78,12 +78,15 @@ impl AppContext {
             .build()
             .context("Failed to create client pool")?;
 
-        Ok(Self { args: Arc::new(args), chain_config: Arc::new(chain_config), client_pool })
+        Ok(Self {
+            args: Arc::new(args),
+            chain_config: Arc::new(chain_config),
+            client_pool,
+        })
     }
 
     // small helper to make error handling nicer
     pub async fn get_client(&self) -> Result<Object<SigningClientPoolManager>> {
         self.client_pool.get().await.map_err(|e| anyhow!("{e:?}"))
     }
-
 }
