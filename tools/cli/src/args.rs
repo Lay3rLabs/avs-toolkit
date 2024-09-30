@@ -74,6 +74,9 @@ pub enum TaskQueueCommand {
         #[clap(short, long)]
         timeout: Option<u64>,
     },
+
+    /// View the task queue
+    ViewQueue,
 }
 
 #[derive(Copy, Clone, Debug, clap::ValueEnum)]

@@ -43,6 +43,17 @@ async fn main() -> Result<()> {
                 } => {
                     let _ = task_queue.add_task(body, description, timeout).await?;
                 }
+                TaskQueueCommand::ViewQueue => {
+                    let mut buffer = Vec::new();
+
+                    let _ = task_queue
+                        .querier
+                        .task_queue_view()
+                        .await?
+                        .report(&mut buffer);
+
+                    tracing::info!("{}", String::from_utf8(buffer)?);
+                }
             }
         }
     }
