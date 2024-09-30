@@ -4,9 +4,7 @@ use crate::{
 };
 use anyhow::{bail, Context, Result};
 use lavs_apis::id::TaskId;
-use lavs_task_queue::msg::{
-    ConfigResponse, CustomExecuteMsg, CustomQueryMsg, ExecuteMsg, QueryMsg, Requestor,
-};
+use lavs_task_queue::msg::{ConfigResponse, CustomExecuteMsg, CustomQueryMsg, QueryMsg, Requestor};
 use layer_climb::{prelude::*, proto::abci::TxResponse};
 
 pub struct TaskQueue {
@@ -66,11 +64,11 @@ impl TaskQueue {
             .await?
             .contract_execute(
                 &self.contract_addr,
-                &ExecuteMsg::Custom(CustomExecuteMsg::Create {
+                &CustomExecuteMsg::Create {
                     description,
                     timeout,
                     payload,
-                }),
+                },
                 payment,
                 None,
             )
