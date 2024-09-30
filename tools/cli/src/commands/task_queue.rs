@@ -8,8 +8,11 @@ use lavs_task_queue::msg::{ConfigResponse, CustomExecuteMsg, CustomQueryMsg, Que
 use layer_climb::{prelude::*, proto::abci::TxResponse};
 
 pub struct TaskQueue {
-    pub ctx: AppContext,
+    pub _ctx: AppContext,
     pub contract_addr: Address,
+    // tasks have the notion of a specific admin
+    // so use this one client instead of the pool
+    pub admin: SigningClient,
 }
 
 impl TaskQueue {
@@ -26,7 +29,17 @@ impl TaskQueue {
 
         let contract_addr = ctx.chain_config.parse_address(&addr_string)?;
 
-        Ok(Self { ctx, contract_addr })
+        let admin = SigningClient::new(
+            ctx.chain_config.as_ref().clone(),
+            KeySigner::new_mnemonic_str(&ctx.client_pool.manager().mnemonic, None)?,
+        )
+        .await?;
+
+        Ok(Self {
+            _ctx: ctx,
+            contract_addr,
+            admin,
+        })
     }
 
     pub async fn add_task(
@@ -38,9 +51,7 @@ impl TaskQueue {
         let payload = serde_json::from_str(&body).context("Failed to parse body into JSON")?;
 
         let contract_config: ConfigResponse = self
-            .ctx
-            .get_client()
-            .await?
+            .admin
             .querier
             .contract_smart(
                 &self.contract_addr,
@@ -51,7 +62,7 @@ impl TaskQueue {
         let payment = match contract_config.requestor {
             Requestor::OpenPayment(coin) => vec![new_coin(coin.amount, coin.denom)],
             Requestor::Fixed(addr) => {
-                if addr != self.ctx.get_client().await?.addr.to_string() {
+                if addr != self.admin.addr.to_string() {
                     bail!("Only the requestor can pay for the task")
                 }
                 Vec::new()
@@ -59,9 +70,7 @@ impl TaskQueue {
         };
 
         let tx_resp = self
-            .ctx
-            .get_client()
-            .await?
+            .admin
             .contract_execute(
                 &self.contract_addr,
                 &CustomExecuteMsg::Create {

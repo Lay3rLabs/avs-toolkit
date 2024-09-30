@@ -2544,7 +2544,7 @@ dependencies = [
 [[package]]
 name = "layer-climb"
 version = "0.0.0"
-source = "git+https://github.com/Lay3rLabs/climb.git?rev=9180b2a1d98e7159ff327f0201f299a063fa9023#9180b2a1d98e7159ff327f0201f299a063fa9023"
+source = "git+https://github.com/Lay3rLabs/climb.git?rev=d9382bd2ea9add6097220f808dc4d99db2958fc3#d9382bd2ea9add6097220f808dc4d99db2958fc3"
 dependencies = [
  "layer-climb-address",
  "layer-climb-config",
@@ -2555,7 +2555,7 @@ dependencies = [
 [[package]]
 name = "layer-climb-address"
 version = "0.0.0"
-source = "git+https://github.com/Lay3rLabs/climb.git?rev=9180b2a1d98e7159ff327f0201f299a063fa9023#9180b2a1d98e7159ff327f0201f299a063fa9023"
+source = "git+https://github.com/Lay3rLabs/climb.git?rev=d9382bd2ea9add6097220f808dc4d99db2958fc3#d9382bd2ea9add6097220f808dc4d99db2958fc3"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2579,7 +2579,7 @@ dependencies = [
 [[package]]
 name = "layer-climb-config"
 version = "0.0.0"
-source = "git+https://github.com/Lay3rLabs/climb.git?rev=9180b2a1d98e7159ff327f0201f299a063fa9023#9180b2a1d98e7159ff327f0201f299a063fa9023"
+source = "git+https://github.com/Lay3rLabs/climb.git?rev=d9382bd2ea9add6097220f808dc4d99db2958fc3#d9382bd2ea9add6097220f808dc4d99db2958fc3"
 dependencies = [
  "anyhow",
  "serde",
@@ -2588,7 +2588,7 @@ dependencies = [
 [[package]]
 name = "layer-climb-core"
 version = "0.0.0"
-source = "git+https://github.com/Lay3rLabs/climb.git?rev=9180b2a1d98e7159ff327f0201f299a063fa9023#9180b2a1d98e7159ff327f0201f299a063fa9023"
+source = "git+https://github.com/Lay3rLabs/climb.git?rev=d9382bd2ea9add6097220f808dc4d99db2958fc3#d9382bd2ea9add6097220f808dc4d99db2958fc3"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2621,7 +2621,7 @@ dependencies = [
 [[package]]
 name = "layer-climb-proto"
 version = "0.0.0"
-source = "git+https://github.com/Lay3rLabs/climb.git?rev=9180b2a1d98e7159ff327f0201f299a063fa9023#9180b2a1d98e7159ff327f0201f299a063fa9023"
+source = "git+https://github.com/Lay3rLabs/climb.git?rev=d9382bd2ea9add6097220f808dc4d99db2958fc3#d9382bd2ea9add6097220f808dc4d99db2958fc3"
 dependencies = [
  "anyhow",
  "cosmos-sdk-proto 0.25.0",
