@@ -4,6 +4,7 @@
 # Compiled files and executables
 /target/
 artifacts/
+components/
 internal/
 
 # Code coverage
