@@ -2,7 +2,7 @@ use crate::{
     args::{TargetEnvironment, TaskQueueArgs},
     context::AppContext,
 };
-use anyhow::{Context, Result};
+use anyhow::{bail, Context, Result};
 use lavs_apis::id::TaskId;
 use lavs_task_queue::msg::{
     ConfigResponse, CustomExecuteMsg, CustomQueryMsg, ExecuteMsg, QueryMsg, Requestor,
@@ -52,7 +52,12 @@ impl TaskQueue {
 
         let payment = match contract_config.requestor {
             Requestor::OpenPayment(coin) => vec![new_coin(coin.amount, coin.denom)],
-            _ => Vec::new(),
+            Requestor::Fixed(addr) => {
+                if addr != self.ctx.get_client().await?.addr.to_string() {
+                    bail!("Only the requestor can pay for the task")
+                }
+                Vec::new()
+            }
         };
 
         let tx_resp = self
