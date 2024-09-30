@@ -10,6 +10,8 @@ in simple test cases. You can find a [more complete example here](https://github
 
 ## Setup
 
+You can automatically run this setup via `./scripts/setup_wasi.sh` ([see source](../../scripts/setup_wasi.sh))
+
 This requires Rust 1.80+. Please ensure you have that installed via `rustup`
 before continuing.
 
