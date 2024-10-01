@@ -1,21 +1,82 @@
-use crate::context::AppContext;
+use crate::{args::DeployTaskRequestor, context::AppContext};
 use anyhow::{anyhow, bail, Result};
 use lavs_task_queue::msg::{Requestor, TimeoutInfo};
 use layer_climb::prelude::*;
 use std::path::PathBuf;
 use tokio::try_join;
 
-pub struct DeployContractAddrs {
-    pub operators: Address,
-    pub task_queue: Address,
-    pub verifier_simple: Address,
+#[derive(Debug)]
+pub struct DeployContractArgs {
+    artifacts_path: PathBuf,
+    operators: Vec<lavs_mock_operators::msg::InstantiateOperator>,
+    requestor: Requestor,
+    task_timeout: TimeoutInfo,
+    required_voting_percentage: u32,
+}
+
+impl DeployContractArgs {
+    pub async fn parse(
+        ctx: &AppContext,
+        artifacts_path: PathBuf,
+        task_timeout_seconds: u64,
+        required_voting_percentage: u32,
+        operators: Vec<String>,
+        requestor: DeployTaskRequestor,
+    ) -> Result<Self> {
+        let operators = operators
+            .into_iter()
+            .map(|s| {
+                let mut parts = s.split(':');
+                let addr = parts.next().unwrap().to_string();
+                let addr = ctx.chain_config()?.parse_address(&addr)?;
+                let voting_power = parts.next().unwrap_or("1").parse().unwrap();
+                anyhow::Ok(lavs_mock_operators::msg::InstantiateOperator::new(
+                    addr.to_string(),
+                    voting_power,
+                ))
+            })
+            .collect::<Result<Vec<_>>>()?;
+
+        let requestor = match requestor {
+            DeployTaskRequestor::Deployer => {
+                Requestor::Fixed(ctx.signing_client().await?.addr.to_string())
+            }
+            DeployTaskRequestor::Fixed(s) => {
+                Requestor::Fixed(ctx.chain_config()?.parse_address(&s)?.to_string())
+            }
+            DeployTaskRequestor::Payment { amount, denom } => {
+                Requestor::OpenPayment(cosmwasm_std::coin(
+                    amount,
+                    denom.unwrap_or(ctx.chain_config()?.gas_denom.clone()),
+                ))
+            }
+        };
+
+        let task_timeout = TimeoutInfo::new(task_timeout_seconds);
+
+        Ok(Self {
+            artifacts_path,
+            operators,
+            requestor,
+            task_timeout,
+            required_voting_percentage,
+        })
+    }
 }
 
 pub async fn deploy_contracts(
     ctx: AppContext,
-    artifacts_path: PathBuf,
+    args: DeployContractArgs,
 ) -> Result<DeployContractAddrs> {
-    tracing::debug!("Uploading contracts from {:?}", artifacts_path);
+    tracing::debug!("Deploying contracts with args: {:#?}", args);
+
+    let DeployContractArgs {
+        artifacts_path,
+        operators,
+        requestor,
+        task_timeout,
+        required_voting_percentage,
+    } = args;
 
     let wasm_files = WasmFiles::read(artifacts_path.clone()).await?;
 
@@ -34,12 +95,7 @@ pub async fn deploy_contracts(
             client.addr.clone(),
             operators_code_id,
             "Mock Operators",
-            &lavs_mock_operators::msg::InstantiateMsg {
-                operators: vec![lavs_mock_operators::msg::InstantiateOperator::new(
-                    client.addr.to_string(),
-                    1,
-                )],
-            },
+            &lavs_mock_operators::msg::InstantiateMsg { operators },
             vec![],
             None,
         )
@@ -55,7 +111,7 @@ pub async fn deploy_contracts(
             "Verifier Simple",
             &lavs_verifier_simple::msg::InstantiateMsg {
                 operator_contract: operators_addr.to_string(),
-                required_percentage: 1,
+                required_percentage: required_voting_percentage,
             },
             vec![],
             None,
@@ -71,11 +127,8 @@ pub async fn deploy_contracts(
             task_queue_code_id,
             "Task Queue",
             &lavs_task_queue::msg::InstantiateMsg {
-                requestor: Requestor::OpenPayment(cosmwasm_std::coin(
-                    100,
-                    &client.querier.chain_config.gas_denom,
-                )),
-                timeout: TimeoutInfo::new(100),
+                requestor,
+                timeout: task_timeout,
                 verifier: verifier_addr.to_string(),
             },
             vec![],
@@ -91,6 +144,12 @@ pub async fn deploy_contracts(
         task_queue: task_queue_addr,
         verifier_simple: verifier_addr,
     })
+}
+
+pub struct DeployContractAddrs {
+    pub operators: Address,
+    pub task_queue: Address,
+    pub verifier_simple: Address,
 }
 
 struct WasmFiles {
