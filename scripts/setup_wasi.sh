@@ -21,21 +21,7 @@ fi
 # install the wasm32-wasi target
 echo "Adding WASI tooling..."
 rustup target add wasm32-wasip1
-cargo install cargo-component
+cargo install cargo-component wkg
 
-# setup wkg
-if [[ $OSTYPE == 'darwin'* ]]; then
-  WKG_DIR="$HOME/Library/Application Support/wasm-pkg"
-elif [[ $OSTYPE == 'linux'* ]]; then
-  WKG_DIR="$HOME/.config/wasm-pkg"
-else
-  echo "Unsupported OS: $OSTYPE"
-  exit 1
-fi
-WKG_FILE="$WKG_DIR/config.toml"
-
-if [ ! -f "$WKG_FILE" ]; then
-  echo "Creating wkg config file at $WKG_FILE"
-  mkdir -p "$WKG_DIR"
-  echo 'default_registry = "wa.dev"' > "$WKG_FILE"
-fi
+# set default registry
+wkg config --default-registry wa.dev
