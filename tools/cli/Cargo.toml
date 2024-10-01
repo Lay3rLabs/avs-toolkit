@@ -10,6 +10,7 @@ lavs-verifier-simple = {workspace = true}
 lavs-task-queue = {workspace = true}
 lavs-apis = { workspace = true }
 layer-climb = {workspace = true}
+layer-climb-cli = {workspace = true}
 cosmwasm-std = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
@@ -21,3 +22,4 @@ dotenvy = { workspace = true }
 tracing-subscriber = { workspace = true }
 anyhow = { workspace = true }
 deadpool = {workspace = true}
+rand = {workspace = true}
