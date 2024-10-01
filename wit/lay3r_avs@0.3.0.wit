@@ -11,6 +11,7 @@ interface types {
   }
 
   type error = string;
+
   type output = result<serialized-json, error>;
 }
 
@@ -21,11 +22,11 @@ world task-queue {
   import wasi:io/streams@0.2.0;
   import wasi:http/types@0.2.0;
   import wasi:http/outgoing-handler@0.2.0;
+  import types;
   use types.{task-queue-input, output};
 
   export run-task: func(request: task-queue-input) -> output;
 }
-
 world cron-job {
   import wasi:io/poll@0.2.0;
   import wasi:clocks/monotonic-clock@0.2.0;
@@ -33,6 +34,7 @@ world cron-job {
   import wasi:io/streams@0.2.0;
   import wasi:http/types@0.2.0;
   import wasi:http/outgoing-handler@0.2.0;
+  import types;
   use types.{output};
 
   export run-cron: func() -> output;

@@ -1,5 +1,5 @@
 [package]
-name = "deploy-cli"
+name = "avs-toolkit-cli"
 version = "0.0.0"
 edition = "2021"
 license = "Apache-2.0"
@@ -8,6 +8,7 @@ license = "Apache-2.0"
 lavs-mock-operators = {workspace = true}
 lavs-verifier-simple = {workspace = true}
 lavs-task-queue = {workspace = true}
+lavs-apis = { workspace = true }
 layer-climb = {workspace = true}
 cosmwasm-std = { workspace = true }
 serde = { workspace = true }
@@ -19,3 +20,4 @@ tracing = { workspace = true }
 dotenvy = { workspace = true }
 tracing-subscriber = { workspace = true }
 anyhow = { workspace = true }
+deadpool = {workspace = true}

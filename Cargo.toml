@@ -1,5 +1,5 @@
 [workspace]
-members = ["packages/*", "contracts/*", "tools/deploy"]
+members = ["packages/*", "contracts/*", "wasi/*", "tools/cli"]
 resolver = "2"
 
 [workspace.package]
@@ -7,6 +7,7 @@ edition       = "2021"
 version       = "0.1.0"
 license       = "MIT"
 repository    = "https://github.com/Lay3rLabs/avs-toolkit"
+rust-version = "1.80.0"
 
 [workspace.dependencies]
 lavs-mock-operators = { path = "contracts/mock-operators" }
@@ -15,9 +16,11 @@ lavs-verifier-simple = { path = "contracts/verifier-simple" }
 
 lavs-apis = { path = "packages/apis" }
 lavs-orch = { path = "packages/orch" }
+lavs-helpers = { path = "packages/helpers" }
+
 
 cosmwasm-schema  = "2.1.4"
-cosmwasm-std     = "2.1.4" 
+cosmwasm-std     = "2.1.4"
 
 cw-orch = "0.25.0"
 cw-orch-core = "2"
@@ -27,7 +30,7 @@ cw-controllers   = "2.0.0"
 cw2              = "2.0.0"
 schemars         = "0.8.17"
 serde            = { version = "1.0.199", default-features = false, features = ["derive"] }
-serde_json       = { version = "1.0.117" }
+serde_json       = { version = "1.0.128" }
 thiserror        = "1.0.59"
 semver = "1.0.22"
 itertools = "0.12.1"
@@ -47,7 +50,13 @@ dotenvy = {version = "0.15.7", features = ["cli"]}
 tracing-subscriber = "0.3.18"
 bip39 = "2.0.0"
 rand = "0.8"
-layer-climb = { git = "https://github.com/Lay3rLabs/climb.git", rev = "94b4c980c9acb6e456d00a81b096ead4ad170e09"}
+layer-climb = { git = "https://github.com/Lay3rLabs/climb.git", rev = "d9382bd2ea9add6097220f808dc4d99db2958fc3"}
+# purposefully left in for now to make debugging easier, will remove eventually:
+# layer-climb = { path = "../climb/packages/layer-climb" }
+deadpool = "0.12.1"
+
+# wasi stuff
+wit-bindgen-rt = { version = "0.32.0", features = ["bitflags"] }
 
 [profile.release]
 codegen-units    = 1

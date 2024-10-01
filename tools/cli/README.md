@@ -8,7 +8,8 @@
 
 1. add a `.env` file
 2. give it a `LOCAL_MNEMONIC` for local deployments, `TEST_MNEMONIC` for testnet
-3. see https://github.com/Lay3rLabs/layer-sdk/blob/main/GETTING-STARTED.md#wallet to create a new mnemonic and give it funds
+3. don't have a mnemonic? see https://github.com/Lay3rLabs/layer-sdk/blob/main/GETTING-STARTED.md#wallet to create a new one
+4. funds will be sent automatically from the faucet (if `pre_fund_minimum` is larger than zero, which it is by default)
 
 ### Deploying Contracts
 

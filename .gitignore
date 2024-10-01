@@ -4,6 +4,7 @@
 # Compiled files and executables
 /target/
 artifacts/
+components/
 internal/
 
 # Code coverage
@@ -30,8 +31,6 @@ mjs
 main
 module
 node_modules
-
-
 
 # Optional npm cache directory
 .npm

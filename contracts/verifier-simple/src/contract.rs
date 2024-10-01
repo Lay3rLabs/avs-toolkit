@@ -82,17 +82,13 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
 mod execute {
     use super::*;
 
-    use cosmwasm_std::{from_json, Addr, Decimal, Uint128, WasmMsg};
+    use cosmwasm_std::{from_json, WasmMsg};
 
     use cw_utils::nonpayable;
-    use lavs_apis::interfaces::tasks::{
-        ResponseType, TaskExecuteMsg, TaskQueryMsg, TaskStatus, TaskStatusResponse,
-    };
-    use lavs_apis::interfaces::voting::{
-        QueryMsg as OperatorQueryMsg, TotalPowerResponse, VotingPowerResponse,
-    };
+    use lavs_apis::interfaces::tasks::{ResponseType, TaskExecuteMsg, TaskStatus};
+    use lavs_helpers::verifier::ensure_valid_vote;
 
-    use crate::state::{record_vote, TaskMetadata, TASKS, VOTES};
+    use crate::state::{record_vote, TASKS, VOTES};
 
     pub fn executed_task(
         mut deps: DepsMut,
@@ -111,12 +107,27 @@ mod execute {
         // verify the result type upon submissions (parse it into expected ResponseType)
         let _: ResponseType = from_json(&result)?;
 
+        let vote = VOTES.may_load(deps.storage, (&task_queue, task_id, &operator))?;
+        let config = CONFIG.load(deps.storage)?;
+
+        // Operator has not submitted a vote yet
+        if vote.is_some() {
+            return Err(ContractError::OperatorAlreadyVoted(operator.to_string()));
+        }
+
         // Verify this operator is allowed to vote and has not voted yet, and do some initialization
-        let (mut task_data, power) =
-            match ensure_valid_vote(deps.branch(), &env, &task_queue, task_id, &operator)? {
-                Some(x) => x,
-                None => return Ok(Response::default()),
-            };
+        let (mut task_data, power) = match ensure_valid_vote(
+            deps.branch(),
+            &env,
+            &task_queue,
+            task_id,
+            &operator,
+            config.required_percentage,
+            &config.operators,
+        )? {
+            Some(x) => x,
+            None => return Ok(Response::default()),
+        };
 
         // Update the vote and check the total power on this result, also recording the operators vote
         let tally = record_vote(
@@ -156,104 +167,6 @@ mod execute {
         }
 
         Ok(res)
-    }
-
-    /// Does all checks to ensure the voter is valid and has not voted yet.
-    /// Also checks the task is valid and still open.
-    /// Returns the metadata for the task (creating it if first voter), along with the voting power of this operator.
-    ///
-    /// We do not want to error if an operator votes for a task that is already completed (due to race conditions).
-    /// In that case, just return None and exit early rather than error.
-    fn ensure_valid_vote(
-        mut deps: DepsMut,
-        env: &Env,
-        task_queue: &Addr,
-        task_id: u64,
-        operator: &Addr,
-    ) -> Result<Option<(TaskMetadata, Uint128)>, ContractError> {
-        // Operator has not submitted a vote yet
-        let vote = VOTES.may_load(deps.storage, (task_queue, task_id, operator))?;
-        if vote.is_some() {
-            return Err(ContractError::OperatorAlreadyVoted(operator.to_string()));
-        }
-
-        // get config for future queries
-        let config = CONFIG.load(deps.storage)?;
-
-        // Load task info, or create it if not there
-        // Error here means the contract is in expired or completed, return None rather than error
-        let metadata =
-            match load_or_initialize_metadata(deps.branch(), env, &config, task_queue, task_id) {
-                Ok(x) => x,
-                Err(_) => return Ok(None),
-            };
-
-        // Get the operators voting power at time of vote creation
-        let power: VotingPowerResponse = deps.querier.query_wasm_smart(
-            config.operators.to_string(),
-            &OperatorQueryMsg::VotingPowerAtHeight {
-                address: operator.to_string(),
-                height: Some(metadata.created_height),
-            },
-        )?;
-        if power.power.is_zero() {
-            return Err(ContractError::Unauthorized);
-        }
-
-        Ok(Some((metadata, power.power)))
-    }
-
-    fn load_or_initialize_metadata(
-        deps: DepsMut,
-        env: &Env,
-        config: &Config,
-        task_queue: &Addr,
-        task_id: u64,
-    ) -> Result<TaskMetadata, ContractError> {
-        let metadata = TASKS.may_load(deps.storage, (task_queue, task_id))?;
-        match metadata {
-            Some(meta) => {
-                // Ensure this is not yet expired (or completed)
-                match meta.status {
-                    TaskStatus::Completed => Err(ContractError::TaskAlreadyCompleted),
-                    TaskStatus::Expired => Err(ContractError::TaskExpired),
-                    TaskStatus::Open if meta.is_expired(env) => Err(ContractError::TaskExpired),
-                    _ => Ok(meta),
-                }
-            }
-            None => {
-                // We need to query the info from the task queue
-                let task_status: TaskStatusResponse = deps.querier.query_wasm_smart(
-                    task_queue.to_string(),
-                    &TaskQueryMsg::TaskStatus { id: task_id },
-                )?;
-                // Abort early if not still open
-                match task_status.status {
-                    TaskStatus::Completed => Err(ContractError::TaskAlreadyCompleted),
-                    TaskStatus::Expired => Err(ContractError::TaskExpired),
-                    TaskStatus::Open => {
-                        // If we create this, we need to calculate total vote power needed
-                        let total_power: TotalPowerResponse = deps.querier.query_wasm_smart(
-                            config.operators.to_string(),
-                            &OperatorQueryMsg::TotalPowerAtHeight {
-                                height: Some(task_status.created_height),
-                            },
-                        )?;
-                        // need to round up!
-                        let fraction = Decimal::percent(config.required_percentage as u64);
-                        let power_required = total_power.power.mul_ceil(fraction);
-                        let meta = TaskMetadata {
-                            power_required,
-                            status: TaskStatus::Open,
-                            created_height: task_status.created_height,
-                            expires_time: task_status.expires_time,
-                        };
-                        TASKS.save(deps.storage, (task_queue, task_id), &meta)?;
-                        Ok(meta)
-                    }
-                }
-            }
-        }
     }
 }
 
