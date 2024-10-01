@@ -211,6 +211,14 @@ impl Status {
             completed: env.block.time.seconds(),
         }
     }
+
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Status::Open {} => "open",
+            Status::Completed { .. } => "completed",
+            Status::Expired {} => "expired",
+        }
+    }
 }
 
 #[cfg(not(target_arch = "wasm32"))]

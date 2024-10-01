@@ -1,6 +1,6 @@
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, Coin, Deps, Env, MessageInfo, StdError};
-use cw_storage_plus::{Item, Map};
+use cw_storage_plus::{Index, IndexList, IndexedMap, Item, MultiIndex};
 use cw_utils::must_pay;
 
 use lavs_apis::id::TaskId;
@@ -10,7 +10,23 @@ use crate::error::ContractError;
 use crate::msg::{self, InstantiateMsg, RequestType, ResponseType};
 
 pub const CONFIG: Item<Config> = Item::new("config");
-pub const TASKS: Map<TaskId, Task> = Map::new("tasks");
+
+pub struct TaskIndexes<'a> {
+    pub status: MultiIndex<'a, &'a str, Task, TaskId>,
+}
+
+impl<'a> IndexList<Task> for TaskIndexes<'a> {
+    fn get_indexes(&'_ self) -> Box<dyn Iterator<Item = &'_ dyn Index<Task>> + '_> {
+        Box::new(std::iter::once(&self.status as &dyn Index<Task>))
+    }
+}
+
+pub const TASKS: IndexedMap<TaskId, Task, TaskIndexes<'static>> = IndexedMap::new(
+    "tasks",
+    TaskIndexes {
+        status: MultiIndex::new(|_, d: &Task| d.status.as_str(), "tasks", "tasks__status"),
+    },
+);
 
 #[cw_serde]
 pub struct Config {
