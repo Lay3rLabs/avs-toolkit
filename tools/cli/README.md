@@ -28,12 +28,12 @@ In this directory:
 Local
 
 ```bash
-cargo run deploy-contracts
+cargo run deploy contracts
 ```
 
 Testnet
 ```bash
-cargo run -- --target-env=testnet deploy-contracts
+cargo run -- --target-env=testnet deploy contracts
 ```
 
-You'll see an output at the end with the different contract's addresses
+If you want to see an output at the end with the different contract's addresses, make sure to run with --

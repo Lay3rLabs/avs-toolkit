@@ -1,5 +1,6 @@
 use clap::Parser;
 use clap::{Args, Subcommand};
+use layer_climb_cli::command::{ContractCommand, WalletCommand};
 use std::path::PathBuf;
 
 #[derive(Parser)]
@@ -37,15 +38,42 @@ pub struct CliArgs {
 
 #[derive(Clone, Subcommand)]
 pub enum Command {
-    /// Deploys the contracts
-    DeployContracts {
-        // set the default
+    /// Deploy subcommands
+    Deploy(DeployArgs),
+    /// Task queue subcommands
+    TaskQueue(TaskQueueArgs),
+    /// Wallet subcommands
+    Wallet(WalletArgs),
+    /// Generic utility contract subcommands
+    Contract(ContractArgs),
+}
+
+#[derive(Clone, Args)]
+pub struct DeployArgs {
+    #[command(subcommand)]
+    pub command: DeployCommand,
+}
+
+#[derive(Clone, Subcommand)]
+pub enum DeployCommand {
+    /// Deploy all the contracts needed for the system to work
+    Contracts {
+        /// Artifacts path
         #[clap(short, long, default_value = "../../artifacts")]
         artifacts_path: PathBuf,
     },
+}
 
-    /// Commands for task queue
-    TaskQueue(TaskQueueArgs),
+#[derive(Clone, Args)]
+pub struct WalletArgs {
+    #[command(subcommand)]
+    pub command: WalletCommand,
+}
+
+#[derive(Clone, Args)]
+pub struct ContractArgs {
+    #[command(subcommand)]
+    pub command: ContractCommand,
 }
 
 #[derive(Clone, Args)]

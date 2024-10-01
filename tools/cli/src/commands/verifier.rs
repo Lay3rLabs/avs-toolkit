@@ -11,11 +11,10 @@ pub struct SimpleVerifierQuerier {
 
 impl SimpleVerifierQuerier {
     pub async fn new(ctx: AppContext, contract_addr: Address) -> Result<Self> {
-        let querier = QueryClient::new(ctx.chain_config.as_ref().clone()).await?;
         Ok(Self {
+            querier: ctx.query_client().await?,
             ctx,
             contract_addr,
-            querier,
         })
     }
 
@@ -28,7 +27,7 @@ impl SimpleVerifierQuerier {
     pub async fn operator_addr(&self) -> Result<Address> {
         let config = self.config().await?;
         self.ctx
-            .chain_config
+            .chain_config()?
             .parse_address(&config.operator_contract)
     }
 }
