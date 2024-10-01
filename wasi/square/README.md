@@ -24,40 +24,17 @@ If haven't yet, add the WASI Preview 1 target:
 rustup target add wasm32-wasip1
 ```
 
-Install `cargo-component`:
+Install `cargo-component` and `wkg` CLIs:
 ```
-cargo install cargo-component
-```
-
-If you have the [cargo-binstall](https://github.com/cargo-bins/cargo-binstall)
-utility installed, `cargo component` can also be installed via a prebuilt
-release artifact, saving time on the installation:
-
-```
-cargo binstall cargo-component
+cargo install cargo-component wkg
 ```
 
-The configuration for registry mappings is in the process of getting better,
-but for now, it is manual.
-
-The default location is `$XDG_CONFIG_HOME/wasm-pkg/config.toml` on unix-like systems and
-`{FOLDERID_RoamingAppData}\wasm-pkg\config.toml` on Windows. Examples of this are found below:
-
-| Platform | Path                                            |
-| -------- | ----------------------------------------------- |
-| Linux    | `/home/<username>/.config`                      |
-| macOS    | `/Users/<username>/Library/Application Support` |
-| Windows  | `C:\Users\<username>\AppData\Roaming`           |
-
-The configuration file is TOML and currently must be edited manually. A future release will include
-an interactive CLI for editing the configuration. For more information about configuration, see
+Set default registry configuration:
+```
+wkg config --default-registry wa.dev
+```
+For more information about configuration, see
 the [wkg docs](https://github.com/bytecodealliance/wasm-pkg-tools).
-
-The recommended configuration that will work out of the box:
-
-```toml
-default_registry = "wa.dev"
-```
 
 ## Usage
 
@@ -69,8 +46,43 @@ cargo component build --release
 This produces a Wasm component bindary that can be found 
 in the workspace target directory (`../../target/wasm32-wasip1/release/cavs_square.wasm`).
 
+## Testing
 
-TODO:
+To run the unit tests, build the component first with:
+```
+cargo component build
+```
+and then:
+```
+cargo test
+```
 
-Note: we can add deployment stuff, how to setup AVS and upload to Wasmatic elsewhere.
-But this should give them the WASI (.wasm) file in a known location, and if they change the algorithm to y = x * x + 2, the WASI will reflect that.
+## Deploy
+
+Upload the compiled Wasm component to the Wasmatic node.
+```
+curl -X POST --data-binary @../../target/wasm32-wasip1/release/cavs_square.wasm http://0.0.0.0:8081/upload
+```
+
+Copy the digest SHA returned.
+Choose a unique application name string and use in the placeholder below CURL commands.
+
+```
+read -d '' BODY << "EOF"
+{
+  "name": "{PLACEHOLDER-UNIQUE-NAME}",
+  "digest": "sha256:{DIGEST}",
+  "trigger": {
+    "queue": {
+      "taskQueueAddr": "{TASK-QUEUE-ADDR}",
+      "hdIndex": 1,
+      "pollInterval": 5
+    }
+  },
+  "permissions": {},
+  "envs": []
+}
+EOF
+
+curl -X POST -H "Content-Type: application/json" http://0.0.0.0:8081/app -d "$BODY"
+```
