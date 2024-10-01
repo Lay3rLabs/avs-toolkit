@@ -76,6 +76,16 @@ async fn main() -> Result<()> {
                             tracing::info!("{}: {}", balance.denom, balance.amount);
                         }
                     }
+                    WalletLog::Balance { addr, balance } => {
+                        tracing::info!("Wallet address: {}", addr);
+                        tracing::info!("{}: {}", balance.denom, balance.amount);
+                    }
+                    WalletLog::AllBalances { addr, balances } => {
+                        tracing::info!("Wallet address: {}", addr);
+                        for balance in balances {
+                            tracing::info!("{}: {}", balance.denom, balance.amount);
+                        }
+                    }
                     WalletLog::Transfer {
                         to,
                         amount,
