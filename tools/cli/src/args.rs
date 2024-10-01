@@ -42,6 +42,8 @@ pub enum Command {
     Deploy(DeployArgs),
     /// Task queue subcommands
     TaskQueue(TaskQueueArgs),
+    /// Faucet subcommands
+    Faucet(FaucetArgs),
     /// Wallet subcommands
     Wallet(WalletArgs),
     /// Generic utility contract subcommands
@@ -105,6 +107,34 @@ pub enum TaskQueueCommand {
 
     /// View the task queue
     ViewQueue,
+}
+
+#[derive(Clone, Args)]
+pub struct FaucetArgs {
+    #[command(subcommand)]
+    pub command: FaucetCommand,
+}
+
+#[derive(Clone, Subcommand)]
+pub enum FaucetCommand {
+    /// Tap the faucet to get some funds
+    Tap {
+        /// The address to send the funds to
+        /// if not set, will be the default client
+        #[arg(long)]
+        to: Option<String>,
+        /// The amount to send
+        /// if not set, will be `Self::DEFAULT_TAP_AMOUNT`
+        #[arg(long)]
+        amount: Option<u128>,
+        /// The denom of the funds to send, if not set will use the chain gas denom
+        #[arg(long)]
+        denom: Option<String>,
+    },
+}
+
+impl FaucetCommand {
+    pub const DEFAULT_TAP_AMOUNT: u128 = 1_000_000;
 }
 
 #[derive(Copy, Clone, Debug, clap::ValueEnum)]
