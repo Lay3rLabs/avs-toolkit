@@ -14,17 +14,17 @@ use crate::{tasks::Status, verifier_simple::TaskMetadata};
 // FIXME: hot to make these generic
 pub type ResponseType = serde_json::Value;
 
-pub struct TasksStorage<'a>(Map<(&'a Addr, TaskId), TaskMetadata>);
+pub struct TasksStorage<'a>(Map<(&'a Addr, u64), TaskMetadata>);
 
 impl<'a> TasksStorage<'a> {
     pub const fn new(storage_key: &'static str) -> Self {
         TasksStorage(Map::new(storage_key))
     }
-    /// key is Task queue address: &Addr and the taskid: TaskId
+    /// key is Task queue address: &Addr and the taskid: u64
     pub fn get_tasks(
         &self,
         store: &mut dyn Storage,
-        key: (&Addr, TaskId),
+        key: (&Addr, u64),
     ) -> StdResult<Option<TaskMetadata>> {
         match self.0.may_load(store, key) {
             Ok(meta) => Ok(meta),
@@ -35,7 +35,7 @@ impl<'a> TasksStorage<'a> {
     pub fn save_tasks(
         &self,
         store: &mut dyn Storage,
-        key: (&Addr, TaskId),
+        key: (&Addr, u64),
         metadata: TaskMetadata,
     ) -> StdResult<()> {
         self.0.save(store, key, &metadata)?;

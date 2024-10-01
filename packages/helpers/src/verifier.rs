@@ -1,7 +1,6 @@
 use cosmwasm_std::{Addr, Decimal, DepsMut, Env, StdError, Uint128};
 use cw_utils::PaymentError;
 use lavs_apis::{
-    id::TaskId,
     interfaces::{
         tasks::TasksStorage,
         voting::{TotalPowerResponse, VotingPowerResponse},
@@ -50,7 +49,7 @@ pub fn ensure_valid_vote(
     mut deps: DepsMut,
     env: &Env,
     task_queue: &Addr,
-    task_id: TaskId,
+    task_id: u64,
     operator: &Addr,
     fraction_percent: u32,
     operators_addr: &Addr,
@@ -89,7 +88,7 @@ fn handle_metadata(
     env: &Env,
     operator_addr: &Addr,
     task_queue: &Addr,
-    task_id: TaskId,
+    task_id: u64,
     fraction_percent: u32,
 ) -> Result<TaskMetadata, VerifierError> {
     let tasks_storage = TasksStorage::new("tasks");

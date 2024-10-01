@@ -5,9 +5,8 @@ use crate::{
 };
 use anyhow::{bail, Context, Result};
 use cosmwasm_std::Order;
-use lavs_apis::{
-    id::TaskId,
-    tasks::{CompletedTaskOverview, ListCompletedResponse, ListOpenResponse, OpenTaskOverview},
+use lavs_apis::tasks::{
+    CompletedTaskOverview, ListCompletedResponse, ListOpenResponse, OpenTaskOverview,
 };
 use lavs_task_queue::msg::{ConfigResponse, CustomExecuteMsg, CustomQueryMsg, QueryMsg, Requestor};
 use layer_climb::{prelude::*, proto::abci::TxResponse};
@@ -62,7 +61,7 @@ impl TaskQueue {
         body: String,
         description: String,
         timeout: Option<u64>,
-    ) -> Result<(TaskId, TxResponse)> {
+    ) -> Result<(u64, TxResponse)> {
         let payload = serde_json::from_str(&body).context("Failed to parse body into JSON")?;
 
         let contract_config = self.querier.config().await?;
@@ -91,7 +90,7 @@ impl TaskQueue {
             )
             .await?;
 
-        let task_id: TaskId = CosmosTxEvents::from(&tx_resp)
+        let task_id: u64 = CosmosTxEvents::from(&tx_resp)
             .attr_first("wasm", "task_id")?
             .value()
             .parse()?;
@@ -231,7 +230,7 @@ pub enum TaskView {
 }
 
 impl TaskView {
-    pub fn id(&self) -> TaskId {
+    pub fn id(&self) -> u64 {
         match self {
             TaskView::Open(task) => task.id,
             TaskView::Completed(task) => task.id,

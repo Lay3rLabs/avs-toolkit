@@ -1,7 +1,7 @@
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, StdError, Storage, Uint128};
 use cw_storage_plus::{Item, Map};
-use lavs_apis::{id::TaskId, verifier_simple::TaskMetadata};
+use lavs_apis::verifier_simple::TaskMetadata;
 
 pub const CONFIG: Item<Config> = Item::new("config");
 
