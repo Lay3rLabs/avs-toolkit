@@ -65,7 +65,9 @@ pub enum DeployCommand {
         /// Artifacts path
         #[clap(short, long, default_value = "../../artifacts")]
         artifacts_path: PathBuf,
-        /// A list of operators. Voting power will be set with a ':' separator, otherwise it's `1`
+        /// A list of operators.
+        ///
+        /// Voting power will be set with a ':' separator, otherwise it's `1`
         #[clap(short, long, num_args(1..))]
         operators: Vec<String>,
         /// The default task timeout, in seconds
@@ -75,11 +77,16 @@ pub enum DeployCommand {
         #[clap(short, long, default_value_t = 70)]
         percentage: u32,
         /// The rules for allowed task requestors
+        ///
         /// Examples:
-        /// payment(100) - will require a payment of 100 gas tokens
-        /// payment(100, uslay) - will require a payment of 100 uslay (same as above)
-        /// fixed(slayaddresshere) - will require the caller be this specific address
-        /// deployer - will require the caller be the same as the deployer
+        ///
+        /// "payment(100)" - will require a payment of 100 gas tokens
+        ///
+        /// "payment(100, uslay)" - will require a payment of 100 uslay (same as above)
+        ///
+        /// "fixed(slayaddresshere)" - will require the caller be this specific address
+        ///
+        /// "deployer" - will require the caller be the same as the deployer
         #[clap(short, long, default_value_t = DeployTaskRequestor::default())]
         requestor: DeployTaskRequestor,
     },
