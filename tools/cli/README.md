@@ -8,8 +8,8 @@
 
 1. add a `.env` file
 2. give it a `LOCAL_MNEMONIC` for local deployments, `TEST_MNEMONIC` for testnet
-3. don't have a mnemonic? see https://github.com/Lay3rLabs/layer-sdk/blob/main/GETTING-STARTED.md#wallet to create a new one
-4. funds will be sent automatically from the faucet (if `pre_fund_minimum` is larger than zero, which it is by default)
+3. don't have a mnemonic? run `cargo run wallet create` 
+4. don't have funds? run `cargo run faucet tap` 
 
 ### Deploying Contracts
 
@@ -28,12 +28,12 @@ In this directory:
 Local
 
 ```bash
-cargo run deploy-contracts
+cargo run deploy contracts
 ```
 
 Testnet
 ```bash
-cargo run -- --target-env=testnet deploy-contracts
+cargo run -- --target-env=testnet deploy contracts
 ```
 
-You'll see an output at the end with the different contract's addresses
+If you want to see an output at the end with the different contract's addresses, make sure to run with --

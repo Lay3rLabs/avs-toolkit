@@ -11,7 +11,7 @@ pub struct OperatorQuerier {
 
 impl OperatorQuerier {
     pub async fn new(ctx: AppContext, contract_addr: Address) -> Result<Self> {
-        let querier = QueryClient::new(ctx.chain_config.as_ref().clone()).await?;
+        let querier = ctx.query_client().await?;
         Ok(Self {
             ctx,
             contract_addr,
@@ -29,7 +29,7 @@ impl OperatorQuerier {
             .voters
             .into_iter()
             .map(|v| {
-                let address = self.ctx.chain_config.parse_address(&v.address)?;
+                let address = self.ctx.chain_config()?.parse_address(&v.address)?;
                 Ok(Operator {
                     address,
                     power: v.power.u128(),
