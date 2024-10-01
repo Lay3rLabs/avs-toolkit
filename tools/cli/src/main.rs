@@ -6,7 +6,11 @@ mod context;
 use anyhow::Result;
 use args::{CliArgs, Command, DeployCommand, FaucetCommand, TaskQueueCommand};
 use clap::Parser;
-use commands::{deploy::deploy_contracts, faucet::tap_faucet, task_queue::TaskQueue};
+use commands::{
+    deploy::{deploy_contracts, DeployContractArgs},
+    faucet::tap_faucet,
+    task_queue::TaskQueue,
+};
 use context::AppContext;
 use layer_climb::prelude::*;
 use layer_climb_cli::command::{ContractLog, WalletLog};
@@ -32,8 +36,24 @@ async fn main() -> Result<()> {
 
     match ctx.args.command.clone() {
         Command::Deploy(deploy_args) => match deploy_args.command {
-            DeployCommand::Contracts { artifacts_path } => {
-                let addrs = deploy_contracts(ctx, artifacts_path).await?;
+            DeployCommand::Contracts {
+                artifacts_path,
+                timeout: task_timeout_seconds,
+                percentage: required_voting_percentage,
+                operators,
+                requestor,
+            } => {
+                let args = DeployContractArgs::parse(
+                    &ctx,
+                    artifacts_path,
+                    task_timeout_seconds,
+                    required_voting_percentage,
+                    operators,
+                    requestor,
+                )
+                .await?;
+
+                let addrs = deploy_contracts(ctx, args).await?;
                 tracing::info!("---- All contracts instantiated successfully ----");
                 tracing::info!("Mock Operators: {}", addrs.operators);
                 tracing::info!("Verifier Simple: {}", addrs.verifier_simple);
