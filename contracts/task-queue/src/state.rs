@@ -3,18 +3,17 @@ use cosmwasm_std::{Addr, Coin, Deps, Env, MessageInfo, StdError};
 use cw_storage_plus::{Item, Map};
 use cw_utils::must_pay;
 
-use lavs_apis::id::TaskId;
 use lavs_apis::tasks::{Requestor, Status, TimeoutConfig};
 
 use crate::error::ContractError;
 use crate::msg::{self, InstantiateMsg, RequestType, ResponseType};
 
 pub const CONFIG: Item<Config> = Item::new("config");
-pub const TASKS: Map<TaskId, Task> = Map::new("tasks");
+pub const TASKS: Map<u64, Task> = Map::new("tasks");
 
 #[cw_serde]
 pub struct Config {
-    pub next_id: TaskId,
+    pub next_id: u64,
     pub requestor: RequestorConfig,
     pub timeout: TimeoutConfig,
     pub verifier: Addr,
@@ -26,7 +25,7 @@ impl Config {
         let timeout = validate_timeout_info(input.timeout)?;
         let verifier = deps.api.addr_validate(&input.verifier)?;
         Ok(Config {
-            next_id: TaskId::new(1),
+            next_id: 1,
             requestor,
             timeout,
             verifier,

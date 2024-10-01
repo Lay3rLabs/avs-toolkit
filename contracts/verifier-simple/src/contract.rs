@@ -85,7 +85,6 @@ mod execute {
     use cosmwasm_std::{from_json, Addr, Decimal, Uint128, WasmMsg};
 
     use cw_utils::nonpayable;
-    use lavs_apis::id::TaskId;
     use lavs_apis::interfaces::tasks::{
         ResponseType, TaskExecuteMsg, TaskQueryMsg, TaskStatus, TaskStatusResponse,
     };
@@ -100,7 +99,7 @@ mod execute {
         env: Env,
         info: MessageInfo,
         task_queue_contract: String,
-        task_id: TaskId,
+        task_id: u64,
         result: String,
     ) -> Result<Response, ContractError> {
         nonpayable(&info)?;
@@ -169,7 +168,7 @@ mod execute {
         mut deps: DepsMut,
         env: &Env,
         task_queue: &Addr,
-        task_id: TaskId,
+        task_id: u64,
         operator: &Addr,
     ) -> Result<Option<(TaskMetadata, Uint128)>, ContractError> {
         // Operator has not submitted a vote yet
@@ -209,7 +208,7 @@ mod execute {
         env: &Env,
         config: &Config,
         task_queue: &Addr,
-        task_id: TaskId,
+        task_id: u64,
     ) -> Result<TaskMetadata, ContractError> {
         let metadata = TASKS.may_load(deps.storage, (task_queue, task_id))?;
         match metadata {
@@ -259,7 +258,6 @@ mod execute {
 }
 
 mod query {
-    use lavs_apis::id::TaskId;
     use lavs_apis::verifier_simple::{TaskStatus, TaskTally};
 
     use super::*;
@@ -279,7 +277,7 @@ mod query {
         deps: Deps,
         env: Env,
         task_contract: String,
-        task_id: TaskId,
+        task_id: u64,
     ) -> StdResult<Option<TaskInfoResponse>> {
         let task_contract = deps.api.addr_validate(&task_contract)?;
         let info = TASKS.may_load(deps.storage, (&task_contract, task_id))?;
@@ -313,7 +311,7 @@ mod query {
     pub fn operator_vote(
         deps: Deps,
         task_contract: String,
-        task_id: TaskId,
+        task_id: u64,
         operator: String,
     ) -> StdResult<Option<OperatorVoteInfoResponse>> {
         let task_contract = deps.api.addr_validate(&task_contract)?;

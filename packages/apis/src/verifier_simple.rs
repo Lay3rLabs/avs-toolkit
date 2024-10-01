@@ -2,7 +2,6 @@ use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::Uint128;
 use cw_orch::{ExecuteFns, QueryFns};
 
-use crate::id::TaskId;
 pub use crate::interfaces::tasks::TaskStatus;
 
 // FIXME: make these generic
@@ -25,7 +24,7 @@ pub enum ExecuteMsg {
         /// Task queue contract for which we completed the task
         task_queue_contract: String,
         /// The ID of the task that was completed
-        task_id: TaskId,
+        task_id: u64,
         /// The result of the task, (JSON) serialized as a string
         /// It is serialized to allow for easy comparison and to avoid field sorting issues when verifying signatures
         result: String,
@@ -46,7 +45,7 @@ pub enum QueryMsg {
         /// The task contract we are interested in
         task_contract: String,
         /// The ID of the task we are interested in
-        task_id: TaskId,
+        task_id: u64,
     },
     /// Ordered by completion time descending (last completed first)
     #[returns(Option<OperatorVoteInfoResponse>)]
@@ -54,7 +53,7 @@ pub enum QueryMsg {
         /// The task contract we are interested in
         task_contract: String,
         /// The ID of the task we are interested in
-        task_id: TaskId,
+        task_id: u64,
         /// The operator whose vote we are interested in
         operator: String,
     },
