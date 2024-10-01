@@ -4,10 +4,11 @@ mod config;
 mod context;
 
 use anyhow::Result;
-use args::{CliArgs, Command, DeployCommand, TaskQueueCommand};
+use args::{CliArgs, Command, DeployCommand, FaucetCommand, TaskQueueCommand};
 use clap::Parser;
-use commands::{deploy::deploy_contracts, task_queue::TaskQueue};
+use commands::{deploy::deploy_contracts, faucet::tap_faucet, task_queue::TaskQueue};
 use context::AppContext;
+use layer_climb::prelude::*;
 use layer_climb_cli::command::{ContractLog, WalletLog};
 
 #[tokio::main]
@@ -59,6 +60,17 @@ async fn main() -> Result<()> {
                 }
             }
         }
+        Command::Faucet(faucet_args) => match faucet_args.command {
+            FaucetCommand::Tap { to, amount, denom } => {
+                let to = match to {
+                    Some(to) => ctx.chain_config()?.parse_address(&to)?,
+                    None => ctx.any_client().await?.as_signing().addr.clone(),
+                };
+
+                let amount = amount.unwrap_or(FaucetCommand::DEFAULT_TAP_AMOUNT);
+                tap_faucet(&ctx, to, amount, denom).await?;
+            }
+        },
         Command::Wallet(wallet_args) => {
             let mut rng_lock = ctx.rng.lock().await;
             wallet_args
