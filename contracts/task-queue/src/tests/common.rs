@@ -357,6 +357,95 @@ where
     assert_eq!(status_two.status, TaskStatus::Expired);
 }
 
+pub fn task_pagination_works<C>(chain: C)
+where
+    C: CwEnv + AltSigner,
+    C::Sender: Addressable,
+{
+    let (contract, _verifier) = fixed_requestor(&chain, 1000);
+    let payload = json!({"pair": ["eth", "usd"]});
+
+    // Create 10 tasks with increasing timeouts
+    let mut created_tasks = Vec::new();
+    for i in 1..=10 {
+        let task_id = make_task(
+            &contract,
+            &format!("Task {}", i),
+            Some(1000 + i * 100),
+            &payload,
+        );
+        created_tasks.push(task_id);
+        chain.next_block().unwrap();
+    }
+
+    // Get the total number of open tasks
+    let ListOpenResponse { tasks: all_open_tasks } = contract.list_open(None, None).unwrap();
+    let total_open_tasks = all_open_tasks.len();
+
+    // Test pagination with different limits
+    let test_cases = vec![2, 3, 5, 7, 10, 15];
+
+    for limit in test_cases {
+        let mut all_retrieved_tasks = Vec::new();
+        let mut start_after = None;
+
+        loop {
+            let ListOpenResponse { tasks } = contract.list_open(start_after, Some(limit)).unwrap();
+
+            if tasks.is_empty() {
+                break;
+            }
+
+            // Check that each page has the correct number of tasks
+            assert!(tasks.len() <= limit as usize, "Page size exceeds limit");
+
+            // Check that tasks are in the correct order (by expiration time)
+            for window in tasks.windows(2) {
+                assert!(window[0].expires <= window[1].expires, "Tasks are not properly ordered");
+            }
+
+            // Check that there's no overlap with previously retrieved tasks
+            for task in &tasks {
+                assert!(!all_retrieved_tasks.contains(&task.id), 
+                    "Task {} appeared in multiple pages", task.id);
+            }
+
+            // If it's not the first page, check that the first task of this page
+            // comes after the last task of the previous page
+            if let Some(last_task_id) = start_after {
+                assert!(tasks[0].id > last_task_id, 
+                    "First task of new page ({:?}) should come after last task of previous page ({:?})",
+                    tasks[0].id, last_task_id);
+            }
+
+            all_retrieved_tasks.extend(tasks.iter().map(|t| t.id));
+            start_after = tasks.last().map(|t| t.id);
+        }
+
+        // Check total number of tasks retrieved
+        assert_eq!(all_retrieved_tasks.len(), total_open_tasks, 
+            "Number of tasks retrieved ({}) doesn't match total open tasks ({})", 
+            all_retrieved_tasks.len(), total_open_tasks
+        );
+
+        // Check that all created tasks (that are still open) are in the retrieved tasks
+        for task_id in &created_tasks {
+            if all_open_tasks.iter().any(|t| t.id == *task_id) {
+                assert!(all_retrieved_tasks.contains(task_id), 
+                    "Created task {:?} is missing from retrieved tasks", task_id);
+            }
+        }
+    }
+
+    // Test with no limit (should return all open tasks)
+    let ListOpenResponse { tasks } = contract.list_open(None, None).unwrap();
+    assert_eq!(
+        tasks.len(),
+        total_open_tasks,
+        "Should return all open tasks when no limit is specified"
+    );
+}
+
 #[track_caller]
 pub fn get_time(chain: &impl QueryHandler) -> u64 {
     chain.block_info().unwrap().time.seconds()
