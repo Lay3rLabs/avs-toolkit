@@ -119,7 +119,11 @@ impl TaskQueueQuerier {
             .await
     }
 
-    pub async fn task_queue_view(&self) -> Result<TaskQueueView> {
+    pub async fn task_queue_view(
+        &self,
+        start_after: Option<TaskId>,
+        limit: Option<u32>,
+    ) -> Result<TaskQueueView> {
         let contract_config: ConfigResponse = self.config().await?;
 
         let verifier_addr = self
@@ -137,7 +141,9 @@ impl TaskQueueQuerier {
 
         let operators = operator_querier.all_operators().await?;
 
-        let tasks = self.tasks_view(Order::Descending).await?;
+        let tasks = self
+            .tasks_view(start_after, limit, Order::Descending)
+            .await?;
 
         Ok(TaskQueueView {
             verifier_addr,
@@ -147,12 +153,17 @@ impl TaskQueueQuerier {
         })
     }
 
-    pub async fn tasks_view(&self, order: Order) -> Result<Vec<TaskView>> {
+    pub async fn tasks_view(
+        &self,
+        start_after: Option<TaskId>,
+        limit: Option<u32>,
+        order: Order,
+    ) -> Result<Vec<TaskView>> {
         let tasks_open: ListOpenResponse = self
             .querier
             .contract_smart(
                 &self.contract_addr,
-                &QueryMsg::Custom(CustomQueryMsg::ListOpen {}),
+                &QueryMsg::Custom(CustomQueryMsg::ListOpen { start_after, limit }),
             )
             .await?;
 
@@ -160,7 +171,7 @@ impl TaskQueueQuerier {
             .querier
             .contract_smart(
                 &self.contract_addr,
-                &QueryMsg::Custom(CustomQueryMsg::ListCompleted {}),
+                &QueryMsg::Custom(CustomQueryMsg::ListCompleted { start_after, limit }),
             )
             .await?;
 

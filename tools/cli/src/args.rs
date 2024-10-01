@@ -1,5 +1,6 @@
 use clap::Parser;
 use clap::{Args, Subcommand};
+use lavs_apis::id::TaskId;
 use std::path::PathBuf;
 
 #[derive(Parser)]
@@ -76,7 +77,12 @@ pub enum TaskQueueCommand {
     },
 
     /// View the task queue
-    ViewQueue,
+    ViewQueue {
+        #[clap(short, long)]
+        start_after: Option<TaskId>,
+        #[clap(short, long)]
+        limit: Option<u32>,
+    },
 }
 
 #[derive(Copy, Clone, Debug, clap::ValueEnum)]

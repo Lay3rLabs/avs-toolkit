@@ -71,9 +71,9 @@ where
     assert_eq!(two, TaskId::new(one.u64() + 1));
 
     // query for open tasks
-    let open = contract.list_open().unwrap();
+    let open = contract.list_open(None, None).unwrap();
     assert_eq!(open.tasks.len(), 2);
-    let closed = contract.list_completed().unwrap();
+    let closed = contract.list_completed(None, None).unwrap();
     assert_eq!(closed.tasks.len(), 0);
 
     // fail to verify one task
@@ -88,9 +88,9 @@ where
     let end = get_time(contract.environment());
 
     // check the list queries
-    let open = contract.list_open().unwrap();
+    let open = contract.list_open(None, None).unwrap();
     assert_eq!(open.tasks.len(), 1);
-    let closed = contract.list_completed().unwrap();
+    let closed = contract.list_completed(None, None).unwrap();
     assert_eq!(closed.tasks.len(), 1);
 
     // check the details of the completed task
@@ -183,7 +183,7 @@ where
     chain.next_block().unwrap();
     let three = make_task(&contract, "Two", None, &payload_three); // uses default of 200
 
-    let ListOpenResponse { tasks } = contract.list_open().unwrap();
+    let ListOpenResponse { tasks } = contract.list_open(None, None).unwrap();
     assert_eq!(tasks.len(), 3);
     assert_eq!(
         tasks[0],
@@ -212,20 +212,20 @@ where
 
     // now let's wait a bit so some expire
     chain.wait_seconds(150).unwrap();
-    let ListOpenResponse { tasks } = contract.list_open().unwrap();
+    let ListOpenResponse { tasks } = contract.list_open(None, None).unwrap();
     assert_eq!(tasks.len(), 2);
     assert_eq!(tasks[0].id, three);
     assert_eq!(tasks[1].id, one);
 
     // and the next expiration
     chain.wait_seconds(100).unwrap();
-    let ListOpenResponse { tasks } = contract.list_open().unwrap();
+    let ListOpenResponse { tasks } = contract.list_open(None, None).unwrap();
     assert_eq!(tasks.len(), 1);
     assert_eq!(tasks[0].id, one);
 
     // and them all
     chain.wait_seconds(100).unwrap();
-    let ListOpenResponse { tasks } = contract.list_open().unwrap();
+    let ListOpenResponse { tasks } = contract.list_open(None, None).unwrap();
     assert_eq!(tasks.len(), 0);
 }
 
@@ -243,7 +243,7 @@ where
     let two = make_task(&contract, "Two", 100, &payload);
 
     // list completed empty
-    let ListCompletedResponse { tasks } = contract.list_completed().unwrap();
+    let ListCompletedResponse { tasks } = contract.list_completed(None, None).unwrap();
     assert_eq!(tasks.len(), 0);
 
     // normal user cannot complete
@@ -299,7 +299,7 @@ where
     );
 
     // list completed
-    let ListCompletedResponse { tasks } = contract.list_completed().unwrap();
+    let ListCompletedResponse { tasks } = contract.list_completed(None, None).unwrap();
     assert_eq!(tasks.len(), 1);
     assert_eq!(
         tasks[0],

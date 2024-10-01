@@ -109,12 +109,14 @@ pub enum CustomQueryMsg {
     /// Ordered by expiration time ascending
     #[returns(ListOpenResponse)]
     ListOpen {
-        // TODO: pagination
+        start_after: Option<TaskId>,
+        limit: Option<u32>,
     },
     /// Ordered by completion time descending (last completed first)
     #[returns(ListCompletedResponse)]
     ListCompleted {
-        // TODO: pagination
+        start_after: Option<TaskId>,
+        limit: Option<u32>,
     },
     /// Get specific task details
     #[returns(TaskResponse)]
