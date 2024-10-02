@@ -211,12 +211,12 @@ pub enum WasmaticCommand {
         trigger: String,
 
         /// Permissions, defaults to an empty array
-        #[clap(short, long, default_value = "[]")]
-        permissions: Vec<String>,
+        #[clap(short, long, default_value = "{}")]
+        permissions: String,
 
         /// Environment variables, multiple can be provided in KEY=VALUE format
-        #[clap(long, value_parser = parse_key_val)]
-        envs: Vec<(String, String)>,
+        #[clap(long)]
+        envs: String,
     },
 
     /// Remove a Wasm application

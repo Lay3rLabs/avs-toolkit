@@ -10,8 +10,8 @@ pub async fn deploy(
     digest: String,
     wasm_source: String,
     trigger: String,
-    permissions: Vec<String>,
-    envs: Vec<(String, String)>,
+    permissions_json: String,
+    envs_json: String,
 ) -> Result<()> {
     let client = Client::new();
 
@@ -24,8 +24,8 @@ pub async fn deploy(
                 "schedule": trigger
             }
         },
-        "permissions": permissions,
-        "envs": envs,
+        "permissions": serde_json::from_str::<serde_json::Value>(&permissions_json).unwrap(),
+        "envs": serde_json::from_str::<Vec<Vec<String>>>(&envs_json).unwrap(),
     });
 
     // Check if wasm_source is a URL or a local file path
