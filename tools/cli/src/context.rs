@@ -84,7 +84,13 @@ impl AppContext {
         let mut client_pool_manager = SigningClientPoolManager::new_mnemonic(
             self.client_mnemonic()?,
             self.chain_config()?.clone(),
-            None,
+            // avoid accidentally trying to send funds to ourselves
+            match self.args.concurrent_minimum_balance_from_faucet
+                && self.client_mnemonic()? == self.config.faucet.mnemonic
+            {
+                true => Some(1),
+                false => None,
+            },
         );
 
         // set the pool minimum balance, if greater than 0
