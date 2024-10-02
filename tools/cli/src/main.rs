@@ -4,7 +4,7 @@ mod config;
 mod context;
 
 use anyhow::Result;
-use args::{CliArgs, Command, DeployCommand, FaucetCommand, TaskQueueCommand};
+use args::{CliArgs, Command, DeployCommand, FaucetCommand, TaskQueueCommand, WasmaticCommand};
 use clap::Parser;
 use commands::{
     deploy::{deploy_contracts, DeployContractArgs},
@@ -156,9 +156,24 @@ async fn main() -> Result<()> {
                 })
                 .await?;
         }
-        Command::Wasmatic(wasmatic_args) => {
-            todo!()
-        }
+        Command::Wasmatic(wasmatic_args) => match wasmatic_args.command {
+            WasmaticCommand::WasmaticDeploy {
+                name,
+                digest,
+                wasm_source,
+                trigger,
+                permissions,
+                envs,
+            } => {
+                todo!();
+            }
+            WasmaticCommand::WasmaticRemove { name } => {
+                todo!();
+            }
+            WasmaticCommand::WasmaticTest { name, input } => {
+                todo!();
+            }
+        },
     }
 
     Ok(())
