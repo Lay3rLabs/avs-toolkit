@@ -92,7 +92,7 @@ impl TaskQueue {
             .value()
             .parse()?;
 
-        tracing::debug!("Task added with id: {task_id}");
+        tracing::info!("Task added with id: {task_id}");
         tracing::debug!("Tx hash: {}", tx_resp.txhash);
 
         Ok((task_id, tx_resp))

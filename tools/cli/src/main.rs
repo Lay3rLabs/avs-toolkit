@@ -74,6 +74,7 @@ async fn main() -> Result<()> {
                 TaskQueueCommand::ViewQueue => {
                     let res = task_queue.querier.task_queue_view().await?;
                     tracing::info!("Task Queue Configuration");
+                    tracing::info!("Address: {}", task_queue.contract_addr);
                     res.report(|line| {
                         println!("{}", line);
                     })?;
