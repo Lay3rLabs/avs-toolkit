@@ -76,3 +76,27 @@ pub async fn deploy(
 
     Ok(())
 }
+
+pub async fn remove(address: String, app_name: String) -> Result<()> {
+    let client = Client::new();
+
+    // Prepare the JSON body
+    let body = json!({
+        "apps": [app_name],
+    });
+
+    // Send the DELETE request
+    let response = client
+        .delete(&format!("{}/app", address))
+        .header("Content-Type", "application/json")
+        .json(&body) // JSON body goes here
+        .send()
+        .await?;
+
+    // Check if the request was successful
+    if !response.status().is_success() {
+        bail!("Error: {:?}", response.text().await?);
+    }
+
+    Ok(())
+}
