@@ -3,7 +3,7 @@
 `cargo run -- --help` to see all the commands
 
 You can also precompile it `cargo install --path .`.
-After that, use `avs-toolkit-cli` whereever you see `cargo run --`.
+After that, use `avs-toolkit-cli` wherever you see `cargo run --`.
 
 ## Prerequisites
 
