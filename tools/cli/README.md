@@ -11,6 +11,7 @@ After that, use `avs-toolkit-cli` wherever you see `cargo run --`.
 
 1. add a `.env` file
 2. give it a `LOCAL_MNEMONIC` for local deployments, `TEST_MNEMONIC` for testnet
+(If working with `localnode` setup grab `LOCAL_MNEMONIC` from [here](https://github.com/Lay3rLabs/layer-sdk/blob/main/localnode/wasmatic.env#L1))
 3. don't have a mnemonic? run `cargo run wallet create` 
 4. don't have funds? run `cargo run faucet tap` 
 
@@ -60,4 +61,10 @@ cargo run -- task-queue view-queue
 cargo run -- task-queue add-task --body '{"x": 9}' --description 'Square nine'
 
 cargo run -- task-queue view-queue
+```
+
+If you'd rather not use environment variables to access the task address, you can also pass it as a flag.
+
+```bash
+cargo run -- task-queue add-task --address <address> --body '{"x": 9}' --description 'Square nine'
 ```
