@@ -183,7 +183,7 @@ impl FaucetCommand {
 
 #[derive(Clone, Args)]
 pub struct WasmaticArgs {
-    #[clap(long)]
+    #[clap(long, default_value = "http://0.0.0.0:8081")]
     pub address: String,
 
     #[command(subcommand)]
@@ -212,11 +212,11 @@ pub enum WasmaticCommand {
 
         /// Permissions, defaults to an empty array
         #[clap(short, long, default_value = "[]")]
-        permissions: String,
+        permissions: Vec<String>,
 
         /// Environment variables, multiple can be provided in KEY=VALUE format
-        #[clap(long)]
-        envs: Vec<String>,
+        #[clap(long, value_parser = parse_key_val)]
+        envs: Vec<(String, String)>,
     },
 
     /// Remove a Wasm application

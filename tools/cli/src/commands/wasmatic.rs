@@ -10,8 +10,8 @@ pub async fn deploy(
     digest: String,
     wasm_source: String,
     trigger: String,
-    permissions: String,
-    envs: Vec<String>,
+    permissions: Vec<String>,
+    envs: Vec<(String, String)>,
 ) -> Result<()> {
     let client = Client::new();
 
@@ -52,16 +52,11 @@ pub async fn deploy(
         let wasm_binary = fs::read(wasm_source).await?;
 
         // Send the request with the binary file and JSON body
-        let form = reqwest::multipart::Form::new()
-            .part(
-                "file",
-                reqwest::multipart::Part::bytes(wasm_binary).file_name(name.to_string()),
-            )
-            .text("body", body.to_string());
-
         let response = client
             .post(&format!("{}/app", address))
-            .multipart(form)
+            .header("Content-Type", "application/json") // Content-Type remains application/json
+            .body(wasm_binary) // Binary data goes here
+            .json(&body) // JSON body goes here
             .send()
             .await?;
 
