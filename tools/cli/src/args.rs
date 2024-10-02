@@ -50,6 +50,9 @@ pub enum Command {
     Wallet(WalletArgs),
     /// Generic utility contract subcommands
     Contract(ContractArgs),
+
+    /// Commands for working with wasmatic
+    Wasmatic(WasmaticArgs),
 }
 
 #[derive(Clone, Args)]
@@ -176,6 +179,62 @@ pub enum FaucetCommand {
 
 impl FaucetCommand {
     pub const DEFAULT_TAP_AMOUNT: u128 = 1_000_000;
+}
+
+pub struct WasmaticArgs {
+    #[clap(long)]
+    pub address: String,
+
+    #[command(subcommand)]
+    pub command: WasmaticCommand,
+}
+
+#[derive(Clone, Subcommand)]
+pub enum WasmaticCommand {
+    /// Deploy a Wasm application
+    WasmaticDeploy {
+        /// Name of the application
+        #[clap(short, long)]
+        name: String,
+
+        /// Digest of the wasm file (sha256)
+        #[clap(short, long)]
+        digest: String,
+
+        /// Path to the Wasm file or a URL to the Wasm file
+        #[clap(short, long)]
+        wasm_source: String, // This can be a local path or a URL
+
+        /// Cron schedule or task queue for the trigger
+        #[clap(short, long)]
+        trigger: String,
+
+        /// Permissions, defaults to an empty array
+        #[clap(short, long, default_value = "[]")]
+        permissions: String,
+
+        /// Environment variables, multiple can be provided in KEY=VALUE format
+        #[clap(long)]
+        envs: Vec<String>,
+    },
+
+    /// Remove a Wasm application
+    WasmaticRemove {
+        /// The name of the application to remove
+        #[clap(short, long)]
+        name: String,
+    },
+
+    /// Test a Wasm application
+    WasmaticTest {
+        /// The name of the application to test
+        #[clap(short, long)]
+        name: String,
+
+        /// Optional input for the test
+        #[clap(short, long)]
+        input: Option<String>,
+    },
 }
 
 #[derive(Copy, Clone, Debug, clap::ValueEnum)]

@@ -156,6 +156,9 @@ async fn main() -> Result<()> {
                 })
                 .await?;
         }
+        Command::Wasmatic(wasmatic_args) => {
+            todo!()
+        }
     }
 
     Ok(())
