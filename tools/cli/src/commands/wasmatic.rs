@@ -50,12 +50,19 @@ pub async fn deploy(
     } else {
         // wasm_source is a local file, read the binary
         let wasm_binary = fs::read(wasm_source).await?;
+        let response = client
+            .post(&format!("{}/upload", address))
+            .body(wasm_binary) // Binary data goes here
+            .send()
+            .await?;
+        if !response.status().is_success() {
+            bail!("Error: {:?}", response.text().await?);
+        }
 
         // Send the request with the binary file and JSON body
         let response = client
             .post(&format!("{}/app", address))
             .header("Content-Type", "application/json") // Content-Type remains application/json
-            .body(wasm_binary) // Binary data goes here
             .json(&body) // JSON body goes here
             .send()
             .await?;
