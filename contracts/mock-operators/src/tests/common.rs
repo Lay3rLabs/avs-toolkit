@@ -7,7 +7,7 @@ use lavs_orch::{Addressable, AltSigner};
 use crate::interface::Contract;
 use crate::msg::{InstantiateMsg, InstantiateOperator, QueryMsgFns};
 
-pub const BECH_PREFIX: &str = "slay3r";
+pub const BECH_PREFIX: &str = "layer";
 
 pub fn setup<Chain: CwEnv>(chain: Chain, msg: InstantiateMsg) -> Contract<Chain> {
     let contract = Contract::new(chain);
