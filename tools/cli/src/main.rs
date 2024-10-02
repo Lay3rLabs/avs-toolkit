@@ -58,6 +58,9 @@ async fn main() -> Result<()> {
                 tracing::info!("Mock Operators: {}", addrs.operators);
                 tracing::info!("Verifier Simple: {}", addrs.verifier_simple);
                 tracing::info!("Task Queue: {}", addrs.task_queue);
+                // TODO: make a flag to select one of these
+                tracing::info!("export LOCAL_TASK_QUEUE_ADDRESS={}", addrs.task_queue);
+                tracing::info!("export TEST_TASK_QUEUE_ADDRESS={}", addrs.task_queue);
             }
         },
         Command::TaskQueue(task_queue_args) => {

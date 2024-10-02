@@ -2,6 +2,9 @@
 
 `cargo run -- --help` to see all the commands
 
+You can also precompile it `cargo install --path .`.
+After that, use `avs-toolkit-cli` wherever you see `cargo run --`.
+
 ## Prerequisites
 
 ### Setup .env
@@ -13,7 +16,7 @@
 
 ### Deploying Contracts
 
-#### First build them:
+#### First build them
 
 In the project root:
 
@@ -21,19 +24,40 @@ In the project root:
 scripts/optimizer.sh
 ```
 
-#### Then deploy them:
+#### Then deploy them
 
 In this directory:
 
 Local
 
 ```bash
-cargo run deploy contracts
+cargo run -- deploy contracts --operators wasmatic
 ```
 
 Testnet
+
 ```bash
-cargo run -- --target-env=testnet deploy contracts
+cargo run -- --target-env=testnet deploy contracts --operators wasmatic
 ```
 
 If you want to see an output at the end with the different contract's addresses, make sure to run with --
+
+Store the task queue for future use, based on the output:
+
+```bash
+# for local testing
+LOCAL_TASK_QUEUE_ADDRESS=<address>
+
+# for remote testnet
+TEST_TASK_QUEUE_ADDRESS=<address>
+```
+
+### Then use them
+
+```bash
+cargo run -- task-queue view-queue
+
+cargo run -- task-queue add-task --body '{"x": 9}' --description 'Square nine'
+
+cargo run -- task-queue view-queue
+```
