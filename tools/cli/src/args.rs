@@ -68,6 +68,10 @@ pub enum DeployCommand {
         /// A list of operators.
         ///
         /// Voting power will be set with a ':' separator, otherwise it's `1`
+        ///
+        /// At least one operator must be set
+        ///
+        /// Tip: "wasmatic" is a special operator that will be set with the wasmatic address
         #[clap(short, long, num_args(1..))]
         operators: Vec<String>,
         /// The default task timeout, in seconds

@@ -23,12 +23,20 @@ impl DeployContractArgs {
         operators: Vec<String>,
         requestor: DeployTaskRequestor,
     ) -> Result<Self> {
+        if operators.is_empty() {
+            bail!("At least one operator must be specified");
+        }
+
         let operators = operators
             .into_iter()
             .map(|s| {
                 let mut parts = s.split(':');
                 let addr = parts.next().unwrap().to_string();
-                let addr = ctx.chain_config()?.parse_address(&addr)?;
+                let addr = match addr.as_str() {
+                    "wasmatic" => ctx.config.wasmatic.address.clone(),
+                    _ => ctx.chain_config()?.parse_address(&addr)?,
+                };
+
                 let voting_power = parts.next().unwrap_or("1").parse().unwrap();
                 anyhow::Ok(lavs_mock_operators::msg::InstantiateOperator::new(
                     addr.to_string(),
