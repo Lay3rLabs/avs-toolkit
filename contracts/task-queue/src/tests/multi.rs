@@ -5,7 +5,7 @@ use crate::interface::Contract;
 use crate::msg::{InstantiateMsg, Requestor, TimeoutInfo};
 
 // TODO: shared variable
-const BECH_PREFIX: &str = "slay3r";
+const BECH_PREFIX: &str = "layer";
 
 // Note: there is an assumption of 5 second blocks in the test framework
 // let's make this clear in the tests

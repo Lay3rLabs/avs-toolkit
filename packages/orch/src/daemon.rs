@@ -31,8 +31,8 @@ pub fn daemon_setup() {
     pretty_env_logger::init(); // Used to log contract and chain interactions
 }
 
-/// Creates a daemon connected to specified slay3r chain (local, devnet, or mainnet)
-pub fn slay3r_connect(kind: ChainKind) -> Daemon {
+/// Creates a daemon connected to specified layer chain (local, devnet, or mainnet)
+pub fn layer_connect(kind: ChainKind) -> Daemon {
     daemon_setup();
     let info = crate::networks::chain_info(kind);
     let chain = DaemonBuilder::default().chain(info).build().unwrap();
