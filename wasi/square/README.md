@@ -16,40 +16,41 @@ This requires Rust 1.80+. Please ensure you have that installed via `rustup`
 before continuing.
 
 Even though we will be building a Wasm component that targets WASI Preview 2, the Rust
-`wasm32-wasip2` target is not quite ready yet. So we will use `cargo-component` to target
+`wasm32-wasip2` target is not quite ready yet. So we will use
+[`cargo-component`](https://github.com/bytecodealliance/cargo-component) to target
 `wasm32-wasip1` and package to use WASI Preview 2.
 
 If haven't yet, add the WASI Preview 1 target:
-```
+```bash
 rustup target add wasm32-wasip1
 ```
 
 Install `cargo-component` and `wkg` CLIs:
-```
+```bash
 cargo install cargo-component wkg
 ```
 
 Set default registry configuration:
-```
+```bash
 wkg config --default-registry wa.dev
 ```
 For more information about configuration, see
 the [wkg docs](https://github.com/bytecodealliance/wasm-pkg-tools).
 
-## Usage
+## Build
 
 On your CLI, navigate to this directory, then run:
-```
+```bash
 cargo component build --release
 ```
 
 This produces a Wasm component bindary that can be found 
 in the workspace target directory (`../../target/wasm32-wasip1/release/cavs_square.wasm`).
 
-## Testing
+## Unit Testing
 
 To run the unit tests, build the component first with:
-```
+```bash
 cargo component build
 ```
 and then:
@@ -61,7 +62,7 @@ cargo test
 
 Upload the compiled Wasm component to the Wasmatic node.
 ```
-curl -X POST --data-binary @../../target/wasm32-wasip1/release/cavs_square.wasm http://0.0.0.0:8081/upload
+curl -X POST --data-binary @../../target/wasm32-wasip1/release/cavs_square.wasm http://localhost:8081/upload
 ```
 
 Copy the digest SHA returned.
@@ -80,9 +81,27 @@ read -d '' BODY << "EOF"
     }
   },
   "permissions": {},
-  "envs": []
+  "envs": [],
+  "testable": true
 }
 EOF
 
-curl -X POST -H "Content-Type: application/json" http://0.0.0.0:8081/app -d "$BODY"
+curl -X POST -H "Content-Type: application/json" http://localhost:8081/app -d "$BODY"
 ```
+
+## Testing Deployment
+
+To test the deployed application on the Wasmatic node, you can use the test endpoint.
+The server responds with the output of the applicaton without sending the result to the chain.
+
+```bash
+curl --request POST \
+  --url http://localhost:8081/test \
+  --header 'Content-Type: application/json' \
+  --data '{
+  "name": "{PLACEHOLDER-UNIQUE-NAME}",
+  "input": {"x": 9 }
+}'
+```
+
+The server should respond with the square of input number `9`.
