@@ -234,7 +234,7 @@ pub enum WasmaticCommand {
 
         /// Optional input for the test
         #[clap(short, long)]
-        input: Option<String>,
+        input: serde_json::Value,
     },
 }
 

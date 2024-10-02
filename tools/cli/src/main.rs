@@ -10,7 +10,7 @@ use commands::{
     deploy::{deploy_contracts, DeployContractArgs},
     faucet::tap_faucet,
     task_queue::TaskQueue,
-    wasmatic::{deploy, remove},
+    wasmatic::{deploy, remove, test},
 };
 use context::AppContext;
 use layer_climb::prelude::*;
@@ -181,7 +181,7 @@ async fn main() -> Result<()> {
                 remove(wasmatic_args.address, name).await?;
             }
             WasmaticCommand::Test { name, input } => {
-                todo!();
+                test(wasmatic_args.address, name, input).await?;
             }
         },
     }

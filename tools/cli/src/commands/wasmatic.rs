@@ -1,7 +1,6 @@
 use anyhow::{bail, Result};
 use reqwest::Client;
 use serde_json::json;
-use std::path::PathBuf;
 use tokio::fs;
 
 pub async fn deploy(
@@ -95,6 +94,39 @@ pub async fn remove(address: String, app_name: String) -> Result<()> {
 
     // Check if the request was successful
     if !response.status().is_success() {
+        bail!("Error: {:?}", response.text().await?);
+    }
+
+    Ok(())
+}
+
+pub async fn test(
+    address: String,
+    app_name: String,
+    input: serde_json::Value, // This allows for any valid JSON input
+) -> Result<()> {
+    let client = Client::new();
+
+    // Prepare the JSON body
+    let body = json!({
+        "name": app_name,
+        "input": input,
+    });
+
+    // Send the POST request
+    let response = client
+        .post(&format!("{}/test", address))
+        .header("Content-Type", "application/json")
+        .json(&body) // Send the JSON body
+        .send()
+        .await?;
+
+    // Check if the request was successful
+    if response.status().is_success() {
+        println!("Test executed successfully!");
+        let response_text = response.text().await?;
+        println!("Response: {}", response_text);
+    } else {
         bail!("Error: {:?}", response.text().await?);
     }
 
