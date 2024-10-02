@@ -181,6 +181,7 @@ impl FaucetCommand {
     pub const DEFAULT_TAP_AMOUNT: u128 = 1_000_000;
 }
 
+#[derive(Clone, Args)]
 pub struct WasmaticArgs {
     #[clap(long)]
     pub address: String,
@@ -192,7 +193,7 @@ pub struct WasmaticArgs {
 #[derive(Clone, Subcommand)]
 pub enum WasmaticCommand {
     /// Deploy a Wasm application
-    WasmaticDeploy {
+    Deploy {
         /// Name of the application
         #[clap(short, long)]
         name: String,
@@ -219,14 +220,14 @@ pub enum WasmaticCommand {
     },
 
     /// Remove a Wasm application
-    WasmaticRemove {
+    Remove {
         /// The name of the application to remove
         #[clap(short, long)]
         name: String,
     },
 
     /// Test a Wasm application
-    WasmaticTest {
+    Test {
         /// The name of the application to test
         #[clap(short, long)]
         name: String,

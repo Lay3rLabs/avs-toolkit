@@ -52,6 +52,7 @@ bip39 = "2.0.0"
 rand = "0.8"
 layer-climb = { git = "https://github.com/Lay3rLabs/climb.git", rev = "ade504edeb54ce5c08a8c3a089d39db83fd9757c"}
 layer-climb-cli = { git = "https://github.com/Lay3rLabs/climb.git", rev = "ade504edeb54ce5c08a8c3a089d39db83fd9757c"}
+reqwest = { version = "0.11", features = ["json", "rustls-tls", "stream", "blocking", "multipart"] }
 # purposefully left in for now to make debugging easier, will remove eventually:
 # layer-climb = { path = "../climb/packages/layer-climb" }
 deadpool = "0.12.1"
