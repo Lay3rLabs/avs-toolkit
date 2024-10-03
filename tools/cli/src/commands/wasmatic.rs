@@ -18,11 +18,7 @@ pub async fn deploy(
     // Prepare the JSON body
     let body = json!({
         "name": name,
-        "trigger": {
-            "cron": {
-                "schedule": trigger
-            }
-        },
+        "trigger": trigger,
         "permissions": serde_json::from_str::<serde_json::Value>(&permissions_json).unwrap(),
         "envs": serde_json::from_str::<Vec<Vec<String>>>(&envs_json).unwrap(),
     });
