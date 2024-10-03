@@ -35,7 +35,7 @@ pub async fn deploy(
 
         // Send the request with wasmUrl in JSON
         let response = client
-            .post(&format!("{}/app", address))
+            .post(format!("{}/app", address))
             .json(&json_body)
             .header("Content-Type", "application/json")
             .send()
@@ -50,7 +50,7 @@ pub async fn deploy(
         // wasm_source is a local file, read the binary
         let wasm_binary = fs::read(wasm_source).await?;
         let response = client
-            .post(&format!("{}/upload", address))
+            .post(format!("{}/upload", address))
             .body(wasm_binary) // Binary data goes here
             .send()
             .await?;
@@ -60,7 +60,7 @@ pub async fn deploy(
 
         // Send the request with the binary file and JSON body
         let response = client
-            .post(&format!("{}/app", address))
+            .post(format!("{}/app", address))
             .header("Content-Type", "application/json") // Content-Type remains application/json
             .json(&body) // JSON body goes here
             .send()
@@ -86,7 +86,7 @@ pub async fn remove(address: String, app_name: String) -> Result<()> {
 
     // Send the DELETE request
     let response = client
-        .delete(&format!("{}/app", address))
+        .delete(format!("{}/app", address))
         .header("Content-Type", "application/json")
         .json(&body) // JSON body goes here
         .send()
@@ -115,7 +115,7 @@ pub async fn test(
 
     // Send the POST request
     let response = client
-        .post(&format!("{}/test", address))
+        .post(format!("{}/test", address))
         .header("Content-Type", "application/json")
         .json(&body) // Send the JSON body
         .send()
