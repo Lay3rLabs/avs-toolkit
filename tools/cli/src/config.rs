@@ -68,9 +68,25 @@ impl Config {
     }
 }
 
-async fn load_wasmatic_address(_endpoint: &str) -> Result<String> {
-    // TODO: Load from endpoint
-    Ok("layer1qyfn9l7w78kxcerwwwc6dpad305dulhk9jks0r".to_string())
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetInfo {
+    pub operators: Vec<String>,
+}
+
+async fn load_wasmatic_address(endpoint: &str) -> Result<String> {
+    let client = reqwest::Client::new();
+
+    // Load from info endpoint
+    let response = client
+        .get(format!("{}/info", endpoint))
+        .header("Content-Type", "application/json")
+        .send()
+        .await?;
+    let info: GetInfo = response.json().await?;
+    let op = info.operators.get(0).context("No operators found")?;
+
+    Ok(op.to_string())
 }
 
 #[derive(Debug, Deserialize, Serialize)]

@@ -21,6 +21,7 @@
         "mnemonic": "economy stock theory fatal elder harbor betray wasp final emotion task crumble siren bottom lizard educate guess current outdoor pair theory focus wife stone"
     },
     "wasmatic": {
-        "endpoint": "https://op1.layer-p.net"
+        "endpoint": "http://localhost:8081",
+        "//endpoint": "https://op1.layer-p.net"
     }
 }
