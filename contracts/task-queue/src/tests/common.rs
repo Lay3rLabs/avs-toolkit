@@ -188,17 +188,17 @@ where
     assert_eq!(
         tasks[0],
         OpenTaskOverview {
-            id: two,
-            expires: start + 100 + block_time + offset, // we waited one block to create
-            payload: payload_two,
+            id: three,
+            expires: start + 200 + 2 * block_time + offset, // we waited two blocks to create
+            payload: payload_three,
         }
     );
     assert_eq!(
         tasks[1],
         OpenTaskOverview {
-            id: three,
-            expires: start + 200 + 2 * block_time + offset, // we waited two blocks to create
-            payload: payload_three,
+            id: two,
+            expires: start + 100 + block_time + offset, // we waited one block to create
+            payload: payload_two,
         }
     );
     assert_eq!(
