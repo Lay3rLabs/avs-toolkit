@@ -28,7 +28,7 @@ pub async fn deploy(
     });
 
     // Check if wasm_source is a URL or a local file path
-    if wasm_source.starts_with("http://") || wasm_source.starts_with("https://") {
+    let json_body = if wasm_source.starts_with("http://") || wasm_source.starts_with("https://") {
         // wasm_source is a URL, include wasmUrl in the body
         let mut json_body = body.clone();
 
@@ -39,19 +39,7 @@ pub async fn deploy(
         json_body["digest"] = json!(digest.unwrap());
         json_body["wasmUrl"] = json!(wasm_source);
 
-        // Send the request with wasmUrl in JSON
-        let response = client
-            .post(format!("{}/app", address))
-            .json(&json_body)
-            .header("Content-Type", "application/json")
-            .send()
-            .await?;
-
-        if response.status().is_success() {
-            println!("Deployment successful!");
-        } else {
-            bail!("Error: {:?}", response.text().await?);
-        }
+        json_body
     } else {
         let mut json_body = body.clone();
 
@@ -73,19 +61,21 @@ pub async fn deploy(
             bail!("Error: {:?}", response.text().await?);
         }
 
-        // Send the request with the binary file and JSON body
-        let response = client
-            .post(format!("{}/app", address))
-            .header("Content-Type", "application/json") // Content-Type remains application/json
-            .json(&json_body) // JSON body goes here
-            .send()
-            .await?;
+        json_body
+    };
 
-        if response.status().is_success() {
-            println!("Deployment successful!");
-        } else {
-            bail!("Error: {:?}", response.text().await?);
-        }
+    // Send the request with wasmUrl in JSON
+    let response = client
+        .post(format!("{}/app", address))
+        .json(&json_body)
+        .header("Content-Type", "application/json")
+        .send()
+        .await?;
+
+    if response.status().is_success() {
+        println!("Deployment successful!");
+    } else {
+        bail!("Error: {:?}", response.text().await?);
     }
 
     Ok(())
