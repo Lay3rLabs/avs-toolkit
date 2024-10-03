@@ -31,16 +31,14 @@ In this directory:
 Local
 
 ```bash
-cargo run -- deploy contracts --operators wasmatic
+cargo run -- --target=local deploy contracts --operators wasmatic
 ```
 
 Testnet
 
 ```bash
-cargo run -- --target-env=testnet deploy contracts --operators wasmatic
+cargo run -- --target=testnet deploy contracts --operators wasmatic
 ```
-
-If you want to see an output at the end with the different contract's addresses, make sure to run with --
 
 Store the task queue for future use, based on the output:
 
@@ -61,3 +59,5 @@ cargo run -- task-queue add-task --body '{"x": 9}' --description 'Square nine'
 
 cargo run -- task-queue view-queue
 ```
+
+If you want to see an output at the end with the different contract's addresses, make sure to run with `--address=<ADDRESS>`

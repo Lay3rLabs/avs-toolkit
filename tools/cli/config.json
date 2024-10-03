@@ -9,11 +9,11 @@
             "address_kind": {"cosmos":{"prefix":"layer"}}
         },
         "testnet": {
-            "chain_id": "slay3r-dev",
-            "rpc_endpoint": "https://lcd.dev-cav3.net",
-            "grpc_endpoint": "https://grpc.dev-cav3.net:443",
+            "chain_id": "layer-permissionless-3",
+            "rpc_endpoint": "https://rpc.layer-p.net",
+            "grpc_endpoint": "https://grpc.layer-p.net:443",
             "gas_amount": "0.025",
-            "gas_denom": "uslay",
+            "gas_denom": "uperm",
             "address_kind": {"cosmos":{"prefix":"layer"}}
         }
     },
@@ -21,6 +21,7 @@
         "mnemonic": "economy stock theory fatal elder harbor betray wasp final emotion task crumble siren bottom lizard educate guess current outdoor pair theory focus wife stone"
     },
     "wasmatic": {
-        "endpoint": "http://localhost:8081"
+        "endpoint": "http://localhost:8081",
+        "//endpoint": "https://op1.layer-p.net"
     }
-  }
+}

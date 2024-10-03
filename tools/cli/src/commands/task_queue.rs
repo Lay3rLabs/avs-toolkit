@@ -27,7 +27,7 @@ impl TaskQueue {
     pub async fn new(ctx: AppContext, task_queue_args: &TaskQueueArgs) -> Result<Self> {
         let addr_string = match task_queue_args.address.clone() {
             Some(x) => x,
-            None => match ctx.args.env {
+            None => match ctx.args.target {
                 TargetEnvironment::Local => std::env::var("LOCAL_TASK_QUEUE_ADDRESS")
                     .context("LOCAL_TASK_QUEUE_ADDRESS not found")?,
                 TargetEnvironment::Testnet => std::env::var("TEST_TASK_QUEUE_ADDRESS")
