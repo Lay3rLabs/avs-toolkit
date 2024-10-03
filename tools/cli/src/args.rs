@@ -9,7 +9,7 @@ use std::str::FromStr;
 #[command(version, about, long_about = None)]
 pub struct CliArgs {
     #[arg(long, value_enum, default_value_t = TargetEnvironment::Local)]
-    pub target_env: TargetEnvironment,
+    pub env: TargetEnvironment,
 
     /// Set the logging level
     #[arg(long, value_enum, default_value_t = LogLevel::Info)]
@@ -50,6 +50,9 @@ pub enum Command {
     Wallet(WalletArgs),
     /// Generic utility contract subcommands
     Contract(ContractArgs),
+
+    /// Commands for working with wasmatic
+    Wasmatic(WasmaticArgs),
 }
 
 #[derive(Clone, Args)]
@@ -176,6 +179,79 @@ pub enum FaucetCommand {
 
 impl FaucetCommand {
     pub const DEFAULT_TAP_AMOUNT: u128 = 1_000_000;
+}
+
+#[derive(Clone, Args)]
+pub struct WasmaticArgs {
+    #[clap(long, default_value = "http://0.0.0.0:8081")]
+    pub address: String,
+
+    #[command(subcommand)]
+    pub command: WasmaticCommand,
+}
+
+#[derive(Clone, Subcommand)]
+pub enum WasmaticCommand {
+    /// Deploy a Wasm application
+    Deploy {
+        /// Name of the application
+        #[clap(short, long)]
+        name: String,
+
+        /// Digest of the wasm file (sha256)
+        #[clap(short, long)]
+        digest: Option<String>,
+
+        /// Path to the Wasm file or a URL to the Wasm file
+        #[clap(short, long)]
+        wasm_source: String, // This can be a local path or a URL
+
+        /// Cron schedule for the trigger (either this or task_trigger must be set)
+        #[clap(long("cron"))]
+        cron_trigger: Option<String>,
+
+        /// Task queue to trigger the action
+        #[clap(long("task"))]
+        task_trigger: Option<String>,
+
+        /// HD Index if using task trigger
+        #[clap(long, default_value = "0")]
+        hd_index: u32,
+
+        /// Poll Interval if using task trigger
+        #[clap(long, default_value = "3")]
+        poll_interval: u32,
+
+        /// Permissions, defaults to an empty array
+        #[clap(short, long, default_value = "{}")]
+        permissions: String,
+
+        /// Environment variables, multiple can be provided in KEY=VALUE format
+        #[clap(long)]
+        envs: Vec<String>,
+
+        /// Set to true to test the application (not for production)
+        #[clap(long, default_value = "f")]
+        testable: bool,
+    },
+
+    /// Remove a Wasm application
+    Remove {
+        /// The name of the application to remove
+        #[clap(short, long)]
+        name: String,
+    },
+
+    /// Test a Wasm application
+    Test {
+        /// The name of the application to test
+        #[clap(short, long)]
+        name: String,
+
+        /// Optional input for the test
+        #[clap(short, long)]
+        input: String,
+    },
 }
 
 #[derive(Copy, Clone, Debug, clap::ValueEnum)]

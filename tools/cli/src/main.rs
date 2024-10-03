@@ -4,12 +4,13 @@ mod config;
 mod context;
 
 use anyhow::Result;
-use args::{CliArgs, Command, DeployCommand, FaucetCommand, TaskQueueCommand};
+use args::{CliArgs, Command, DeployCommand, FaucetCommand, TaskQueueCommand, WasmaticCommand};
 use clap::Parser;
 use commands::{
     deploy::{deploy_contracts, DeployContractArgs},
     faucet::tap_faucet,
     task_queue::TaskQueue,
+    wasmatic::{deploy, remove, test, Trigger},
 };
 use context::AppContext;
 use layer_climb::prelude::*;
@@ -156,6 +157,49 @@ async fn main() -> Result<()> {
                 })
                 .await?;
         }
+        Command::Wasmatic(wasmatic_args) => match wasmatic_args.command {
+            WasmaticCommand::Deploy {
+                name,
+                digest,
+                wasm_source,
+                cron_trigger,
+                task_trigger,
+                hd_index,
+                poll_interval,
+                permissions,
+                envs,
+                testable,
+            } => {
+                let trigger = match (cron_trigger, task_trigger) {
+                    (Some(cron), None) => Trigger::Cron { schedule: cron },
+                    (None, Some(task)) => Trigger::Queue {
+                        task_queue_addr: task,
+                        hd_index,
+                        poll_interval,
+                    },
+                    _ => {
+                        panic!("Error: You need to provide either cron_trigger or task_trigger")
+                    }
+                };
+                deploy(
+                    wasmatic_args.address,
+                    name,
+                    digest,
+                    wasm_source,
+                    trigger,
+                    permissions,
+                    envs,
+                    testable,
+                )
+                .await?;
+            }
+            WasmaticCommand::Remove { name } => {
+                remove(wasmatic_args.address, name).await?;
+            }
+            WasmaticCommand::Test { name, input } => {
+                test(wasmatic_args.address, name, input).await?;
+            }
+        },
     }
 
     Ok(())
