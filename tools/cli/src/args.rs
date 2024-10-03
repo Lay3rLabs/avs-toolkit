@@ -1,6 +1,7 @@
 use anyhow::{anyhow, Result};
 use clap::Parser;
 use clap::{Args, Subcommand};
+use lavs_apis::id::TaskId;
 use layer_climb_cli::command::{ContractCommand, WalletCommand};
 use std::path::PathBuf;
 use std::str::FromStr;
@@ -150,7 +151,12 @@ pub enum TaskQueueCommand {
     },
 
     /// View the task queue
-    ViewQueue,
+    ViewQueue {
+        #[clap(short, long)]
+        start_after: Option<TaskId>,
+        #[clap(short, long)]
+        limit: Option<u32>,
+    },
 }
 
 #[derive(Clone, Args)]

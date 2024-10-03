@@ -75,8 +75,11 @@ async fn main() -> Result<()> {
                 } => {
                     let _ = task_queue.add_task(body, description, timeout).await?;
                 }
-                TaskQueueCommand::ViewQueue => {
-                    let res = task_queue.querier.task_queue_view().await?;
+                TaskQueueCommand::ViewQueue { start_after, limit } => {
+                    let res = task_queue
+                        .querier
+                        .task_queue_view(start_after, limit)
+                        .await?;
                     tracing::info!("Task Queue Configuration");
                     tracing::info!("Address: {}", task_queue.contract_addr);
                     res.report(|line| {

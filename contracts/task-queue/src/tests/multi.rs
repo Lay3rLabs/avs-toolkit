@@ -41,6 +41,12 @@ fn task_status() {
     super::common::task_status_works(chain);
 }
 
+#[test]
+fn task_pagination() {
+    let chain = MockBech32::new(BECH_PREFIX);
+    super::common::task_pagination_works(chain);
+}
+
 /// This is the simplest, most explicit test to bootstrap, before importing from common
 #[test]
 fn sanity_check() {

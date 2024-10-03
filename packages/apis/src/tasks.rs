@@ -107,12 +107,14 @@ pub enum CustomQueryMsg {
     /// Ordered by expiration time ascending
     #[returns(ListOpenResponse)]
     ListOpen {
-        // TODO: pagination
+        start_after: Option<TaskId>,
+        limit: Option<u32>,
     },
     /// Ordered by completion time descending (last completed first)
     #[returns(ListCompletedResponse)]
     ListCompleted {
-        // TODO: pagination
+        start_after: Option<TaskId>,
+        limit: Option<u32>,
     },
     /// Get specific task details
     #[returns(TaskResponse)]
@@ -207,6 +209,14 @@ impl Status {
     pub fn completed(env: &Env) -> Self {
         Status::Completed {
             completed: env.block.time.seconds(),
+        }
+    }
+
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Status::Open {} => "open",
+            Status::Completed { .. } => "completed",
+            Status::Expired {} => "expired",
         }
     }
 }

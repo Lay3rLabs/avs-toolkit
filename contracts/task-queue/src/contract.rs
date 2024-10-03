@@ -64,10 +64,12 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<Binary, ContractErro
         },
         QueryMsg::Custom(custom) => match custom {
             CustomQueryMsg::Task { id } => Ok(to_json_binary(&query::task(deps, env, id)?)?),
-            CustomQueryMsg::ListOpen {} => Ok(to_json_binary(&query::list_open(deps, env)?)?),
-            CustomQueryMsg::ListCompleted {} => {
-                Ok(to_json_binary(&query::list_completed(deps, env)?)?)
-            }
+            CustomQueryMsg::ListOpen { start_after, limit } => Ok(to_json_binary(
+                &query::list_open(deps, env, start_after, limit)?,
+            )?),
+            CustomQueryMsg::ListCompleted { start_after, limit } => Ok(to_json_binary(
+                &query::list_completed(deps, env, start_after, limit)?,
+            )?),
             CustomQueryMsg::Config {} => Ok(to_json_binary(&query::config(deps, env)?)?),
         },
     }
@@ -159,6 +161,7 @@ mod execute {
 }
 
 mod query {
+    use cw_storage_plus::Bound;
     use lavs_apis::{id::TaskId, tasks::ConfigResponse};
 
     use crate::msg::{
@@ -210,10 +213,25 @@ mod query {
         Ok(r)
     }
 
-    pub fn list_open(deps: Deps, env: Env) -> Result<ListOpenResponse, ContractError> {
-        // TODO: proper implementation here, this is just for minimal test code
-        let mut open = TASKS
-            .range(deps.storage, None, None, cosmwasm_std::Order::Ascending)
+    // TODO: There should probably be a max page limit, but it's left unbound to keep the API simple for now
+    pub fn list_open(
+        deps: Deps,
+        env: Env,
+        start_after: Option<TaskId>,
+        limit: Option<u32>,
+    ) -> Result<ListOpenResponse, ContractError> {
+        let limit = limit.map(|v| v as usize).unwrap_or(usize::MAX);
+
+        let open = TASKS
+            .idx
+            .status
+            .prefix(Status::Open {}.as_str())
+            .range(
+                deps.storage,
+                None,
+                start_after.map(Bound::exclusive),
+                cosmwasm_std::Order::Descending,
+            )
             .filter_map(|r| match r {
                 Ok((
                     id,
@@ -231,15 +249,30 @@ mod query {
                 Ok(_) => None,
                 Err(e) => Some(Err(e)),
             })
+            .take(limit)
             .collect::<Result<Vec<_>, _>>()?;
 
-        open.sort_by_key(|t| t.expires);
         Ok(ListOpenResponse { tasks: open })
     }
 
-    pub fn list_completed(deps: Deps, _env: Env) -> Result<ListCompletedResponse, ContractError> {
-        let mut completed = TASKS
-            .range(deps.storage, None, None, cosmwasm_std::Order::Ascending)
+    pub fn list_completed(
+        deps: Deps,
+        _env: Env,
+        start_after: Option<TaskId>,
+        limit: Option<u32>,
+    ) -> Result<ListCompletedResponse, ContractError> {
+        let limit = limit.map(|v| v as usize).unwrap_or(usize::MAX);
+
+        let completed = TASKS
+            .idx
+            .status
+            .prefix(Status::Completed { completed: 0 }.as_str())
+            .range(
+                deps.storage,
+                None,
+                start_after.map(Bound::exclusive),
+                cosmwasm_std::Order::Descending,
+            )
             .filter_map(|r| match r {
                 Ok((
                     id,
@@ -259,10 +292,9 @@ mod query {
                 Ok(_) => None,
                 Err(e) => Some(Err(e.into())),
             })
+            .take(limit)
             .collect::<Result<Vec<_>, _>>()?;
 
-        completed.sort_by_key(|t| t.completed);
-        completed.reverse();
         Ok(ListCompletedResponse { tasks: completed })
     }
 }
