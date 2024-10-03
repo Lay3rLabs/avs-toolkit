@@ -48,12 +48,11 @@ impl TimeoutInfo {
 }
 
 #[cw_serde]
+#[serde(untagged)]
 pub enum ExecuteMsg {
     /// Complete and any other public APIs in the interface
-    #[serde(untagged)]
     Api(TaskExecuteMsg),
     /// The messages unique to this contract implementation
-    #[serde(untagged)]
     Custom(CustomExecuteMsg),
 }
 
@@ -92,12 +91,11 @@ impl From<TaskExecuteMsg> for ExecuteMsg {
 #[cw_serde]
 #[derive(QueryResponses)]
 #[query_responses(nested)]
+#[serde(untagged)]
 pub enum QueryMsg {
     /// Complete and any other public APIs in the interface
-    #[serde(untagged)]
     Api(TaskQueryMsg),
     /// The messages unique to this implementation
-    #[serde(untagged)]
     Custom(CustomQueryMsg),
 }
 

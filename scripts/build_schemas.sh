@@ -2,6 +2,9 @@
 set -o errexit -o nounset -o pipefail
 command -v shellcheck >/dev/null && shellcheck "$0"
 
+# Enable recursive globbing
+shopt -s globstar
+
 rm -rf ./schemas
 mkdir -p ./schemas
 
