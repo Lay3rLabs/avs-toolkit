@@ -18,6 +18,7 @@ pub enum Trigger {
     },
 }
 
+#[allow(clippy::too_many_arguments)]
 pub async fn deploy(
     address: String,
     name: String,
