@@ -1,12 +1,13 @@
 use anyhow::{bail, Result};
 use reqwest::Client;
 use serde_json::json;
+use sha2::{Digest, Sha256};
 use tokio::fs;
 
 pub async fn deploy(
     address: String,
     name: String,
-    digest: String,
+    digest: Option<String>,
     wasm_source: String,
     trigger: String,
     permissions_json: String,
@@ -17,7 +18,6 @@ pub async fn deploy(
     // Prepare the JSON body
     let body = json!({
         "name": name,
-        "digest": digest,
         "trigger": {
             "cron": {
                 "schedule": trigger
@@ -31,6 +31,12 @@ pub async fn deploy(
     if wasm_source.starts_with("http://") || wasm_source.starts_with("https://") {
         // wasm_source is a URL, include wasmUrl in the body
         let mut json_body = body.clone();
+
+        if digest.is_none() {
+            bail!("Error: You need to provide sha256 sum digest if wasm source is an url")
+        }
+
+        json_body["digest"] = json!(digest.unwrap());
         json_body["wasmUrl"] = json!(wasm_source);
 
         // Send the request with wasmUrl in JSON
@@ -47,8 +53,17 @@ pub async fn deploy(
             bail!("Error: {:?}", response.text().await?);
         }
     } else {
+        let mut json_body = body.clone();
+
         // wasm_source is a local file, read the binary
         let wasm_binary = fs::read(wasm_source).await?;
+
+        // calculate sha256sum
+        let mut hasher = Sha256::new();
+        hasher.update(&wasm_binary);
+        let result = hasher.finalize();
+        json_body["digest"] = json!(format!("sha256:{:x}", result));
+
         let response = client
             .post(format!("{}/upload", address))
             .body(wasm_binary) // Binary data goes here
@@ -62,7 +77,7 @@ pub async fn deploy(
         let response = client
             .post(format!("{}/app", address))
             .header("Content-Type", "application/json") // Content-Type remains application/json
-            .json(&body) // JSON body goes here
+            .json(&json_body) // JSON body goes here
             .send()
             .await?;
 

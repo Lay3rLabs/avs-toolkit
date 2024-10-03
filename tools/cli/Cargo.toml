@@ -24,3 +24,4 @@ anyhow = { workspace = true }
 deadpool = {workspace = true}
 rand = {workspace = true}
 reqwest = { workspace = true }
+sha2 = { workspace = true }

@@ -200,7 +200,7 @@ pub enum WasmaticCommand {
 
         /// Digest of the wasm file (sha256)
         #[clap(short, long)]
-        digest: String,
+        digest: Option<String>,
 
         /// Path to the Wasm file or a URL to the Wasm file
         #[clap(short, long)]
