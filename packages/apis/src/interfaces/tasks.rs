@@ -3,9 +3,6 @@
 /// This must be a subset of any of the implementation.
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, StdResult, Storage};
-// FIXME: do we need to derive cw_orch? This is not used by the contracts calling,
-// And the external callers likely use the full APIs.
-// TODO: try embedding these (enum with serde(untagged)) in the main types of the implementing contracts
 use cw_orch::{ExecuteFns, QueryFns};
 use cw_storage_plus::Map;
 
