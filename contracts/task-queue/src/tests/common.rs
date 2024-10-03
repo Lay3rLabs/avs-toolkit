@@ -401,14 +401,6 @@ where
             // Check that each page has the correct number of tasks
             assert!(tasks.len() <= limit as usize, "Page size exceeds limit");
 
-            // Check that tasks are in the correct order (by expiration time)
-            for window in tasks.windows(2) {
-                assert!(
-                    window[0].expires <= window[1].expires,
-                    "Tasks are not properly ordered"
-                );
-            }
-
             // Check that there's no overlap with previously retrieved tasks
             for task in &tasks {
                 assert!(
@@ -418,12 +410,15 @@ where
                 );
             }
 
-            // If it's not the first page, check that the first task of this page
-            // comes after the last task of the previous page
+            // If it's not the first page, check that the first task of this page has an older task id.
+            // Newest tasks are retrieved first.
             if let Some(last_task_id) = start_after {
-                assert!(tasks[0].id > last_task_id,
-                    "First task of new page ({:?}) should come after last task of previous page ({:?})",
-                    tasks[0].id, last_task_id);
+                assert!(
+                    tasks[0].id < last_task_id,
+                    "First task of new page ({:?}) should have older task id ({:?})",
+                    tasks[0].id,
+                    last_task_id
+                );
             }
 
             all_retrieved_tasks.extend(tasks.iter().map(|t| t.id));

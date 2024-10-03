@@ -222,15 +222,15 @@ mod query {
     ) -> Result<ListOpenResponse, ContractError> {
         let limit = limit.map(|v| v as usize).unwrap_or(usize::MAX);
 
-        let mut open = TASKS
+        let open = TASKS
             .idx
             .status
             .prefix(Status::Open {}.as_str())
             .range(
                 deps.storage,
-                start_after.map(Bound::exclusive),
                 None,
-                cosmwasm_std::Order::Ascending,
+                start_after.map(Bound::exclusive),
+                cosmwasm_std::Order::Descending,
             )
             .filter_map(|r| match r {
                 Ok((
@@ -252,7 +252,6 @@ mod query {
             .take(limit)
             .collect::<Result<Vec<_>, _>>()?;
 
-        open.sort_by_key(|t| t.expires);
         Ok(ListOpenResponse { tasks: open })
     }
 
@@ -264,15 +263,15 @@ mod query {
     ) -> Result<ListCompletedResponse, ContractError> {
         let limit = limit.map(|v| v as usize).unwrap_or(usize::MAX);
 
-        let mut completed = TASKS
+        let completed = TASKS
             .idx
             .status
             .prefix(Status::Completed { completed: 0 }.as_str())
             .range(
                 deps.storage,
-                start_after.map(Bound::exclusive),
                 None,
-                cosmwasm_std::Order::Ascending,
+                start_after.map(Bound::exclusive),
+                cosmwasm_std::Order::Descending,
             )
             .filter_map(|r| match r {
                 Ok((
@@ -296,8 +295,6 @@ mod query {
             .take(limit)
             .collect::<Result<Vec<_>, _>>()?;
 
-        completed.sort_by_key(|t| t.completed);
-        completed.reverse();
         Ok(ListCompletedResponse { tasks: completed })
     }
 }
