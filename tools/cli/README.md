@@ -11,8 +11,8 @@ After that, use `avs-toolkit-cli` wherever you see `cargo run --`.
 
 1. add a `.env` file
 2. give it a `LOCAL_MNEMONIC` for local deployments, `TEST_MNEMONIC` for testnet
-3. don't have a mnemonic? run `cargo run wallet create` 
-4. don't have funds? run `cargo run faucet tap` 
+3. don't have a mnemonic? run `cargo run wallet create`
+4. don't have funds? run `cargo run faucet tap`
 
 ### Deploying Contracts
 

@@ -1,26 +1,48 @@
 use anyhow::{bail, Result};
 use reqwest::Client;
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 use sha2::{Digest, Sha256};
 use tokio::fs;
+
+#[derive(Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub enum Trigger {
+    #[serde(rename_all = "camelCase")]
+    Cron { schedule: String },
+    #[serde(rename_all = "camelCase")]
+    Queue {
+        task_queue_addr: String,
+        hd_index: u32,
+        poll_interval: u32,
+    },
+}
 
 pub async fn deploy(
     address: String,
     name: String,
     digest: Option<String>,
     wasm_source: String,
-    trigger: String,
+    trigger: Trigger,
     permissions_json: String,
-    envs_json: String,
+    env_pairs: Vec<String>,
 ) -> Result<()> {
     let client = Client::new();
+
+    let envs = env_pairs
+        .iter()
+        .map(|env| {
+            let (k, v) = env.split_once('=').unwrap();
+            vec![k.to_string(), v.to_string()]
+        })
+        .collect::<Vec<Vec<String>>>();
 
     // Prepare the JSON body
     let body = json!({
         "name": name,
         "trigger": trigger,
         "permissions": serde_json::from_str::<serde_json::Value>(&permissions_json).unwrap(),
-        "envs": serde_json::from_str::<Vec<Vec<String>>>(&envs_json).unwrap(),
+        "envs": envs,
     });
 
     // Check if wasm_source is a URL or a local file path

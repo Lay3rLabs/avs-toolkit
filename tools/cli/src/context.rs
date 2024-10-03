@@ -30,19 +30,19 @@ impl AppContext {
     }
 
     pub fn chain_config(&self) -> Result<&ChainConfig> {
-        match self.args.target_env {
+        match self.args.env {
             TargetEnvironment::Local => &self.config.chains.local,
             TargetEnvironment::Testnet => &self.config.chains.testnet,
         }
         .as_ref()
         .context(format!(
             "Chain config for environment {:?} not found",
-            self.args.target_env
+            self.args.env
         ))
     }
 
     pub fn client_mnemonic(&self) -> Result<String> {
-        let mnemonic_var = match self.args.target_env {
+        let mnemonic_var = match self.args.env {
             TargetEnvironment::Local => "LOCAL_MNEMONIC",
             TargetEnvironment::Testnet => "TEST_MNEMONIC",
         };

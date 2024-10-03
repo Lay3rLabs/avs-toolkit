@@ -9,7 +9,7 @@ use std::str::FromStr;
 #[command(version, about, long_about = None)]
 pub struct CliArgs {
     #[arg(long, value_enum, default_value_t = TargetEnvironment::Local)]
-    pub target_env: TargetEnvironment,
+    pub env: TargetEnvironment,
 
     /// Set the logging level
     #[arg(long, value_enum, default_value_t = LogLevel::Info)]
@@ -206,9 +206,21 @@ pub enum WasmaticCommand {
         #[clap(short, long)]
         wasm_source: String, // This can be a local path or a URL
 
-        /// Cron schedule or task queue for the trigger
-        #[clap(short, long)]
-        trigger: String,
+        /// Cron schedule for the trigger (either this or task_trigger must be set)
+        #[clap(long("cron"))]
+        cron_trigger: Option<String>,
+
+        /// Task queue to trigger the action
+        #[clap(long("task"))]
+        task_trigger: Option<String>,
+
+        /// HD Index if using task trigger
+        #[clap(long, default_value = "0")]
+        hd_index: u32,
+
+        /// Poll Interval if using task trigger
+        #[clap(long, default_value = "3")]
+        poll_interval: u32,
 
         /// Permissions, defaults to an empty array
         #[clap(short, long, default_value = "{}")]
@@ -216,7 +228,7 @@ pub enum WasmaticCommand {
 
         /// Environment variables, multiple can be provided in KEY=VALUE format
         #[clap(long)]
-        envs: String,
+        envs: Vec<String>,
     },
 
     /// Remove a Wasm application
