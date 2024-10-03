@@ -6,7 +6,17 @@
             "grpc_endpoint": "http://localhost:9090",
             "gas_amount": "0.025",
             "gas_denom": "uslay",
-            "address_kind": {"cosmos":{"prefix":"layer"}}
+            "address_kind": {
+                "cosmos": {
+                    "prefix": "layer"
+                }
+            },
+            "faucet": {
+                "mnemonic": "economy stock theory fatal elder harbor betray wasp final emotion task crumble siren bottom lizard educate guess current outdoor pair theory focus wife stone"
+            },
+            "wasmatic": {
+                "endpoint": "http://localhost:8081"
+            }
         },
         "testnet": {
             "chain_id": "layer-permissionless-3",
@@ -14,14 +24,17 @@
             "grpc_endpoint": "https://grpc.layer-p.net:443",
             "gas_amount": "0.025",
             "gas_denom": "uperm",
-            "address_kind": {"cosmos":{"prefix":"layer"}}
+            "address_kind": {
+                "cosmos": {
+                    "prefix": "layer"
+                }
+            },
+            "faucet": {
+                "mnemonic": "economy stock theory fatal elder harbor betray wasp final emotion task crumble siren bottom lizard educate guess current outdoor pair theory focus wife stone"
+            },
+            "wasmatic": {
+                "endpoint": "http://op.layer-p.net"
+            }
         }
-    },
-    "faucet": {
-        "mnemonic": "economy stock theory fatal elder harbor betray wasp final emotion task crumble siren bottom lizard educate guess current outdoor pair theory focus wife stone"
-    },
-    "wasmatic": {
-        "endpoint": "http://localhost:8081",
-        "//endpoint": "https://op1.layer-p.net"
     }
 }

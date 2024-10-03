@@ -76,7 +76,7 @@ impl AppContext {
     }
 
     pub async fn faucet_client(&self) -> Result<SigningClient> {
-        let signer = KeySigner::new_mnemonic_str(&self.config.faucet.mnemonic, None)?;
+        let signer = KeySigner::new_mnemonic_str(&self.chain_config()?.faucet.mnemonic, None)?;
         SigningClient::new(self.chain_config()?.clone(), signer).await
     }
 
@@ -86,7 +86,7 @@ impl AppContext {
             self.chain_config()?.clone(),
             // avoid accidentally trying to send funds to ourselves
             match self.args.concurrent_minimum_balance_from_faucet
-                && self.client_mnemonic()? == self.config.faucet.mnemonic
+                && self.client_mnemonic()? == self.chain_config()?.faucet.mnemonic
             {
                 true => Some(1),
                 false => None,

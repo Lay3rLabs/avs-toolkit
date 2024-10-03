@@ -1,4 +1,4 @@
-use crate::{args::DeployTaskRequestor, context::AppContext};
+use crate::{args::DeployTaskRequestor, config::load_wasmatic_address, context::AppContext};
 use anyhow::{anyhow, bail, Result};
 use lavs_task_queue::msg::{Requestor, TimeoutInfo};
 use layer_climb::prelude::*;
@@ -27,23 +27,26 @@ impl DeployContractArgs {
             bail!("At least one operator must be specified");
         }
 
-        let operators = operators
-            .into_iter()
-            .map(|s| {
-                let mut parts = s.split(':');
-                let addr = parts.next().unwrap().to_string();
-                let addr = match addr.as_str() {
-                    "wasmatic" => ctx.config.wasmatic.address.clone(),
-                    _ => ctx.chain_config()?.parse_address(&addr)?,
-                };
+        let mut instantiate_operators = vec![];
+        for s in operators.into_iter() {
+            let mut parts = s.split(':');
+            let addr_str = parts.next().unwrap().to_string();
+            let addr = match addr_str.as_str() {
+                "wasmatic" => {
+                    let chain_config = ctx.chain_config()?;
+                    let wasmatic_address =
+                        load_wasmatic_address(&chain_config.wasmatic.endpoint).await?;
+                    Address::try_from_value(&wasmatic_address, &chain_config.address_kind)?
+                }
+                _ => ctx.chain_config()?.parse_address(&addr_str)?,
+            };
 
-                let voting_power = parts.next().unwrap_or("1").parse().unwrap();
-                anyhow::Ok(lavs_mock_operators::msg::InstantiateOperator::new(
-                    addr.to_string(),
-                    voting_power,
-                ))
-            })
-            .collect::<Result<Vec<_>>>()?;
+            let voting_power = parts.next().unwrap_or("1").parse()?;
+            instantiate_operators.push(lavs_mock_operators::msg::InstantiateOperator::new(
+                addr.to_string(),
+                voting_power,
+            ));
+        }
 
         let requestor = match requestor {
             DeployTaskRequestor::Deployer => {
@@ -64,7 +67,7 @@ impl DeployContractArgs {
 
         Ok(Self {
             artifacts_path,
-            operators,
+            operators: instantiate_operators,
             requestor,
             task_timeout,
             required_voting_percentage,
