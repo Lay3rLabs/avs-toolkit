@@ -229,6 +229,10 @@ pub enum WasmaticCommand {
         /// Environment variables, multiple can be provided in KEY=VALUE format
         #[clap(long)]
         envs: Vec<String>,
+
+        /// Set to true to test the application (not for production)
+        #[clap(long, default_value = "f")]
+        testable: bool,
     },
 
     /// Remove a Wasm application
@@ -246,7 +250,7 @@ pub enum WasmaticCommand {
 
         /// Optional input for the test
         #[clap(short, long)]
-        input: serde_json::Value,
+        input: String,
     },
 }
 

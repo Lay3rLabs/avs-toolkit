@@ -168,6 +168,7 @@ async fn main() -> Result<()> {
                 poll_interval,
                 permissions,
                 envs,
+                testable,
             } => {
                 let trigger = match (cron_trigger, task_trigger) {
                     (Some(cron), None) => Trigger::Cron { schedule: cron },
@@ -188,6 +189,7 @@ async fn main() -> Result<()> {
                     trigger,
                     permissions,
                     envs,
+                    testable,
                 )
                 .await?;
             }

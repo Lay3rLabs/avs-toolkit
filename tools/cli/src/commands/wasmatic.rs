@@ -1,7 +1,7 @@
 use anyhow::{bail, Result};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
-use serde_json::json;
+use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 use tokio::fs;
 
@@ -26,6 +26,7 @@ pub async fn deploy(
     trigger: Trigger,
     permissions_json: String,
     env_pairs: Vec<String>,
+    testable: bool,
 ) -> Result<()> {
     let client = Client::new();
 
@@ -43,6 +44,7 @@ pub async fn deploy(
         "trigger": trigger,
         "permissions": serde_json::from_str::<serde_json::Value>(&permissions_json).unwrap(),
         "envs": envs,
+        "testable": testable,
     });
 
     // Check if wasm_source is a URL or a local file path
@@ -123,12 +125,18 @@ pub async fn remove(address: String, app_name: String) -> Result<()> {
     Ok(())
 }
 
-pub async fn test(
-    address: String,
-    app_name: String,
-    input: serde_json::Value, // This allows for any valid JSON input
-) -> Result<()> {
+/// This is the return value for error (message) or success (output) cases, if needed later
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct TestOutput {
+    pub message: Option<String>,
+    pub output: Option<Value>,
+}
+
+pub async fn test(address: String, app_name: String, input: String) -> Result<()> {
     let client = Client::new();
+
+    // Parse input into json
+    let input: Value = serde_json::from_str(&input)?;
 
     // Prepare the JSON body
     let body = json!({
@@ -148,9 +156,11 @@ pub async fn test(
     if response.status().is_success() {
         println!("Test executed successfully!");
         let response_text = response.text().await?;
-        println!("Response: {}", response_text);
+        println!("Output: {}", response_text);
     } else {
-        bail!("Error: {:?}", response.text().await?);
+        // let json: TestOutput = response.json().await?;
+        let json = response.text().await?;
+        bail!("{}", json);
     }
 
     Ok(())
