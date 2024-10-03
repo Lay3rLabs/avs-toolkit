@@ -31,6 +31,10 @@ mjs
 main
 module
 node_modules
+codegen.config.js
+package-lock.json
+package.json
+ts/
 
 # Optional npm cache directory
 .npm
