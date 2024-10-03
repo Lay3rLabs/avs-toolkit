@@ -9,8 +9,8 @@ use std::str::FromStr;
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
 pub struct CliArgs {
-    #[arg(long, value_enum, default_value_t = TargetEnvironment::Local)]
-    pub env: TargetEnvironment,
+    #[arg(long, value_enum, default_value_t = TargetEnvironment::Testnet)]
+    pub target: TargetEnvironment,
 
     /// Set the logging level
     #[arg(long, value_enum, default_value_t = LogLevel::Info)]
