@@ -84,7 +84,7 @@ async fn load_wasmatic_address(endpoint: &str) -> Result<String> {
         .send()
         .await?;
     let info: GetInfo = response.json().await?;
-    let op = info.operators.get(0).context("No operators found")?;
+    let op = info.operators.first().context("No operators found")?;
 
     Ok(op.to_string())
 }
