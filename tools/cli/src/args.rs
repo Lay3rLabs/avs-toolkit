@@ -1,7 +1,10 @@
+use anyhow::{anyhow, Result};
 use clap::Parser;
 use clap::{Args, Subcommand};
 use lavs_apis::id::TaskId;
+use layer_climb_cli::command::{ContractCommand, WalletCommand};
 use std::path::PathBuf;
+use std::str::FromStr;
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -38,15 +41,83 @@ pub struct CliArgs {
 
 #[derive(Clone, Subcommand)]
 pub enum Command {
-    /// Deploys the contracts
-    DeployContracts {
-        // set the default
+    /// Deploy subcommands
+    Deploy(DeployArgs),
+    /// Task queue subcommands
+    TaskQueue(TaskQueueArgs),
+    /// Faucet subcommands
+    Faucet(FaucetArgs),
+    /// Wallet subcommands
+    Wallet(WalletArgs),
+    /// Generic utility contract subcommands
+    Contract(ContractArgs),
+}
+
+#[derive(Clone, Args)]
+pub struct DeployArgs {
+    #[command(subcommand)]
+    pub command: DeployCommand,
+}
+
+#[derive(Clone, Subcommand)]
+pub enum DeployCommand {
+    /// Deploy all the contracts needed for the system to work
+    Contracts {
+        /// Artifacts path
         #[clap(short, long, default_value = "../../artifacts")]
         artifacts_path: PathBuf,
+        /// A list of operators.
+        ///
+        /// Voting power will be set with a ':' separator, otherwise it's `1`
+        ///
+        /// At least one operator must be set
+        ///
+        /// Tip: "wasmatic" is a special operator that will be set with the wasmatic address
+        #[clap(short, long, num_args(1..))]
+        operators: Vec<String>,
+        /// The default task timeout, in seconds
+        #[clap(short, long, default_value_t = 300)]
+        timeout: u64,
+        /// The required voting percentage for a task to be approved
+        #[clap(short, long, default_value_t = 70)]
+        percentage: u32,
+        /// The rules for allowed task requestors
+        ///
+        /// Examples:
+        ///
+        /// "payment(100)" - will require a payment of 100 gas tokens
+        ///
+        /// "payment(100, uslay)" - will require a payment of 100 uslay (same as above)
+        ///
+        /// "fixed(slayaddresshere)" - will require the caller be this specific address
+        ///
+        /// "deployer" - will require the caller be the same as the deployer
+        #[clap(short, long, default_value_t = DeployTaskRequestor::default())]
+        requestor: DeployTaskRequestor,
     },
+}
 
-    /// Commands for task queue
-    TaskQueue(TaskQueueArgs),
+#[derive(Clone, Debug, PartialEq, Default)]
+pub enum DeployTaskRequestor {
+    #[default]
+    Deployer,
+    Fixed(String),
+    Payment {
+        amount: u128,
+        denom: Option<String>,
+    },
+}
+
+#[derive(Clone, Args)]
+pub struct WalletArgs {
+    #[command(subcommand)]
+    pub command: WalletCommand,
+}
+
+#[derive(Clone, Args)]
+pub struct ContractArgs {
+    #[command(subcommand)]
+    pub command: ContractCommand,
 }
 
 #[derive(Clone, Args)]
@@ -85,6 +156,34 @@ pub enum TaskQueueCommand {
     },
 }
 
+#[derive(Clone, Args)]
+pub struct FaucetArgs {
+    #[command(subcommand)]
+    pub command: FaucetCommand,
+}
+
+#[derive(Clone, Subcommand)]
+pub enum FaucetCommand {
+    /// Tap the faucet to get some funds
+    Tap {
+        /// The address to send the funds to
+        /// if not set, will be the default client
+        #[arg(long)]
+        to: Option<String>,
+        /// The amount to send
+        /// if not set, will be `Self::DEFAULT_TAP_AMOUNT`
+        #[arg(long)]
+        amount: Option<u128>,
+        /// The denom of the funds to send, if not set will use the chain gas denom
+        #[arg(long)]
+        denom: Option<String>,
+    },
+}
+
+impl FaucetCommand {
+    pub const DEFAULT_TAP_AMOUNT: u128 = 1_000_000;
+}
+
 #[derive(Copy, Clone, Debug, clap::ValueEnum)]
 pub enum LogLevel {
     Trace,
@@ -110,4 +209,191 @@ impl From<LogLevel> for tracing::Level {
 pub enum TargetEnvironment {
     Local,
     Testnet,
+}
+
+/// Supporting impls needed for custom types
+impl FromStr for DeployTaskRequestor {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let s = s.trim();
+
+        if s == "deployer" {
+            Ok(DeployTaskRequestor::Deployer)
+        } else if s.starts_with("payment(") && s.ends_with(')') {
+            let inner = &s[8..s.len() - 1]; // Extract content inside parentheses
+            let parts: Vec<&str> = inner.split(',').map(|s| s.trim()).collect();
+
+            match parts.len() {
+                1 => {
+                    let amount = parts[0]
+                        .parse::<u128>()
+                        .map_err(|_| anyhow!("invalid amount"))?;
+                    Ok(DeployTaskRequestor::Payment {
+                        amount,
+                        denom: None,
+                    })
+                }
+                2 => {
+                    let amount = parts[0]
+                        .parse::<u128>()
+                        .map_err(|_| anyhow!("invalid amount"))?;
+                    let denom = Some(parts[1].to_string());
+                    Ok(DeployTaskRequestor::Payment { amount, denom })
+                }
+                _ => Err(anyhow!("invalid format")),
+            }
+        } else if s.starts_with("fixed(") && s.ends_with(')') {
+            let inner = &s[6..s.len() - 1]; // Extract content inside parentheses
+            Ok(DeployTaskRequestor::Fixed(inner.trim().to_string()))
+        } else {
+            Err(anyhow!("unknown variant"))
+        }
+    }
+}
+
+impl std::fmt::Display for DeployTaskRequestor {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            DeployTaskRequestor::Payment { amount, denom } => match denom {
+                Some(denom) => write!(f, "payment({}, {})", amount, denom),
+                None => write!(f, "payment({})", amount),
+            },
+            DeployTaskRequestor::Fixed(identifier) => {
+                write!(f, "fixed({})", identifier)
+            }
+            DeployTaskRequestor::Deployer => {
+                write!(f, "deployer")
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_deployer() {
+        let input = "deployer";
+        let result = DeployTaskRequestor::from_str(input).unwrap();
+        assert_eq!(result, DeployTaskRequestor::Deployer);
+    }
+
+    #[test]
+    fn test_parse_payment_amount_only() {
+        let input = "payment(200)";
+        let result = DeployTaskRequestor::from_str(input).unwrap();
+        assert_eq!(
+            result,
+            DeployTaskRequestor::Payment {
+                amount: 200,
+                denom: None,
+            }
+        );
+    }
+
+    #[test]
+    fn test_parse_payment_amount_and_denom() {
+        let input = "payment(300, USD)";
+        let result = DeployTaskRequestor::from_str(input).unwrap();
+        assert_eq!(
+            result,
+            DeployTaskRequestor::Payment {
+                amount: 300,
+                denom: Some("USD".to_string()),
+            }
+        );
+    }
+
+    #[test]
+    fn test_parse_payment_with_whitespace() {
+        let input = " payment( 400 ,  EUR ) ";
+        let result = DeployTaskRequestor::from_str(input).unwrap();
+        assert_eq!(
+            result,
+            DeployTaskRequestor::Payment {
+                amount: 400,
+                denom: Some("EUR".to_string()),
+            }
+        );
+    }
+
+    #[test]
+    fn test_parse_fixed() {
+        let input = "fixed(my_identifier)";
+        let result = DeployTaskRequestor::from_str(input).unwrap();
+        assert_eq!(
+            result,
+            DeployTaskRequestor::Fixed("my_identifier".to_string())
+        );
+    }
+
+    #[test]
+    fn test_parse_fixed_with_whitespace() {
+        let input = " fixed( my_identifier ) ";
+        let result = DeployTaskRequestor::from_str(input).unwrap();
+        assert_eq!(
+            result,
+            DeployTaskRequestor::Fixed("my_identifier".to_string())
+        );
+    }
+
+    #[test]
+    fn test_parse_invalid_variant() {
+        let input = "unknown(123)";
+        let result = DeployTaskRequestor::from_str(input);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_parse_invalid_amount() {
+        let input = "payment(not_a_number)";
+        let result = DeployTaskRequestor::from_str(input);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_parse_invalid_format_extra_fields() {
+        let input = "payment(100, USD, extra)";
+        let result = DeployTaskRequestor::from_str(input);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_parse_invalid_format_no_parentheses() {
+        let input = "payment100, USD";
+        let result = DeployTaskRequestor::from_str(input);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_display_payment_without_denom() {
+        let requestor = DeployTaskRequestor::Payment {
+            amount: 100,
+            denom: None,
+        };
+        assert_eq!(format!("{}", requestor), "payment(100)");
+    }
+
+    #[test]
+    fn test_display_payment_with_denom() {
+        let requestor = DeployTaskRequestor::Payment {
+            amount: 200,
+            denom: Some("EUR".to_string()),
+        };
+        assert_eq!(format!("{}", requestor), "payment(200, EUR)");
+    }
+
+    #[test]
+    fn test_display_fixed() {
+        let requestor = DeployTaskRequestor::Fixed("identifier".to_string());
+        assert_eq!(format!("{}", requestor), "fixed(identifier)");
+    }
+
+    #[test]
+    fn test_display_deployer() {
+        let requestor = DeployTaskRequestor::Deployer;
+        assert_eq!(format!("{}", requestor), "deployer");
+    }
 }

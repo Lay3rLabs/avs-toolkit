@@ -6,7 +6,7 @@
             "grpc_endpoint": "http://localhost:9090",
             "gas_amount": "0.025",
             "gas_denom": "uslay",
-            "address_kind": {"cosmos":{"prefix":"slay3r"}}
+            "address_kind": {"cosmos":{"prefix":"layer"}}
         },
         "testnet": {
             "chain_id": "slay3r-dev",
@@ -14,10 +14,13 @@
             "grpc_endpoint": "https://grpc.dev-cav3.net:443",
             "gas_amount": "0.025",
             "gas_denom": "uslay",
-            "address_kind": {"cosmos":{"prefix":"slay3r"}}
+            "address_kind": {"cosmos":{"prefix":"layer"}}
         }
     },
     "faucet": {
         "mnemonic": "economy stock theory fatal elder harbor betray wasp final emotion task crumble siren bottom lizard educate guess current outdoor pair theory focus wife stone"
+    },
+    "wasmatic": {
+        "endpoint": "http://localhost:8081"
     }
   }

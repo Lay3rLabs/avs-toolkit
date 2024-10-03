@@ -7,10 +7,8 @@ command -v shellcheck >/dev/null && shellcheck "$0"
 
 OUTDIR="components"
 
-rm -rf "$OUTDIR"
-mkdir -p "$OUTDIR"
-
 rm -rf target/wasm32-wasip1/release/*.wasm "$OUTDIR"
+mkdir -p "$OUTDIR"
 
 BASEDIR=$(pwd)
 for C in wasi/*/Cargo.toml; do
@@ -19,6 +17,7 @@ for C in wasi/*/Cargo.toml; do
   (
     cd "$DIR";
     cargo component build --release
+    cargo fmt
   )
 done
 

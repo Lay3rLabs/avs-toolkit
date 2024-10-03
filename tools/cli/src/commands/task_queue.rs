@@ -35,18 +35,14 @@ impl TaskQueue {
             },
         };
 
-        let contract_addr = ctx.chain_config.parse_address(&addr_string)?;
+        let contract_addr = ctx.chain_config()?.parse_address(&addr_string)?;
 
-        let admin = SigningClient::new(
-            ctx.chain_config.as_ref().clone(),
-            KeySigner::new_mnemonic_str(&ctx.client_pool.manager().mnemonic, None)?,
-        )
-        .await?;
+        let admin = ctx.signing_client().await?;
 
         let querier = TaskQueueQuerier {
             ctx: ctx.clone(),
             contract_addr: contract_addr.clone(),
-            querier: QueryClient::new(ctx.chain_config.as_ref().clone()).await?,
+            querier: ctx.query_client().await?,
         };
 
         Ok(Self {
@@ -96,7 +92,7 @@ impl TaskQueue {
             .value()
             .parse()?;
 
-        tracing::debug!("Task added with id: {task_id}");
+        tracing::info!("Task added with id: {task_id}");
         tracing::debug!("Tx hash: {}", tx_resp.txhash);
 
         Ok((task_id, tx_resp))
@@ -128,7 +124,7 @@ impl TaskQueueQuerier {
 
         let verifier_addr = self
             .ctx
-            .chain_config
+            .chain_config()?
             .parse_address(&contract_config.verifier)?;
 
         let verifier_querier =
@@ -203,31 +199,30 @@ pub struct TaskQueueView {
 }
 
 impl TaskQueueView {
-    pub fn report(&self, mut writer: impl std::io::Write) -> Result<()> {
-        writeln!(writer, "Task Queue Configuration").unwrap();
-        writeln!(writer, "Verifier: {}", self.verifier_addr).unwrap();
-        writeln!(writer, "Operator: {}", self.operator_addr).unwrap();
+    pub fn report(&self, log: impl Fn(&str)) -> Result<()> {
+        log(&format!("Verifier: {}", self.verifier_addr));
+        log(&format!("Operator: {}", self.operator_addr));
 
-        writeln!(writer, "\nOperators:").unwrap();
+        log("\nOperators:");
         for operator in &self.operators {
-            writeln!(writer, "  - {}: {}", operator.address, operator.power).unwrap();
+            log(&format!("  - {}: {}", operator.address, operator.power));
         }
 
-        writeln!(writer, "\nTasks:").unwrap();
+        log("\nTasks:");
 
         for task in &self.tasks {
             let data_json_string = task.data_json_string()?;
 
             match task {
                 TaskView::Open(task) => {
-                    writeln!(writer, "  - Open Task: {}", task.id).unwrap();
-                    writeln!(writer, "    Expires: {}", task.expires).unwrap();
-                    writeln!(writer, "    Payload: {}", data_json_string).unwrap();
+                    log(&format!("  - Open Task: {}", task.id));
+                    log(&format!("    Expires: {}", task.expires));
+                    log(&format!("    Payload: {}", data_json_string));
                 }
                 TaskView::Completed(task) => {
-                    writeln!(writer, "  - Completed Task: {}", task.id).unwrap();
-                    writeln!(writer, "    Completed: {}", task.completed).unwrap();
-                    writeln!(writer, "    Result: {}", data_json_string).unwrap();
+                    log(&format!("  - Completed Task: {}", task.id));
+                    log(&format!("    Completed: {}", task.completed));
+                    log(&format!("    Result: {}", data_json_string));
                 }
             }
         }
