@@ -7,7 +7,7 @@ use rand::{rngs::StdRng, SeedableRng};
 
 use crate::{
     args::{CliArgs, TargetEnvironment},
-    config::Config,
+    config::{ChainInfo, Config},
 };
 
 // The context is relatively cheap to clone, so we can pass it around
@@ -30,9 +30,13 @@ impl AppContext {
     }
 
     pub fn chain_config(&self) -> Result<&ChainConfig> {
+        self.chain_info().map(|ci| &ci.chain)
+    }
+
+    pub fn chain_info(&self) -> Result<&ChainInfo> {
         match self.args.target {
-            TargetEnvironment::Local => &self.config.chains.local,
-            TargetEnvironment::Testnet => &self.config.chains.testnet,
+            TargetEnvironment::Local => &self.config.local,
+            TargetEnvironment::Testnet => &self.config.testnet,
         }
         .as_ref()
         .context(format!(
@@ -76,7 +80,7 @@ impl AppContext {
     }
 
     pub async fn faucet_client(&self) -> Result<SigningClient> {
-        let signer = KeySigner::new_mnemonic_str(&self.config.faucet.mnemonic, None)?;
+        let signer = KeySigner::new_mnemonic_str(&self.chain_info()?.faucet.mnemonic, None)?;
         SigningClient::new(self.chain_config()?.clone(), signer).await
     }
 
@@ -86,7 +90,7 @@ impl AppContext {
             self.chain_config()?.clone(),
             // avoid accidentally trying to send funds to ourselves
             match self.args.concurrent_minimum_balance_from_faucet
-                && self.client_mnemonic()? == self.config.faucet.mnemonic
+                && self.client_mnemonic()? == self.chain_info()?.faucet.mnemonic
             {
                 true => Some(1),
                 false => None,

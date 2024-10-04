@@ -9,8 +9,8 @@ use std::str::FromStr;
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
 pub struct CliArgs {
-    // #[arg(long, value_enum, default_value_t = TargetEnvironment::Testnet)]
-    #[arg(long, value_enum, default_value_t = TargetEnvironment::Local)]
+    #[arg(long, value_enum, default_value_t = TargetEnvironment::Testnet)]
+    // #[arg(long, value_enum, default_value_t = TargetEnvironment::Local)]
     pub target: TargetEnvironment,
 
     /// Set the logging level
@@ -190,9 +190,6 @@ impl FaucetCommand {
 
 #[derive(Clone, Args)]
 pub struct WasmaticArgs {
-    #[clap(long, default_value = "http://0.0.0.0:8081")]
-    pub address: String,
-
     #[command(subcommand)]
     pub command: WasmaticCommand,
 }
