@@ -2,10 +2,9 @@
 mod bindings;
 
 use bindings::{Guest, Output, TaskQueueInput};
-use layer_wasi::{block_on, Reactor, Request, WasiPollable};
+use layer_wasi::{block_on, Request, WasiPollable};
 use serde::{Deserialize, Serialize};
 use web3::contract::tokens::Tokenizable;
-use web3::contract::tokens::Tokenize;
 use web3::ethabi;
 use web3::types::{H160, U256};
 
@@ -13,13 +12,13 @@ struct Component;
 
 #[derive(Deserialize, Debug)]
 pub struct TaskRequestData {
-    pub address: String,
+    pub address: H160,
 }
 
 #[derive(Serialize, Debug)]
 pub struct TaskResponseData {
-    pub address: String,
-    pub balance: String,
+    pub address: H160,
+    pub balance: U256,
 }
 
 #[derive(Serialize)]
@@ -32,25 +31,20 @@ struct JsonRpcRequest {
 
 #[derive(Deserialize)]
 struct JsonRpcResponse {
-    result: String,
+    result: U256,
 }
 
 impl Guest for Component {
     fn run_task(request: TaskQueueInput) -> Output {
         block_on(|reactor| async move {
-            let payload: TaskRequestData = serde_json::from_slice(&request.request)
+            let TaskRequestData { address } = serde_json::from_slice(&request.request)
                 .map_err(|e| format!("deserializing the task input data failed: {e}"))?;
 
             // TODO: Load these from environment variables.
             let rpc_url = "https://rpc.ankr.com/eth";
             let contract_address = "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48";
 
-            // Use web3 to encode the function call
-            let address =
-                H160::from_str(&payload.address).map_err(|e| format!("Invalid address: {}", e))?;
-
             // TODO make more generic as UI can encode the data and pass it in as a string
-            println!("HERE");
             let function = ethabi::Function {
                 name: "balanceOf".to_owned(),
                 inputs: vec![ethabi::Param {
@@ -70,8 +64,6 @@ impl Guest for Component {
                 .encode_input(&[address.into_token()])
                 .map_err(|e| format!("Failed to encode function call: {}", e))?;
 
-            println!("and HERE");
-
             // THIS BIT WILL SOON BE A WHOLE BUNCH NICER
             let json_rpc_request = JsonRpcRequest {
                 jsonrpc: "2.0".to_string(),
@@ -86,7 +78,7 @@ impl Guest for Component {
                 id: 1,
             };
 
-            let mut req = Request::post("https://rpc.ankr.com")?;
+            let mut req = Request::post(rpc_url)?;
             req.json(&json_rpc_request)?;
 
             // You can add hearders like so.
@@ -94,26 +86,14 @@ impl Guest for Component {
             let res = reactor.send(req).await?;
 
             // TODO finish
-            let body = match res.status {
+            let JsonRpcResponse { result: balance } = match res.status {
                 200 => res.json::<JsonRpcResponse>()?,
                 429 => return Err("rate limited, price unavailable".to_string()),
                 status => return Err(format!("unexpected status code: {status}")),
             };
 
-            // Use web3 to decode the response
-            let balance = U256::from(body.result.as_bytes())
-                .map_err(|e| format!("Failed to parse balance: {}", e))?;
-
-            let response_data = TaskResponseData {
-                address: payload.address,
-                balance: balance.to_string(),
-            };
-
-            let response = serde_json::to_string(&response_data)
-                .map_err(|e| format!("Could not serialize response JSON: {}", e))?;
-            println!("{:?}", response);
-
-            Ok("hei".to_string().into_bytes())
+            serde_json::to_vec(&TaskResponseData { address, balance })
+                .map_err(|e| format!("Could not serialize response JSON: {}", e))
         })
     }
 }
