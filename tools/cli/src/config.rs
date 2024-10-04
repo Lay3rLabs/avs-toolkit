@@ -4,7 +4,8 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Config {
-    pub chains: ChainConfigs,
+    pub local: Option<ChainInfo>,
+    pub testnet: Option<ChainInfo>,
 }
 
 impl Config {
@@ -18,9 +19,9 @@ impl Config {
         // SANITY CHECK
         // make sure every chain has the same address kind
 
-        match (&config.chains.local, &config.chains.testnet) {
+        match (&config.local, &config.testnet) {
             (Some(local), Some(testnet)) => {
-                if local.address_kind != testnet.address_kind {
+                if local.chain.address_kind != testnet.chain.address_kind {
                     return Err(anyhow::anyhow!(
                         "Local and testnet chains must have the same address kind"
                     ));
@@ -32,16 +33,25 @@ impl Config {
             _ => {} // Either local or testnet is Some, which is valid
         }
 
-        Ok(Config {
-            chains: config.chains,
-        })
+        Ok(config)
     }
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-pub struct ChainConfigs {
-    pub local: Option<ChainConfig>,
-    pub testnet: Option<ChainConfig>,
+pub struct ChainInfo {
+    pub chain: ChainConfig,
+    pub faucet: FaucetConfig,
+    pub wasmatic: WasmaticConfig,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct WasmaticConfig {
+    pub endpoint: String,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct FaucetConfig {
+    pub mnemonic: String,
 }
 
 #[derive(Serialize, Deserialize)]

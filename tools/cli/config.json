@@ -1,6 +1,6 @@
 {
-    "chains": {
-        "local": {
+    "local": {
+        "chain": {
             "chain_id": "slay3r-local",
             "rpc_endpoint": "http://localhost:26657",
             "grpc_endpoint": "http://localhost:9090",
@@ -10,15 +10,17 @@
                 "cosmos": {
                     "prefix": "layer"
                 }
-            },
-            "faucet": {
-                "mnemonic": "economy stock theory fatal elder harbor betray wasp final emotion task crumble siren bottom lizard educate guess current outdoor pair theory focus wife stone"
-            },
-            "wasmatic": {
-                "endpoint": "http://localhost:8081"
             }
         },
-        "testnet": {
+        "faucet": {
+            "mnemonic": "economy stock theory fatal elder harbor betray wasp final emotion task crumble siren bottom lizard educate guess current outdoor pair theory focus wife stone"
+        },
+        "wasmatic": {
+            "endpoint": "http://localhost:8081"
+        }
+    },
+    "testnet": {
+        "chain": {
             "chain_id": "layer-permissionless-3",
             "rpc_endpoint": "https://rpc.layer-p.net",
             "grpc_endpoint": "https://grpc.layer-p.net:443",
@@ -28,13 +30,13 @@
                 "cosmos": {
                     "prefix": "layer"
                 }
-            },
-            "faucet": {
-                "mnemonic": "economy stock theory fatal elder harbor betray wasp final emotion task crumble siren bottom lizard educate guess current outdoor pair theory focus wife stone"
-            },
-            "wasmatic": {
-                "endpoint": "http://op.layer-p.net"
-            }
+            }    
+        },
+        "faucet": {
+            "mnemonic": "feel slide lunch main narrow illness goose foster income exotic trim brief install million slab myth marine uncover club eye evolve edit angle decrease"
+        },
+        "wasmatic": {
+            "endpoint": "http://op.layer-p.net"
         }
     }
 }

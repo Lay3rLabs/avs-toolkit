@@ -33,9 +33,10 @@ impl DeployContractArgs {
             let addr_str = parts.next().unwrap().to_string();
             let addr = match addr_str.as_str() {
                 "wasmatic" => {
-                    let chain_config = ctx.chain_config()?;
+                    let chain_info = ctx.chain_info()?;
+                    let chain_config = &chain_info.chain;
                     let wasmatic_address =
-                        load_wasmatic_address(&chain_config.wasmatic.endpoint).await?;
+                        load_wasmatic_address(&chain_info.wasmatic.endpoint).await?;
                     Address::try_from_value(&wasmatic_address, &chain_config.address_kind)?
                 }
                 _ => ctx.chain_config()?.parse_address(&addr_str)?,
