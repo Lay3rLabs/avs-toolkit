@@ -5,6 +5,8 @@ use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 use tokio::fs;
 
+use crate::context::AppContext;
+
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub enum Trigger {
@@ -20,7 +22,7 @@ pub enum Trigger {
 
 #[allow(clippy::too_many_arguments)]
 pub async fn deploy(
-    address: String,
+    ctx: &AppContext,
     name: String,
     digest: Option<String>,
     wasm_source: String,
@@ -29,6 +31,7 @@ pub async fn deploy(
     env_pairs: Vec<String>,
     testable: bool,
 ) -> Result<()> {
+    let endpoint = &ctx.chain_info()?.wasmatic.endpoint;
     let client = Client::new();
 
     let envs = env_pairs
@@ -74,7 +77,7 @@ pub async fn deploy(
         json_body["digest"] = json!(format!("sha256:{:x}", result));
 
         let response = client
-            .post(format!("{}/upload", address))
+            .post(format!("{}/upload", endpoint))
             .body(wasm_binary) // Binary data goes here
             .send()
             .await?;
@@ -87,7 +90,7 @@ pub async fn deploy(
 
     // Send the request with wasmUrl in JSON
     let response = client
-        .post(format!("{}/app", address))
+        .post(format!("{}/app", endpoint))
         .json(&json_body)
         .header("Content-Type", "application/json")
         .send()
@@ -102,7 +105,8 @@ pub async fn deploy(
     Ok(())
 }
 
-pub async fn remove(address: String, app_name: String) -> Result<()> {
+pub async fn remove(ctx: &AppContext, app_name: String) -> Result<()> {
+    let endpoint = &ctx.chain_info()?.wasmatic.endpoint;
     let client = Client::new();
 
     // Prepare the JSON body
@@ -112,7 +116,7 @@ pub async fn remove(address: String, app_name: String) -> Result<()> {
 
     // Send the DELETE request
     let response = client
-        .delete(format!("{}/app", address))
+        .delete(format!("{}/app", endpoint))
         .header("Content-Type", "application/json")
         .json(&body) // JSON body goes here
         .send()
@@ -133,7 +137,8 @@ pub struct TestOutput {
     pub output: Option<Value>,
 }
 
-pub async fn test(address: String, app_name: String, input: String) -> Result<()> {
+pub async fn test(ctx: &AppContext, app_name: String, input: String) -> Result<()> {
+    let endpoint = &ctx.chain_info()?.wasmatic.endpoint;
     let client = Client::new();
 
     // Parse input into json
@@ -147,7 +152,7 @@ pub async fn test(address: String, app_name: String, input: String) -> Result<()
 
     // Send the POST request
     let response = client
-        .post(format!("{}/test", address))
+        .post(format!("{}/test", endpoint))
         .header("Content-Type", "application/json")
         .json(&body) // Send the JSON body
         .send()

@@ -185,7 +185,7 @@ async fn main() -> Result<()> {
                     }
                 };
                 deploy(
-                    wasmatic_args.address,
+                    &ctx,
                     name,
                     digest,
                     wasm_source,
@@ -197,10 +197,10 @@ async fn main() -> Result<()> {
                 .await?;
             }
             WasmaticCommand::Remove { name } => {
-                remove(wasmatic_args.address, name).await?;
+                remove(&ctx, name).await?;
             }
             WasmaticCommand::Test { name, input } => {
-                test(wasmatic_args.address, name, input).await?;
+                test(&ctx, name, input).await?;
             }
         },
     }

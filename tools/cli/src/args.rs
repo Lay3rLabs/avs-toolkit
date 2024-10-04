@@ -190,9 +190,6 @@ impl FaucetCommand {
 
 #[derive(Clone, Args)]
 pub struct WasmaticArgs {
-    #[clap(long, default_value = "http://0.0.0.0:8081")]
-    pub address: String,
-
     #[command(subcommand)]
     pub command: WasmaticCommand,
 }
