@@ -1,7 +1,7 @@
 #![allow(async_fn_in_trait)]
 
 use serde::{de::DeserializeOwned, Serialize};
-use std::cmp::max;
+use std::cmp::min;
 pub use url::Url;
 pub use wasi::http::types::Method;
 pub use wstd::runtime::{block_on, Reactor};
@@ -147,7 +147,7 @@ impl WasiPollable for wstd::runtime::Reactor {
 
             // how many bytes the stream accept next
             let n = stream.check_write().map_err(|_| err)? as usize;
-            let stop = max(n, bytes.len());
+            let stop = min(n, bytes.len());
 
             // write and flush and advance slice
             stream.write(&bytes[..stop]).map_err(|_| err)?;
@@ -156,6 +156,7 @@ impl WasiPollable for wstd::runtime::Reactor {
             if stop == bytes.len() {
                 // wait for stream to finish flush
                 self.wait_for(stream.subscribe()).await;
+                break;
             } else {
                 bytes = &bytes[stop..];
             }
