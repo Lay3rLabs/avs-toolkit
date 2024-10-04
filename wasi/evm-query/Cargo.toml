@@ -1,0 +1,32 @@
+[package]
+name = "evm-query"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+hex = "0.4.3"
+layer-wasi = { git = "https://github.com/Lay3rLabs/avs-toolkit", version = "0.1.0" }
+serde = { workspace = true, features = ["derive"] }
+serde_json = "1.0.128"
+web3 = "0.19.0"
+wit-bindgen-rt = { workspace = true, features = ["bitflags"] }
+
+[lib]
+crate-type = ["cdylib"]
+
+[profile.release]
+codegen-units = 1
+opt-level = "s"
+debug = false
+strip = true
+lto = true
+
+[package.metadata.component]
+package = "component:evm-query"
+target = "lay3r:avs/task-queue@0.3.0"
+
+[package.metadata.component.dependencies]
