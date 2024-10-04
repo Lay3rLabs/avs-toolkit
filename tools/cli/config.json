@@ -36,7 +36,7 @@
             "mnemonic": "feel slide lunch main narrow illness goose foster income exotic trim brief install million slab myth marine uncover club eye evolve edit angle decrease"
         },
         "wasmatic": {
-            "endpoints": ["http://op1.layer-p.net", "http://op2.layer-p.net", "http://op3.layer-p.net"]
+            "endpoints": ["https://op1.layer-p.net", "https://op2.layer-p.net", "https://op3.layer-p.net"]
         }
     }
 }
