@@ -60,48 +60,34 @@ cargo test
 
 ## Deploy
 
-Upload the compiled Wasm component to the Wasmatic node.
-```
-curl -X POST --data-binary @../../target/wasm32-wasip1/release/cavs_square.wasm http://localhost:8081/upload
+Let's do a release build of the component:
+
+```bash
+cargo component build --release
 ```
 
-Copy the digest SHA returned.
-Choose a unique application name string and use in the placeholder below CURL commands.
+Upload the compiled Wasm component to the Wasmatic node using the `avs-toolkit-cli` CLI tool (if you don't have it already,
+`cargo install --path ../../tools/cli`).
+Assign a unique name, as it is how your application is going to be distinguished. The examples below assume
+the assigned name is `square`.
 
-```
-read -d '' BODY << "EOF"
-{
-  "name": "{PLACEHOLDER-UNIQUE-NAME}",
-  "digest": "sha256:{DIGEST}",
-  "trigger": {
-    "queue": {
-      "taskQueueAddr": "{TASK-QUEUE-ADDR}",
-      "hdIndex": 1,
-      "pollInterval": 5
-    }
-  },
-  "permissions": {},
-  "envs": [],
-  "testable": true
-}
-EOF
+You'll also need to use the task address that was created when you deployed your contract.
 
-curl -X POST -H "Content-Type: application/json" http://localhost:8081/app -d "$BODY"
+```bash
+avs-toolkit-cli wasmatic deploy --name square \
+    --wasm-source ./target/wasm32-wasip1/release/cavs_square.wasm  \
+    --testable \
+    --task <TASK-ADDRESS>
 ```
 
 ## Testing Deployment
 
-To test the deployed application on the Wasmatic node, you can use the test endpoint.
-The server responds with the output of the applicaton without sending the result to the chain.
+This can only be done if `--testable` flag was provided during deployment.
+To test the deployed application on the Wasmatic node, you can provide `input` test data
+that your application expects. The server responds with the output of the applicaton without
+sending the result to the chain. For the input flag, you'll use the json input expected
+by the WASI component you're testing.
 
 ```bash
-curl --request POST \
-  --url http://localhost:8081/test \
-  --header 'Content-Type: application/json' \
-  --data '{
-  "name": "{PLACEHOLDER-UNIQUE-NAME}",
-  "input": {"x": 9 }
-}'
+avs-toolkit-cli wasmatic test --name square --input '{"x":9}'
 ```
-
-The server should respond with the square of input number `9`.
