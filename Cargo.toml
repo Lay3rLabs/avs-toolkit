@@ -29,7 +29,7 @@ cw-utils         = "2.0.0"
 cw-controllers   = "2.0.0"
 cw2              = "2.0.0"
 schemars         = "0.8.17"
-serde            = { version = "1.0.199", default-features = false, features = ["derive"] }
+serde            = { version = "1.0.210", default-features = false, features = ["derive"] }
 serde_json       = { version = "1.0.128" }
 thiserror        = "1.0.59"
 semver = "1.0.22"
@@ -60,6 +60,10 @@ deadpool = "0.12.1"
 
 # wasi stuff
 wit-bindgen-rt = { version = "0.32.0", features = ["bitflags"] }
+layer-wasi = { path = "packages/layer-wasi" }
+url = "2.5.2"
+wasi = "=0.13.1"
+wstd = "=0.4.0"
 
 [profile.release]
 codegen-units    = 1
