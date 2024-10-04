@@ -1,9 +1,7 @@
 #[allow(warnings)]
 mod bindings;
 
-use anyhow::anyhow;
 use bindings::{Guest, Output, TaskQueueInput};
-use hex;
 use layer_wasi::{block_on, Reactor, Request, WasiPollable};
 use serde::{Deserialize, Serialize};
 use web3::contract::tokens::Tokenizable;
@@ -16,12 +14,6 @@ struct Component;
 #[derive(Deserialize, Debug)]
 pub struct TaskRequestData {
     pub address: String,
-}
-
-#[derive(Serialize, Debug)]
-pub struct ResponseData {
-    pub id: u64,
-    pub response: TaskResponseData,
 }
 
 #[derive(Serialize, Debug)]
@@ -46,6 +38,9 @@ struct JsonRpcResponse {
 impl Guest for Component {
     fn run_task(request: TaskQueueInput) -> Output {
         block_on(|reactor| async move {
+            let payload: TaskRequestData = serde_json::from_slice(&request.request)
+                .map_err(|e| format!("deserializing the task input data failed: {e}"))?;
+
             // TODO: Load these from environment variables.
             let rpc_url = "https://rpc.ankr.com/eth";
             let contract_address = "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48";
@@ -91,7 +86,8 @@ impl Guest for Component {
                 id: 1,
             };
 
-            let mut req = Request::post("https://rpc.ankr.com")?.json(json_rpc_request)?;
+            let mut req = Request::post("https://rpc.ankr.com")?;
+            req.json(&json_rpc_request)?;
 
             // You can add hearders like so.
             // req.headers = vec![("x-cg-pro-api-key".to_string(), api_key.to_owned())];
@@ -104,18 +100,13 @@ impl Guest for Component {
                 status => return Err(format!("unexpected status code: {status}")),
             };
 
-            let json_rpc_response: JsonRpcResponse = serde_json::from_slice(body)?;
-
             // Use web3 to decode the response
-            let balance = U256::from(&json_rpc_response.result)
+            let balance = U256::from(body.result.as_bytes())
                 .map_err(|e| format!("Failed to parse balance: {}", e))?;
 
-            let response_data = ResponseData {
-                id,
-                response: TaskResponseData {
-                    address: payload.address,
-                    balance: balance.to_string(),
-                },
+            let response_data = TaskResponseData {
+                address: payload.address,
+                balance: balance.to_string(),
             };
 
             let response = serde_json::to_string(&response_data)
