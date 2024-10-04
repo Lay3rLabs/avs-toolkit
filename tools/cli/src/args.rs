@@ -112,7 +112,8 @@ impl Default for DeployTaskRequestor {
     fn default() -> Self {
         DeployTaskRequestor::Payment {
             amount: 1_000_000,
-            denom: Some("uslay".to_string()),
+            // implementation fills out chain_config.gas_denom in case of None
+            denom: None,
         }
     }
 }
