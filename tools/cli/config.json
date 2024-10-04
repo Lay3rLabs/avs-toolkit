@@ -16,7 +16,7 @@
             "mnemonic": "economy stock theory fatal elder harbor betray wasp final emotion task crumble siren bottom lizard educate guess current outdoor pair theory focus wife stone"
         },
         "wasmatic": {
-            "endpoint": "http://localhost:8081"
+            "endpoints": ["http://localhost:8081"]
         }
     },
     "testnet": {
@@ -30,13 +30,13 @@
                 "cosmos": {
                     "prefix": "layer"
                 }
-            }    
+            }
         },
         "faucet": {
             "mnemonic": "feel slide lunch main narrow illness goose foster income exotic trim brief install million slab myth marine uncover club eye evolve edit angle decrease"
         },
         "wasmatic": {
-            "endpoint": "http://op1.layer-p.net"
+            "endpoints": ["http://op1.layer-p.net", "http://op2.layer-p.net", "http://op3.layer-p.net"]
         }
     }
 }

@@ -31,7 +31,7 @@ pub async fn deploy(
     env_pairs: Vec<String>,
     testable: bool,
 ) -> Result<()> {
-    let endpoint = &ctx.chain_info()?.wasmatic.endpoint;
+    let endpoints = &ctx.chain_info()?.wasmatic.endpoints;
     let client = Client::new();
 
     let envs = env_pairs
@@ -76,37 +76,56 @@ pub async fn deploy(
         let result = hasher.finalize();
         json_body["digest"] = json!(format!("sha256:{:x}", result));
 
-        let response = client
-            .post(format!("{}/upload", endpoint))
-            .body(wasm_binary) // Binary data goes here
-            .send()
-            .await?;
-        if !response.status().is_success() {
-            bail!("Error: {:?}", response.text().await?);
-        }
+        futures::future::join_all(endpoints.iter().map(|endpoint| {
+            let client = client.clone();
+            let wasm_binary = wasm_binary.clone();
+            async move {
+                let response = client
+                    .post(format!("{}/upload", endpoint))
+                    .body(wasm_binary) // Binary data goes here
+                    .send()
+                    .await?;
+                if !response.status().is_success() {
+                    bail!("Error: {:?}", response.text().await?);
+                }
+                Ok(())
+            }
+        }))
+        .await
+        .into_iter()
+        .collect::<Result<Vec<()>, _>>()?;
 
         json_body
     };
 
-    // Send the request with wasmUrl in JSON
-    let response = client
-        .post(format!("{}/app", endpoint))
-        .json(&json_body)
-        .header("Content-Type", "application/json")
-        .send()
-        .await?;
+    futures::future::join_all(endpoints.iter().map(|endpoint| {
+        let client = client.clone();
+        let json_body = json_body.clone();
+        async move {
+            // Send the request with wasmUrl in JSON
+            let response = client
+                .post(format!("{}/app", endpoint))
+                .json(&json_body)
+                .send()
+                .await?;
 
-    if response.status().is_success() {
-        println!("Deployment successful!");
-    } else {
-        bail!("Error: {:?}", response.text().await?);
-    }
+            if response.status().is_success() {
+                println!("Deployment successful to operator: {endpoint}");
+            } else {
+                bail!("Error: {:?}", response.text().await?);
+            }
+            Ok(())
+        }
+    }))
+    .await
+    .into_iter()
+    .collect::<Result<Vec<()>, _>>()?;
 
     Ok(())
 }
 
 pub async fn remove(ctx: &AppContext, app_name: String) -> Result<()> {
-    let endpoint = &ctx.chain_info()?.wasmatic.endpoint;
+    let endpoints = &ctx.chain_info()?.wasmatic.endpoints;
     let client = Client::new();
 
     // Prepare the JSON body
@@ -114,18 +133,27 @@ pub async fn remove(ctx: &AppContext, app_name: String) -> Result<()> {
         "apps": [app_name],
     });
 
-    // Send the DELETE request
-    let response = client
-        .delete(format!("{}/app", endpoint))
-        .header("Content-Type", "application/json")
-        .json(&body) // JSON body goes here
-        .send()
-        .await?;
+    futures::future::join_all(endpoints.iter().map(|endpoint| {
+        let client = client.clone();
+        let body = body.clone();
+        async move {
+            // Send the DELETE request
+            let response = client
+                .delete(format!("{}/app", endpoint))
+                .json(&body) // JSON body goes here
+                .send()
+                .await?;
 
-    // Check if the request was successful
-    if !response.status().is_success() {
-        bail!("Error: {:?}", response.text().await?);
-    }
+            // Check if the request was successful
+            if !response.status().is_success() {
+                bail!("Error: {:?}", response.text().await?);
+            }
+            Ok(())
+        }
+    }))
+    .await
+    .into_iter()
+    .collect::<Result<Vec<()>, _>>()?;
 
     Ok(())
 }
@@ -138,7 +166,7 @@ pub struct TestOutput {
 }
 
 pub async fn test(ctx: &AppContext, app_name: String, input: String) -> Result<()> {
-    let endpoint = &ctx.chain_info()?.wasmatic.endpoint;
+    let endpoints = &ctx.chain_info()?.wasmatic.endpoints;
     let client = Client::new();
 
     // Parse input into json
@@ -150,24 +178,34 @@ pub async fn test(ctx: &AppContext, app_name: String, input: String) -> Result<(
         "input": input,
     });
 
-    // Send the POST request
-    let response = client
-        .post(format!("{}/test", endpoint))
-        .header("Content-Type", "application/json")
-        .json(&body) // Send the JSON body
-        .send()
-        .await?;
+    futures::future::join_all(endpoints.iter().map(|endpoint| {
+        let client = client.clone();
+        let body = body.clone();
+        async move {
+            // Send the POST request
+            let response = client
+                .post(format!("{}/test", endpoint))
+                .header("Content-Type", "application/json")
+                .json(&body) // Send the JSON body
+                .send()
+                .await?;
 
-    // Check if the request was successful
-    if response.status().is_success() {
-        println!("Test executed successfully!");
-        let response_text = response.text().await?;
-        println!("Output: {}", response_text);
-    } else {
-        // let json: TestOutput = response.json().await?;
-        let json = response.text().await?;
-        bail!("{}", json);
-    }
+            // Check if the request was successful
+            if response.status().is_success() {
+                println!("Test executed successfully!");
+                let response_text = response.text().await?;
+                println!("Output for operator `{endpoint}`: {}", response_text);
+            } else {
+                // let json: TestOutput = response.json().await?;
+                let json = response.text().await?;
+                bail!("{}", json);
+            }
+            Ok(())
+        }
+    }))
+    .await
+    .into_iter()
+    .collect::<Result<Vec<()>, _>>()?;
 
     Ok(())
 }

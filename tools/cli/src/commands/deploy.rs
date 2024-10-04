@@ -1,4 +1,4 @@
-use crate::{args::DeployTaskRequestor, config::load_wasmatic_address, context::AppContext};
+use crate::{args::DeployTaskRequestor, config::load_wasmatic_addresses, context::AppContext};
 use anyhow::{anyhow, bail, Result};
 use lavs_task_queue::msg::{Requestor, TimeoutInfo};
 use layer_climb::prelude::*;
@@ -31,22 +31,37 @@ impl DeployContractArgs {
         for s in operators.into_iter() {
             let mut parts = s.split(':');
             let addr_str = parts.next().unwrap().to_string();
-            let addr = match addr_str.as_str() {
+            match addr_str.as_str() {
                 "wasmatic" => {
                     let chain_info = ctx.chain_info()?;
                     let chain_config = &chain_info.chain;
-                    let wasmatic_address =
-                        load_wasmatic_address(&chain_info.wasmatic.endpoint).await?;
-                    Address::try_from_value(&wasmatic_address, &chain_config.address_kind)?
+                    let wasmatic_addresses: Vec<Address> =
+                        load_wasmatic_addresses(&chain_info.wasmatic.endpoints)
+                            .await?
+                            .into_iter()
+                            .map(|addr| {
+                                Address::try_from_value(&addr, &chain_config.address_kind).unwrap()
+                            })
+                            .collect();
+                    for addr in wasmatic_addresses {
+                        let voting_power = parts.next().unwrap_or("1").parse()?;
+                        instantiate_operators.push(
+                            lavs_mock_operators::msg::InstantiateOperator::new(
+                                addr.to_string(),
+                                voting_power,
+                            ),
+                        );
+                    }
                 }
-                _ => ctx.chain_config()?.parse_address(&addr_str)?,
-            };
-
-            let voting_power = parts.next().unwrap_or("1").parse()?;
-            instantiate_operators.push(lavs_mock_operators::msg::InstantiateOperator::new(
-                addr.to_string(),
-                voting_power,
-            ));
+                _ => {
+                    let addr = ctx.chain_config()?.parse_address(&addr_str)?;
+                    let voting_power = parts.next().unwrap_or("1").parse()?;
+                    instantiate_operators.push(lavs_mock_operators::msg::InstantiateOperator::new(
+                        addr.to_string(),
+                        voting_power,
+                    ));
+                }
+            }
         }
 
         let requestor = match requestor {
