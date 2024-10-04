@@ -101,15 +101,21 @@ pub enum DeployCommand {
     },
 }
 
-#[derive(Clone, Debug, PartialEq, Default)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum DeployTaskRequestor {
-    #[default]
     Deployer,
     Fixed(String),
-    Payment {
-        amount: u128,
-        denom: Option<String>,
-    },
+    Payment { amount: u128, denom: Option<String> },
+}
+
+impl Default for DeployTaskRequestor {
+    fn default() -> Self {
+        DeployTaskRequestor::Payment {
+            amount: 5_000,
+            // implementation fills out chain_config.gas_denom in case of None
+            denom: None,
+        }
+    }
 }
 
 #[derive(Clone, Args)]
