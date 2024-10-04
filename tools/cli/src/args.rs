@@ -111,7 +111,7 @@ pub enum DeployTaskRequestor {
 impl Default for DeployTaskRequestor {
     fn default() -> Self {
         DeployTaskRequestor::Payment {
-            amount: 1_000_000,
+            amount: 5_000,
             // implementation fills out chain_config.gas_denom in case of None
             denom: None,
         }
