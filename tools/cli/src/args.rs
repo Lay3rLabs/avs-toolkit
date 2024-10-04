@@ -101,15 +101,20 @@ pub enum DeployCommand {
     },
 }
 
-#[derive(Clone, Debug, PartialEq, Default)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum DeployTaskRequestor {
-    #[default]
     Deployer,
     Fixed(String),
-    Payment {
-        amount: u128,
-        denom: Option<String>,
-    },
+    Payment { amount: u128, denom: Option<String> },
+}
+
+impl Default for DeployTaskRequestor {
+    fn default() -> Self {
+        DeployTaskRequestor::Payment {
+            amount: 1_000_000,
+            denom: Some("uslay".to_string()),
+        }
+    }
 }
 
 #[derive(Clone, Args)]
