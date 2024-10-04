@@ -46,7 +46,7 @@ pub struct ChainInfo {
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct WasmaticConfig {
-    pub endpoint: String,
+    pub endpoints: Vec<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -60,17 +60,26 @@ pub struct GetInfo {
     pub operators: Vec<String>,
 }
 
-pub(crate) async fn load_wasmatic_address(endpoint: &str) -> Result<String> {
+pub(crate) async fn load_wasmatic_addresses(endpoints: &[String]) -> Result<Vec<String>> {
     let client = reqwest::Client::new();
 
-    // Load from info endpoint
-    let response = client
-        .get(format!("{}/info", endpoint))
-        .header("Content-Type", "application/json")
-        .send()
-        .await?;
-    let info: GetInfo = response.json().await?;
-    let op = info.operators.first().context("No operators found")?;
-
-    Ok(op.to_string())
+    futures::future::join_all(endpoints.iter().map(|endpoint| {
+        let client = client.clone();
+        async move {
+            // Load from info endpoint
+            let response = client
+                .get(format!("{}/info", endpoint))
+                .header("Content-Type", "application/json")
+                .send()
+                .await?;
+            let info: GetInfo = response.json().await?;
+            info.operators
+                .first()
+                .context("No operators found")
+                .map(|v| v.to_string())
+        }
+    }))
+    .await
+    .into_iter()
+    .collect::<Result<Vec<String>, _>>()
 }
