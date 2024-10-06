@@ -209,6 +209,8 @@ mod query {
             requestor: config.requestor.into(),
             timeout: config.timeout,
             verifier: config.verifier.into_string(),
+            title: config.title,
+            description: config.description,
         };
         Ok(r)
     }

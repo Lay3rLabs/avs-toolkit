@@ -171,6 +171,8 @@ pub struct ConfigResponse {
     pub requestor: Requestor,
     pub timeout: TimeoutConfig,
     pub verifier: String,
+    pub title: String,
+    pub description: String,
 }
 
 /// All timeouts are defined in seconds
