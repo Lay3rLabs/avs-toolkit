@@ -3,14 +3,14 @@ mod commands;
 mod config;
 mod context;
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use args::{CliArgs, Command, DeployCommand, FaucetCommand, TaskQueueCommand, WasmaticCommand};
 use clap::Parser;
 use commands::{
     deploy::{deploy_contracts, DeployContractArgs},
     faucet::tap_faucet,
     task_queue::TaskQueue,
-    wasmatic::{deploy, remove, test, Trigger},
+    wasmatic::{deploy, remove, run, test, Trigger},
 };
 use context::AppContext;
 use layer_climb::prelude::*;
@@ -198,6 +198,26 @@ async fn main() -> Result<()> {
             }
             WasmaticCommand::Remove { name } => {
                 remove(&ctx, name).await?;
+            }
+            WasmaticCommand::Run {
+                wasm_source,
+                cron_trigger,
+                envs,
+                dir,
+                input,
+            } => {
+                let app_cache_path = if let Some(dir) = dir {
+                    dir
+                } else {
+                    tempfile::tempdir()
+                        .context("failed to create temp directory for app cache")?
+                        .path()
+                        .into()
+                };
+                println!(
+                    "{}",
+                    run(wasm_source, cron_trigger, envs, app_cache_path, input).await?
+                );
             }
             WasmaticCommand::Test { name, input } => {
                 test(&ctx, name, input).await?;

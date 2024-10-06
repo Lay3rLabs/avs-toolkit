@@ -23,6 +23,8 @@ schemas/
 .DS_Store
 .vscode
 .idea
+*.swp
+*.swo
 
 
 # node.js
