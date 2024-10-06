@@ -20,6 +20,10 @@ pub struct InstantiateMsg {
     pub timeout: TimeoutInfo,
     /// Which contract can verify results
     pub verifier: String,
+    /// Title of the service
+    pub title: String,
+    /// Description of the service
+    pub description: String,
 }
 
 #[cw_serde]

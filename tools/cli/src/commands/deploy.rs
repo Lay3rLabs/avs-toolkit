@@ -12,9 +12,12 @@ pub struct DeployContractArgs {
     requestor: Requestor,
     task_timeout: TimeoutInfo,
     required_voting_percentage: u32,
+    title: String,
+    description: String,
 }
 
 impl DeployContractArgs {
+    #[allow(clippy::too_many_arguments)]
     pub async fn parse(
         ctx: &AppContext,
         artifacts_path: PathBuf,
@@ -22,6 +25,8 @@ impl DeployContractArgs {
         required_voting_percentage: u32,
         operators: Vec<String>,
         requestor: DeployTaskRequestor,
+        title: String,
+        description: String,
     ) -> Result<Self> {
         if operators.is_empty() {
             bail!("At least one operator must be specified");
@@ -87,6 +92,8 @@ impl DeployContractArgs {
             requestor,
             task_timeout,
             required_voting_percentage,
+            title,
+            description,
         })
     }
 }
@@ -103,6 +110,8 @@ pub async fn deploy_contracts(
         requestor,
         task_timeout,
         required_voting_percentage,
+        title,
+        description,
     } = args;
 
     let wasm_files = WasmFiles::read(artifacts_path.clone()).await?;
@@ -157,6 +166,8 @@ pub async fn deploy_contracts(
                 requestor,
                 timeout: task_timeout,
                 verifier: verifier_addr.to_string(),
+                title,
+                description,
             },
             vec![],
             None,

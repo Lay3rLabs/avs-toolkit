@@ -65,6 +65,8 @@ fn sanity_check() {
             maximum: None,
         },
         verifier: verifier.to_string(),
+        title: "Title".to_string(),
+        description: "Description".to_string(),
     };
     let init_res = tasker.instantiate(&msg, None, &[]).unwrap();
     let contract_addr = init_res.instantiated_contract_address().unwrap();

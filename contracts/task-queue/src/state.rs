@@ -34,6 +34,8 @@ pub struct Config {
     pub requestor: RequestorConfig,
     pub timeout: TimeoutConfig,
     pub verifier: Addr,
+    pub title: String,
+    pub description: String,
 }
 
 impl Config {
@@ -46,6 +48,8 @@ impl Config {
             requestor,
             timeout,
             verifier,
+            title: input.title,
+            description: input.description,
         })
     }
 }
