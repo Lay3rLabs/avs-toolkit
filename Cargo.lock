@@ -391,7 +391,6 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "wasmtime",
- "wasmtime-cli-flags",
  "wasmtime-wasi",
  "wasmtime-wasi-http",
 ]
@@ -5452,18 +5451,6 @@ dependencies = [
  "toml",
  "windows-sys 0.52.0",
  "zstd",
-]
-
-[[package]]
-name = "wasmtime-cli-flags"
-version = "24.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4e5f14d5c798484fece332086ee4975a22ba721ace2edadfb730c292e8f20dbe"
-dependencies = [
- "anyhow",
- "clap 4.5.19",
- "humantime",
- "wasmtime",
 ]
 
 [[package]]

@@ -38,7 +38,6 @@ tempfile = "3.13.0"
 wasmtime = { version = "24.0.0", features = ["cache", "component-model", "async", "runtime", "std"] }
 wasmtime-wasi-http = "24.0.0"
 wasmtime-wasi = { version = "24.0.0", default-features = true }
-wasmtime-cli-flags = "24.0.0"
 
 # dev deps
 anyhow        = "1"
