@@ -35,7 +35,7 @@ Copy address, paste in frontend.
 Deploy new wasm.
 ```
 avs-toolkit-cli wasmatic deploy --name better-math \
-    --wasm-source ../../target/wasm32-wasip1/release/cavs_squared.wasm  \
+    --wasm-source ../../target/wasm32-wasip1/release/cavs_square.wasm  \
     --testable \
     --task $TEST_TASK_QUEUE_ADDRESS
 
