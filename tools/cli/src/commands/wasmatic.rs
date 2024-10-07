@@ -449,7 +449,7 @@ async fn instantiate_and_invoke(
                     .expect("Wasm instantiate failed");
 
             let input = task_bindings::lay3r::avs::types::TaskQueueInput {
-                timestamp: get_time(),
+                timestamp: get_time().to_string(),
                 request,
             };
             bindings

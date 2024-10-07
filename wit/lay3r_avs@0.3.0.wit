@@ -4,9 +4,10 @@ interface types {
   /// serialized json, avs wasi and lay3r contract must agree on the types
   /// the runner is agnostic to the data format
   type serialized-json = list<u8>;
+  type timestamp = string;
 
   record task-queue-input {
-    timestamp: u64,
+    timestamp: timestamp,
     request: serialized-json,
   }
 
