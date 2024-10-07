@@ -252,6 +252,29 @@ pub enum WasmaticCommand {
         name: String,
     },
 
+    /// Run a Wasm application locally
+    Run {
+        /// Path to the Wasm file or a URL to the Wasm file
+        #[clap(short, long)]
+        wasm_source: String, // This can be a local path or a URL
+
+        /// Cron trigger the action, otherwise task queue trigger
+        #[clap(long("cron"))]
+        cron_trigger: bool,
+
+        /// Environment variables, multiple can be provided in KEY=VALUE format
+        #[clap(long)]
+        envs: Vec<String>,
+
+        /// App cache directory to use, otherwise will default to temporary directory
+        #[clap(long)]
+        dir: Option<PathBuf>,
+
+        /// Optional input for the test
+        #[clap(short, long)]
+        input: Option<String>,
+    },
+
     /// Test a Wasm application
     Test {
         /// The name of the application to test
@@ -260,7 +283,7 @@ pub enum WasmaticCommand {
 
         /// Optional input for the test
         #[clap(short, long)]
-        input: String,
+        input: Option<String>,
     },
 }
 

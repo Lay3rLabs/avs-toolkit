@@ -25,3 +25,7 @@ deadpool = {workspace = true}
 rand = {workspace = true}
 reqwest = { workspace = true }
 sha2 = { workspace = true }
+tempfile = { workspace = true }
+wasmtime = { workspace = true }
+wasmtime-wasi-http = { workspace = true }
+wasmtime-wasi = { workspace = true }

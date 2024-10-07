@@ -34,6 +34,10 @@ serde_json       = { version = "1.0.128" }
 thiserror        = "1.0.59"
 semver = "1.0.22"
 itertools = "0.12.1"
+tempfile = "3.13.0"
+wasmtime = { version = "24.0.0", features = ["cache", "component-model", "async", "runtime", "std"] }
+wasmtime-wasi-http = "24.0.0"
+wasmtime-wasi = { version = "24.0.0", default-features = true }
 
 # dev deps
 anyhow        = "1"
