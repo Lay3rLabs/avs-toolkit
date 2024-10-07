@@ -1,5 +1,10 @@
 # Containerized AVSs Demo for Eigen
 
+Prep:
+- Two terminals (one in wasi / square, one in tools/cli)
+- Test mnemonic loaded as environment variable
+- Frontend running
+
 Show frontend. Square 3, the answer is 9.
 
 
