@@ -324,6 +324,13 @@ async fn instantiate_and_invoke(
     let mut store = wasmtime::Store::new(engine, host);
     match trigger {
         TriggerRequest::Cron => {
+            if component
+                .component_type()
+                .get_export(engine, "run-cron")
+                .is_none()
+            {
+                return Err("Wasm component is missing the expected function export `run-cron` for CRON trigger app".to_string());
+            }
             let bindings = cron_bindings::CronJob::instantiate_async(&mut store, component, linker)
                 .await
                 .expect("Wasm instantiate failed");
@@ -334,6 +341,13 @@ async fn instantiate_and_invoke(
                 .expect("Failed to call invoke cron job")
         }
         TriggerRequest::Queue(request) => {
+            if component
+                .component_type()
+                .get_export(engine, "run-task")
+                .is_none()
+            {
+                return Err("Wasm component is missing the expected function export `run-task` for task queue trigger app".to_string());
+            }
             let bindings =
                 task_bindings::TaskQueue::instantiate_async(&mut store, component, linker)
                     .await
