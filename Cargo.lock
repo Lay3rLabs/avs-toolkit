@@ -841,6 +841,7 @@ name = "cavs-square"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "cosmwasm-std 2.1.4",
  "serde",
  "serde_json",
  "wit-bindgen-rt 0.32.0",
