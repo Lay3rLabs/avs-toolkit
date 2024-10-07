@@ -1,4 +1,7 @@
-use crate::{client::{TargetEnvironment, ENVIRONMENT}, prelude::*};
+use crate::{
+    client::{TargetEnvironment, ENVIRONMENT},
+    prelude::*,
+};
 use dominator_helpers::futures::AsyncLoader;
 use futures::StreamExt;
 use gloo_timers::future::IntervalStream;
@@ -85,7 +88,9 @@ impl WalletFaucetUi {
     async fn get_tokens(&self) -> Result<()> {
         let env = ENVIRONMENT.get().unwrap_ext();
         let mnemnoic = match env {
-            TargetEnvironment::Testnet => &CONFIG.data.testnet.as_ref().unwrap_ext().faucet.mnemonic,
+            TargetEnvironment::Testnet => {
+                &CONFIG.data.testnet.as_ref().unwrap_ext().faucet.mnemonic
+            }
             TargetEnvironment::Local => &CONFIG.data.local.as_ref().unwrap_ext().faucet.mnemonic,
         };
         let signer = KeySigner::new_mnemonic_str(&mnemnoic, None)?;
