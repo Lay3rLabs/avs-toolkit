@@ -1,8 +1,10 @@
 use crate::prelude::*;
+use anyhow::Chain;
 use layer_climb::prelude::*;
 use std::sync::OnceLock;
 
 pub static CLIENT: OnceLock<SigningClient> = OnceLock::new();
+pub static ENVIRONMENT: OnceLock<TargetEnvironment> = OnceLock::new();
 pub static FAUCET_CLIENT: OnceLock<SigningClient> = OnceLock::new();
 
 #[derive(Debug, Clone)]
@@ -22,16 +24,19 @@ pub async fn client_connect(key_kind: ClientKeyKind, target_env: TargetEnvironme
     let chain_config = match target_env {
         TargetEnvironment::Testnet => CONFIG
             .data
-            .chains
             .testnet
-            .clone()
-            .context("testnet chain not configured")?,
+            .as_ref()
+            .context("testnet chain not configured")?
+            .chain
+            .clone(),
+
         TargetEnvironment::Local => CONFIG
             .data
-            .chains
             .local
-            .clone()
-            .context("local chain not configured")?,
+            .as_ref()
+            .context("local chain not configured")?
+            .chain
+            .clone(),
     }
     .into();
 
@@ -62,6 +67,7 @@ pub async fn client_connect(key_kind: ClientKeyKind, target_env: TargetEnvironme
     log::info!("got client: {}", client.addr);
 
     CLIENT.set(client);
+    ENVIRONMENT.set(target_env);
     Ok(())
 }
 
@@ -69,16 +75,18 @@ pub async fn add_keplr_chain(target_env: TargetEnvironment) -> Result<()> {
     let chain_config = match target_env {
         TargetEnvironment::Testnet => CONFIG
             .data
-            .chains
             .testnet
-            .clone()
-            .context("testnet chain not configured")?,
+            .as_ref()
+            .context("testnet chain not configured")?
+            .chain
+            .clone(),
         TargetEnvironment::Local => CONFIG
             .data
-            .chains
             .local
-            .clone()
-            .context("local chain not configured")?,
+            .as_ref()
+            .context("local chain not configured")?
+            .chain
+            .clone(),
     };
 
     KeplrSigner::add_chain(&chain_config).await
