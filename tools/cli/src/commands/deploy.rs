@@ -40,7 +40,7 @@ impl DeployContractArgs {
                             .await?
                             .into_iter()
                             .map(|addr| {
-                                Address::try_from_value(&addr, &chain_config.address_kind).unwrap()
+                                Address::try_from_str(&addr, &chain_config.address_kind).unwrap()
                             })
                             .collect();
                     for addr in wasmatic_addresses {

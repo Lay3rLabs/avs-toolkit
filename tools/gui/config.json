@@ -1,0 +1,29 @@
+{
+    "chains": {
+        "local": {
+            "chain_id": "slay3r-local",
+            "rpc_endpoint": "http://localhost:26657",
+            "rest_endpoint": "http://localhost:1317",
+            "grpc_endpoint": "http://localhost:9090",
+            "gas_amount": "0.025",
+            "gas_denom": "uslay",
+            "address_kind": {"cosmos":{"prefix":"slay3r"}}
+        },
+        "testnet": {
+            "chain_id": "layer-permissionless-3",
+            "rpc_endpoint": "https://rpc.layer-p.net",
+            "rest_endpoint": "https://api.layer-p.net",
+            "grpc_endpoint": "https://grpc.layer-p.net:443",
+            "gas_amount": "0.025",
+            "gas_denom": "uperm",
+            "address_kind": {
+                "cosmos": {
+                    "prefix": "layer"
+                }
+            }
+        }
+    },
+    "faucet": {
+        "mnemonic": "economy stock theory fatal elder harbor betray wasp final emotion task crumble siren bottom lizard educate guess current outdoor pair theory focus wife stone"
+    }
+  }
