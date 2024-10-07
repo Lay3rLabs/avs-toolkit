@@ -170,6 +170,35 @@ pub async fn remove(ctx: &AppContext, app_name: String) -> Result<()> {
     Ok(())
 }
 
+pub async fn info(ctx: &AppContext) -> Result<()> {
+    let endpoints = &ctx.chain_info()?.wasmatic.endpoints;
+    let client = Client::new();
+
+    // Make asynchronous requests to all endpoints
+    futures::future::join_all(endpoints.iter().map(|endpoint| {
+        let client = client.clone();
+        async move {
+            // Send the GET request to `/info` endpoint
+            let response = client.get(format!("{}/info", endpoint)).send().await?;
+
+            // Check if the request was successful
+            if !response.status().is_success() {
+                bail!("Error: {:?}", response.text().await?);
+            }
+
+            println!(
+                "Output for operator `{endpoint}`: {}",
+                response.text().await?
+            );
+
+            Ok(())
+        }
+    }))
+    .await
+    .into_iter()
+    .collect::<Result<(), _>>()
+}
+
 /// This is the return value for error (message) or success (output) cases, if needed later
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct TestOutput {
