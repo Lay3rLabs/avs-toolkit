@@ -2973,6 +2973,7 @@ version = "0.1.0"
 dependencies = [
  "cosmwasm-schema 2.1.4",
  "cosmwasm-std 2.1.4",
+ "cw-controllers",
  "cw-multi-test",
  "cw-orch",
  "cw-storage-plus 2.0.0",

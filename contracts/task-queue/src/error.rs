@@ -1,4 +1,5 @@
 use cosmwasm_std::StdError;
+use cw_controllers::HookError;
 use cw_utils::PaymentError;
 use lavs_apis::id::TaskId;
 use thiserror::Error;
@@ -10,6 +11,9 @@ pub enum ContractError {
 
     #[error("{0}")]
     Payment(#[from] PaymentError),
+
+    #[error("{0}")]
+    Hook(#[from] HookError),
 
     #[error("Unauthorized")]
     Unauthorized,

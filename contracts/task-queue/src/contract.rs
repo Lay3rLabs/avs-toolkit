@@ -9,7 +9,7 @@ use lavs_apis::tasks::{CustomExecuteMsg, CustomQueryMsg, TaskQueryMsg};
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::msg::{RequestType, ResponseType, Status};
-use crate::state::{Config, Task, CONFIG, TASKS};
+use crate::state::{Config, Task, CONFIG, TASKS, TASK_HOOKS};
 
 // version info for migration info
 const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
@@ -42,6 +42,11 @@ pub fn execute(
             interface::TaskExecuteMsg::Complete { task_id, response } => {
                 execute::complete(deps, env, info, task_id, response)
             }
+            interface::TaskExecuteMsg::AddHook(task_hook_type) => {
+                TASK_HOOKS.add_hook(deps.storage, task_hook_type, info.sender)?;
+
+                Ok(Response::new())
+            }
         },
         ExecuteMsg::Custom(custom) => match custom {
             CustomExecuteMsg::Create {
@@ -61,6 +66,9 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<Binary, ContractErro
             TaskQueryMsg::TaskStatus { id } => {
                 Ok(to_json_binary(&query::task_status(deps, env, id)?)?)
             }
+            TaskQueryMsg::TaskHooks(task_hook_type) => Ok(to_json_binary(
+                &TASK_HOOKS.query_hooks(deps, task_hook_type)?,
+            )?),
         },
         QueryMsg::Custom(custom) => match custom {
             CustomQueryMsg::Task { id } => Ok(to_json_binary(&query::task(deps, env, id)?)?),
@@ -76,8 +84,9 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<Binary, ContractErro
 }
 
 mod execute {
+    use cosmwasm_std::{SubMsg, WasmMsg};
     use cw_utils::nonpayable;
-    use lavs_apis::id::TaskId;
+    use lavs_apis::{id::TaskId, interfaces::task_hooks::TaskHookExecuteMsg, tasks::TaskResponse};
 
     use crate::state::{check_timeout, Timing};
 
@@ -109,9 +118,25 @@ mod execute {
         config.next_id = TaskId::new(task_id.u64() + 1);
         CONFIG.save(deps.storage, &config)?;
 
+        // Prepare hooks
+        let hooks = TASK_HOOKS.created.prepare_hooks(deps.storage, |addr| {
+            Ok(SubMsg::reply_never(WasmMsg::Execute {
+                contract_addr: addr.to_string(),
+                msg: to_json_binary(&TaskHookExecuteMsg::Created(TaskResponse {
+                    description: task.description.clone(),
+                    status: task.status.clone(),
+                    id: task_id,
+                    payload: task.payload.clone(),
+                    result: None,
+                }))?,
+                funds: vec![],
+            }))
+        })?;
+
         let res = Response::new()
             .add_attribute("action", "create")
-            .add_attribute("task_id", task_id.to_string());
+            .add_attribute("task_id", task_id.to_string())
+            .add_submessages(hooks);
         Ok(res)
     }
 
