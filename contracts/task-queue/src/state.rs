@@ -10,6 +10,7 @@ use crate::error::ContractError;
 use crate::msg::{self, InstantiateMsg, RequestType, ResponseType};
 
 pub const CONFIG: Item<Config> = Item::new("config");
+pub const INFO: Item<Info> = Item::new("info");
 
 pub struct TaskIndexes<'a> {
     pub status: MultiIndex<'a, &'a str, Task, TaskId>,
@@ -34,6 +35,10 @@ pub struct Config {
     pub requestor: RequestorConfig,
     pub timeout: TimeoutConfig,
     pub verifier: Addr,
+}
+
+#[cw_serde]
+pub struct Info {
     pub title: String,
     pub description: String,
 }
@@ -48,8 +53,6 @@ impl Config {
             requestor,
             timeout,
             verifier,
-            title: input.title,
-            description: input.description,
         })
     }
 }

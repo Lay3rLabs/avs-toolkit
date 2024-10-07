@@ -126,6 +126,17 @@ pub enum CustomQueryMsg {
     /// Get task configuration
     #[returns(ConfigResponse)]
     Config {},
+    /// Get service info
+    #[returns(InfoResponse)]
+    Info {},
+}
+
+#[cw_serde]
+pub struct InfoResponse {
+    /// Title of the service
+    pub title: String,
+    /// Description of the service
+    pub description: String,
 }
 
 impl From<TaskQueryMsg> for QueryMsg {
@@ -171,8 +182,6 @@ pub struct ConfigResponse {
     pub requestor: Requestor,
     pub timeout: TimeoutConfig,
     pub verifier: String,
-    pub title: String,
-    pub description: String,
 }
 
 /// All timeouts are defined in seconds
