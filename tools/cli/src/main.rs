@@ -225,8 +225,8 @@ async fn main() -> Result<()> {
             WasmaticCommand::Info {} => {
                 info(&ctx).await?;
             }
-            WasmaticCommand::App {} => {
-                app(&ctx).await?;
+            WasmaticCommand::App { endpoint } => {
+                app(&ctx, endpoint).await?;
             }
         },
     }

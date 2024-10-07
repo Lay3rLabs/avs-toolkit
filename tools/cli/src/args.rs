@@ -290,7 +290,10 @@ pub enum WasmaticCommand {
     Info {},
 
     /// Returns info deployed apps and sha256 digests
-    App {},
+    App {
+        #[clap(short, long)]
+        endpoint: Option<String>,
+    },
 }
 
 #[derive(Copy, Clone, Debug, clap::ValueEnum)]

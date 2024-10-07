@@ -179,14 +179,11 @@ pub async fn info(ctx: &AppContext) -> Result<()> {
     let endpoints = &ctx.chain_info()?.wasmatic.endpoints;
     let client = Client::new();
 
-    // Make asynchronous requests to all endpoints
     futures::future::join_all(endpoints.iter().map(|endpoint| {
         let client = client.clone();
         async move {
-            // Send the GET request to `/info` endpoint
             let response = client.get(format!("{}/info", endpoint)).send().await?;
 
-            // Check if the request was successful
             if !response.status().is_success() {
                 bail!("Error: {:?}", response.text().await?);
             }
@@ -229,29 +226,23 @@ pub struct Queue {
     poll_interval: u32,
 }
 
-pub async fn app(ctx: &AppContext) -> Result<()> {
+pub async fn app(ctx: &AppContext, endpoint: Option<String>) -> Result<()> {
     let endpoints = &ctx.chain_info()?.wasmatic.endpoints;
     let client = Client::new();
 
-    // Call the first operator in the list (change this if you want to call a specific one)
-    let endpoint = &endpoints[0]; // You can also specify a different index
+    let endpoint = &endpoint.unwrap_or(endpoints[0].clone());
 
-    // Send the GET request to `/app` endpoint
     let response = client.get(format!("{}/app", endpoint)).send().await?;
 
-    // Check if the request was successful
     if !response.status().is_success() {
         bail!("Error: {:?}", response.text().await?);
     }
 
-    // Parse the response JSON into the structured format
     let app_response: AppResponse = response.json().await?;
-
-    // Print the structured response in a readable way
     println!(
         "Output for operator `{}`: {}",
         endpoint,
-        serde_json::to_string_pretty(&app_response)? // Pretty-print the response
+        serde_json::to_string_pretty(&app_response)?
     );
 
     Ok(())
