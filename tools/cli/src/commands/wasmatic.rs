@@ -19,7 +19,7 @@ use wasmtime_wasi_http::{WasiHttpCtx, WasiHttpView};
 
 use crate::context::AppContext;
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub enum Trigger {
     #[serde(rename_all = "camelCase")]
@@ -170,6 +170,11 @@ pub async fn remove(ctx: &AppContext, app_name: String) -> Result<()> {
     Ok(())
 }
 
+#[derive(Deserialize, Debug, Serialize)]
+pub struct InfoResponse {
+    operators: Vec<String>,
+}
+
 pub async fn info(ctx: &AppContext) -> Result<()> {
     let endpoints = &ctx.chain_info()?.wasmatic.endpoints;
     let client = Client::new();
@@ -186,9 +191,11 @@ pub async fn info(ctx: &AppContext) -> Result<()> {
                 bail!("Error: {:?}", response.text().await?);
             }
 
+            let info_response: InfoResponse = response.json().await?;
+
             println!(
                 "Output for operator `{endpoint}`: {}",
-                response.text().await?
+                serde_json::to_string_pretty(&info_response)?
             );
 
             Ok(())
@@ -197,6 +204,57 @@ pub async fn info(ctx: &AppContext) -> Result<()> {
     .await
     .into_iter()
     .collect::<Result<(), _>>()
+}
+
+// Define the structure to deserialize the response
+#[derive(Deserialize, Debug, Serialize)]
+pub struct AppResponse {
+    apps: Vec<AppInfo>,
+    digests: Vec<String>,
+}
+
+#[derive(Deserialize, Debug, Serialize)]
+pub struct AppInfo {
+    name: String,
+    digest: String,
+    trigger: Trigger,
+    permissions: Value,
+    testable: bool,
+}
+
+#[derive(Deserialize, Debug, Serialize)]
+pub struct Queue {
+    task_queue_addr: String,
+    hd_index: u32,
+    poll_interval: u32,
+}
+
+pub async fn app(ctx: &AppContext) -> Result<()> {
+    let endpoints = &ctx.chain_info()?.wasmatic.endpoints;
+    let client = Client::new();
+
+    // Call the first operator in the list (change this if you want to call a specific one)
+    let endpoint = &endpoints[0]; // You can also specify a different index
+
+    // Send the GET request to `/app` endpoint
+    let response = client.get(format!("{}/app", endpoint)).send().await?;
+
+    // Check if the request was successful
+    if !response.status().is_success() {
+        bail!("Error: {:?}", response.text().await?);
+    }
+
+    // Parse the response JSON into the structured format
+    let app_response: AppResponse = response.json().await?;
+
+    // Print the structured response in a readable way
+    println!(
+        "Output for operator `{}`: {}",
+        endpoint,
+        serde_json::to_string_pretty(&app_response)? // Pretty-print the response
+    );
+
+    Ok(())
 }
 
 /// This is the return value for error (message) or success (output) cases, if needed later

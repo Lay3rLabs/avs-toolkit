@@ -10,7 +10,7 @@ use commands::{
     deploy::{deploy_contracts, DeployContractArgs},
     faucet::tap_faucet,
     task_queue::TaskQueue,
-    wasmatic::{deploy, info, remove, run, test, Trigger},
+    wasmatic::{app, deploy, info, remove, run, test, Trigger},
 };
 use context::AppContext;
 use layer_climb::prelude::*;
@@ -224,6 +224,9 @@ async fn main() -> Result<()> {
             }
             WasmaticCommand::Info {} => {
                 info(&ctx).await?;
+            }
+            WasmaticCommand::App {} => {
+                app(&ctx).await?;
             }
         },
     }

@@ -288,6 +288,9 @@ pub enum WasmaticCommand {
 
     /// Returns info about wasmatic operators
     Info {},
+
+    /// Returns info deployed apps and sha256 digests
+    App {},
 }
 
 #[derive(Copy, Clone, Debug, clap::ValueEnum)]
