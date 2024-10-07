@@ -285,6 +285,15 @@ pub enum WasmaticCommand {
         #[clap(short, long)]
         input: Option<String>,
     },
+
+    /// Returns info about wasmatic operators
+    Info {},
+
+    /// Returns info deployed apps and sha256 digests
+    App {
+        #[clap(short, long)]
+        endpoint: Option<String>,
+    },
 }
 
 #[derive(Copy, Clone, Debug, clap::ValueEnum)]
