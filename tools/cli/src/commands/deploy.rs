@@ -1,5 +1,10 @@
-use crate::{args::DeployTaskRequestor, config::load_wasmatic_addresses, context::AppContext};
+use crate::{
+    args::{DeployMode, DeployTaskRequestor},
+    config::load_wasmatic_addresses,
+    context::AppContext,
+};
 use anyhow::{anyhow, bail, Result};
+use cosmwasm_std::Decimal;
 use lavs_task_queue::msg::{Requestor, TimeoutInfo};
 use layer_climb::prelude::*;
 use std::path::PathBuf;
@@ -12,6 +17,9 @@ pub struct DeployContractArgs {
     requestor: Requestor,
     task_timeout: TimeoutInfo,
     required_voting_percentage: u32,
+    threshold_percentage: Option<Decimal>,
+    allowed_spread: Option<Decimal>,
+    slashable_spread: Option<Decimal>,
 }
 
 impl DeployContractArgs {
@@ -20,6 +28,9 @@ impl DeployContractArgs {
         artifacts_path: PathBuf,
         task_timeout_seconds: u64,
         required_voting_percentage: u32,
+        threshold_percentage: Option<Decimal>,
+        allowed_spread: Option<Decimal>,
+        slashable_spread: Option<Decimal>,
         operators: Vec<String>,
         requestor: DeployTaskRequestor,
     ) -> Result<Self> {
@@ -87,12 +98,16 @@ impl DeployContractArgs {
             requestor,
             task_timeout,
             required_voting_percentage,
+            threshold_percentage,
+            allowed_spread,
+            slashable_spread,
         })
     }
 }
 
 pub async fn deploy_contracts(
     ctx: AppContext,
+    mode: DeployMode,
     args: DeployContractArgs,
 ) -> Result<DeployContractAddrs> {
     tracing::debug!("Deploying contracts with args: {:#?}", args);
@@ -103,6 +118,9 @@ pub async fn deploy_contracts(
         requestor,
         task_timeout,
         required_voting_percentage,
+        threshold_percentage,
+        allowed_spread,
+        slashable_spread,
     } = args;
 
     let wasm_files = WasmFiles::read(artifacts_path.clone()).await?;
@@ -131,22 +149,47 @@ pub async fn deploy_contracts(
     tracing::debug!("Mock Operators Tx Hash: {}", tx_resp.txhash);
     tracing::debug!("Mock Operators Address: {}", operators_addr);
 
-    let (verifier_addr, tx_resp) = client
-        .contract_instantiate(
-            client.addr.clone(),
-            verifier_code_id,
-            "Verifier Simple",
-            &lavs_verifier_simple::msg::InstantiateMsg {
-                operator_contract: operators_addr.to_string(),
-                required_percentage: required_voting_percentage,
-            },
-            vec![],
-            None,
-        )
-        .await?;
+    let (verifier_addr, tx_resp) = match mode {
+        DeployMode::VerifierSimple => {
+            client
+                .contract_instantiate(
+                    client.addr.clone(),
+                    verifier_code_id,
+                    "Verifier Simple",
+                    &lavs_verifier_simple::msg::InstantiateMsg {
+                        operator_contract: operators_addr.to_string(),
+                        required_percentage: required_voting_percentage,
+                    },
+                    vec![],
+                    None,
+                )
+                .await?;
 
-    tracing::debug!("Verifier Simple Tx Hash: {}", tx_resp.txhash);
-    tracing::debug!("Verifier Simple Address: {}", verifier_addr);
+            tracing::debug!("Verifier Simple Tx Hash: {}", tx_resp.txhash);
+            tracing::debug!("Verifier Simple Address: {}", verifier_addr);
+        }
+        DeployMode::OracleVerifier => {
+            client
+                .contract_instantiate(
+                    client.addr.clone(),
+                    verifier_code_id,
+                    "Oracle Verifier",
+                    &lavs_oracle_verifier::msg::InstantiateMsg {
+                        operator_contract: operators_addr.to_string(),
+                        required_percentage: required_voting_percentage,
+                        threshold_percentage,
+                        allowed_spread,
+                        slashable_spread,
+                    },
+                    vec![],
+                    None,
+                )
+                .await?;
+
+            tracing::debug!("Oracle Verifier Tx Hash: {}", tx_resp.txhash);
+            tracing::debug!("Oracle Verifier Address: {}", verifier_addr);
+        }
+    };
 
     let (task_queue_addr, tx_resp) = client
         .contract_instantiate(
