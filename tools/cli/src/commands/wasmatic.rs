@@ -314,6 +314,7 @@ async fn instantiate_and_invoke(
     builder
         .preopened_dir(app_cache_path, ".", DirPerms::all(), FilePerms::all())
         .expect("preopen failed");
+    builder.inherit_stdio();
     let ctx = builder.build();
 
     let host = Host {
