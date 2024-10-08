@@ -381,6 +381,7 @@ name = "avs-toolkit-cli"
 version = "0.0.0"
 dependencies = [
  "anyhow",
+ "avs-toolkit-shared",
  "clap 4.5.20",
  "cosmwasm-std 2.1.4",
  "deadpool",
@@ -413,6 +414,7 @@ version = "0.0.0"
 dependencies = [
  "anyhow",
  "async-broadcast",
+ "avs-toolkit-shared",
  "awsm_web 0.45.0",
  "cfg-if",
  "console_error_panic_hook",
@@ -437,6 +439,25 @@ dependencies = [
  "wasm-bindgen-futures",
  "wasm-logger",
  "web-sys",
+]
+
+[[package]]
+name = "avs-toolkit-shared"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "cosmwasm-std 2.1.4",
+ "futures",
+ "lavs-apis 0.1.0",
+ "lavs-mock-operators 0.1.0",
+ "lavs-task-queue 0.1.0",
+ "lavs-verifier-simple",
+ "layer-climb",
+ "reqwest 0.11.27",
+ "serde",
+ "serde_json",
+ "sha2 0.10.8",
+ "tracing",
 ]
 
 [[package]]
