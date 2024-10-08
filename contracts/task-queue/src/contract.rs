@@ -98,6 +98,7 @@ mod execute {
 
         let timing = Timing::new(&env, timeout);
         let status = Status::new();
+        dbg!(&timing);
         let task = Task {
             description,
             status,
