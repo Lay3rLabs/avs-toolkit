@@ -370,7 +370,7 @@ name = "avs-toolkit-cli"
 version = "0.0.0"
 dependencies = [
  "anyhow",
- "clap 4.5.19",
+ "clap 4.5.20",
  "cosmwasm-std 2.1.4",
  "deadpool",
  "dotenvy",
@@ -853,9 +853,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "4.5.19"
+version = "4.5.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7be5744db7978a28d9df86a214130d106a89ce49644cbc4e3f0c22c3fba30615"
+checksum = "b97f376d85a664d5837dbae44bf546e6477a679ff6610010f17276f686d867e8"
 dependencies = [
  "clap_builder",
  "clap_derive",
@@ -863,9 +863,9 @@ dependencies = [
 
 [[package]]
 name = "clap_builder"
-version = "4.5.19"
+version = "4.5.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a5fbc17d3ef8278f55b282b2a2e75ae6f6c7d4bb70ed3d0382375104bfafdb4b"
+checksum = "19bc80abd44e4bed93ca373a0704ccbd1b710dc5749406201bb018272808dc54"
 dependencies = [
  "anstream",
  "anstyle",
@@ -1569,9 +1569,9 @@ dependencies = [
 
 [[package]]
 name = "cw-orch-networks"
-version = "0.24.2"
+version = "0.24.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "21dc63b942a44796fd0b5e4aff3dd6f65b8b1ce456b478ed22512385f24df958"
+checksum = "032bee6b3f3231de3be5feef6450572307b953220e1acc18cc2e1a0afed196fe"
 dependencies = [
  "cw-orch-core",
  "serde",
@@ -3256,7 +3256,7 @@ source = "git+https://github.com/Lay3rLabs/climb.git?rev=5436381a7c35344325bd27e
 dependencies = [
  "anyhow",
  "bip39",
- "clap 4.5.19",
+ "clap 4.5.20",
  "cosmwasm-std 2.1.4",
  "deadpool",
  "dotenvy",
@@ -3337,7 +3337,7 @@ dependencies = [
 [[package]]
 name = "layer-wasi"
 version = "0.1.1"
-source = "git+https://github.com/Lay3rLabs/avs-toolkit#08c1974e66990ba048df0dcbe1227a87db9fbafb"
+source = "git+https://github.com/Lay3rLabs/avs-toolkit#4c21fc66a872fadb8aa06d9804cdbedaf4dd56ed"
 dependencies = [
  "serde",
  "serde_json",
@@ -3859,9 +3859,9 @@ dependencies = [
 
 [[package]]
 name = "proc-macro2"
-version = "1.0.86"
+version = "1.0.87"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5e719e8df665df0d1c8fbfd238015744736151d4445ec0836b8e628aae103b77"
+checksum = "b3e4daa0dcf6feba26f985457cdf104d4b4256fc5a09547140f3631bb076b19a"
 dependencies = [
  "unicode-ident",
 ]
