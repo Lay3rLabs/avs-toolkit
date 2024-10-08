@@ -2,12 +2,12 @@ pub type TaskQueueInput = lay3r::avs::types::TaskQueueInput;
 pub type Output = lay3r::avs::types::Output;
 #[doc(hidden)]
 #[allow(non_snake_case)]
-pub unsafe fn _export_run_task_cabi<T: Guest>(arg0: i64, arg1: *mut u8, arg2: usize) -> *mut u8 {
+pub unsafe fn _export_run_task_cabi<T: Guest>(arg0: u64, arg1: *mut u8, arg2: usize) -> *mut u8 {
     #[cfg(target_arch = "wasm32")]
     _rt::run_ctors_once();
     let len0 = arg2;
     let result1 = T::run_task(lay3r::avs::types::TaskQueueInput {
-        timestamp: arg0 as u64,
+        timestamp: Timestamp::from_nanos(arg0),
         request: _rt::Vec::from_raw_parts(arg1.cast(), len0, len0),
     });
     let ptr2 = _RET_AREA.0.as_mut_ptr().cast::<u8>();
@@ -59,7 +59,7 @@ pub trait Guest {
 macro_rules! __export_world_task_queue_cabi {
     ($ty:ident with_types_in $($path_to_types:tt)*) => {
         const _ : () = { #[export_name = "run-task"] unsafe extern "C" fn
-        export_run_task(arg0 : i64, arg1 : * mut u8, arg2 : usize,) -> * mut u8 {
+        export_run_task(arg0 : u64, arg1 : * mut u8, arg2 : usize,) -> * mut u8 {
         $($path_to_types)*:: _export_run_task_cabi::<$ty > (arg0, arg1, arg2) }
         #[export_name = "cabi_post_run-task"] unsafe extern "C" fn
         _post_return_run_task(arg0 : * mut u8,) { $($path_to_types)*::
@@ -81,13 +81,15 @@ pub mod lay3r {
             #[doc(hidden)]
             static __FORCE_SECTION_REF: fn() =
                 super::super::super::__link_custom_section_describing_imports;
+            use cosmwasm_std::Timestamp;
+
             use super::super::super::_rt;
             /// serialized json, avs wasi and lay3r contract must agree on the types
             /// the runner is agnostic to the data format
             pub type SerializedJson = _rt::Vec<u8>;
             #[derive(Clone)]
             pub struct TaskQueueInput {
-                pub timestamp: u64,
+                pub timestamp: Timestamp,
                 pub request: SerializedJson,
             }
             impl ::core::fmt::Debug for TaskQueueInput {
@@ -7090,6 +7092,7 @@ macro_rules! __export_task_queue_impl {
 }
 #[doc(inline)]
 pub(crate) use __export_task_queue_impl as export;
+use cosmwasm_std::Timestamp;
 #[cfg(target_arch = "wasm32")]
 #[link_section = "component-type:wit-bindgen:0.30.0:task-queue:encoded world"]
 #[doc(hidden)]

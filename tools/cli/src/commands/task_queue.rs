@@ -4,7 +4,7 @@ use crate::{
     context::AppContext,
 };
 use anyhow::{bail, Context, Result};
-use cosmwasm_std::Order;
+use cosmwasm_std::{Order, Timestamp};
 use lavs_apis::{
     id::TaskId,
     tasks::{CompletedTaskOverview, ListCompletedResponse, ListOpenResponse, OpenTaskOverview},
@@ -57,7 +57,7 @@ impl TaskQueue {
         &self,
         body: String,
         description: String,
-        timeout: Option<u64>,
+        timeout: Option<Timestamp>,
     ) -> Result<(TaskId, TxResponse)> {
         let payload = serde_json::from_str(&body).context("Failed to parse body into JSON")?;
 

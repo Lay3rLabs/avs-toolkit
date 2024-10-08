@@ -1,3 +1,4 @@
+use cosmwasm_std::Timestamp;
 use cw_orch::environment::{ChainState, CwEnv};
 use cw_orch::prelude::*;
 use lavs_apis::id::TaskId;
@@ -57,7 +58,7 @@ where
     // Upload and instantiate task queue, acknowledging the verifier
     let msg = TasksInstantiateMsg {
         requestor: Requestor::Fixed(chain.sender_addr().into()),
-        timeout: TimeoutInfo::new(600),
+        timeout: TimeoutInfo::new(Timestamp::from_seconds(600)),
         verifier: verifier.addr_str().unwrap(),
     };
     let tasker = TasksContract::new(chain.clone());
@@ -81,7 +82,7 @@ where
         .call_as(&op_node)
         .executed_task(tasker.addr_str().unwrap(), task_id, result)
         .unwrap();
-    let completed = chain.block_info().unwrap().time.seconds();
+    let completed = Timestamp::from_seconds(chain.block_info().unwrap().time.seconds());
 
     // Check it is marked as completed (both in verifier and task queue)
     let status = tasker.task(task_id).unwrap();
@@ -127,7 +128,7 @@ where
     // Upload and instantiate task queue, acknowledging the verifier
     let msg = TasksInstantiateMsg {
         requestor: Requestor::Fixed(chain.sender_addr().into()),
-        timeout: TimeoutInfo::new(600),
+        timeout: TimeoutInfo::new(Timestamp::from_seconds(600)),
         verifier: verifier.addr_str().unwrap(),
     };
     let tasker = TasksContract::new(chain.clone());
@@ -183,7 +184,7 @@ where
         .call_as(&op_nodes[2])
         .executed_task(tasker.addr_str().unwrap(), task_id, result)
         .unwrap();
-    let completed = chain.block_info().unwrap().time.seconds();
+    let completed = Timestamp::from_seconds(chain.block_info().unwrap().time.seconds());
 
     // Check it is marked as completed (both in verifier and task queue)
     let status = tasker.task(task_id).unwrap();
@@ -200,7 +201,7 @@ where
 pub fn make_task<C: ChainState + TxHandler>(
     contract: &TasksContract<C>,
     name: &str,
-    timeout: impl Into<Option<u64>>,
+    timeout: impl Into<Option<Timestamp>>,
     payload: &serde_json::Value,
 ) -> TaskId {
     let res = contract
