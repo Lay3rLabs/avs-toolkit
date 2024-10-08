@@ -159,9 +159,25 @@ mod execute {
         task.complete(&env, response)?;
         TASKS.save(deps.storage, task_id, &task)?;
 
+        // Prepare hooks
+        let hooks = TASK_HOOKS.completed.prepare_hooks(deps.storage, |addr| {
+            Ok(SubMsg::reply_never(WasmMsg::Execute {
+                contract_addr: addr.to_string(),
+                msg: to_json_binary(&TaskHookExecuteMsg::Completed(TaskResponse {
+                    description: task.description.clone(),
+                    status: task.status.clone(),
+                    id: task_id,
+                    payload: task.payload.clone(),
+                    result: task.result.clone(),
+                }))?,
+                funds: vec![],
+            }))
+        })?;
+
         let res = Response::new()
             .add_attribute("action", "completed")
-            .add_attribute("task_id", task_id.to_string());
+            .add_attribute("task_id", task_id.to_string())
+            .add_submessages(hooks);
         Ok(res)
     }
 
@@ -178,9 +194,25 @@ mod execute {
         task.expire(&env)?;
         TASKS.save(deps.storage, task_id, &task)?;
 
+        // Prepare hooks
+        let hooks = TASK_HOOKS.timeout.prepare_hooks(deps.storage, |addr| {
+            Ok(SubMsg::reply_never(WasmMsg::Execute {
+                contract_addr: addr.to_string(),
+                msg: to_json_binary(&TaskHookExecuteMsg::Timeout(TaskResponse {
+                    description: task.description.clone(),
+                    status: task.status.clone(),
+                    id: task_id,
+                    payload: task.payload.clone(),
+                    result: None,
+                }))?,
+                funds: vec![],
+            }))
+        })?;
+
         let res = Response::new()
             .add_attribute("action", "expired")
-            .add_attribute("task_id", task_id.to_string());
+            .add_attribute("task_id", task_id.to_string())
+            .add_submessages(hooks);
         Ok(res)
     }
 }
