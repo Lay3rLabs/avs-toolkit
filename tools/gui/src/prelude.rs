@@ -1,6 +1,6 @@
 pub use crate::{
     atoms::*,
-    client::CLIENT,
+    client::{client_event_receiver, query_client, signing_client, ClientEvent},
     config::CONFIG,
     route::Route,
     theme::{color::*, misc::*, typography::*},

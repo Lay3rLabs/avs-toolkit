@@ -1,6 +1,6 @@
 use crate::{
-    client::CLIENT,
-    page::{dashboard::DashboardUi, landing::LandingUi, notfound::NotFoundUi},
+    client::{has_signing_client, signing_client},
+    page::{landing::LandingUi, main::MainUi, notfound::NotFoundUi},
     prelude::*,
 };
 
@@ -90,11 +90,11 @@ pub fn render() -> Dom {
                 Route::Landing => Some(LandingUi::new().render()),
                 Route::NotFound => Some(NotFoundUi::new().render()),
                 _ => {
-                    if CLIENT.get().is_none() {
+                    if !has_signing_client() {
                         Route::Landing.go_to_url();
                         None
                     } else {
-                        Some(DashboardUi::new().render())
+                        Some(MainUi::new().render())
                     }
                 }
             }
