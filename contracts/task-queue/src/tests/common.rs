@@ -12,6 +12,7 @@ use crate::msg::{
     CompletedTaskOverview, InstantiateMsg, ListCompletedResponse, ListOpenResponse,
     OpenTaskOverview, Requestor, Status, TimeoutInfo,
 };
+use crate::tests::multi::DENOM;
 use mock_hook_consumer::interface::Contract as MockHookConsumerContract;
 
 // FIXME: any way to get these as one import, rather than import all sub traits?
@@ -470,8 +471,6 @@ where
     C: CwEnv + AltSigner,
     C::Sender: Addressable,
 {
-    const DENOM: &str = "uslay";
-
     let coin = Coin {
         denom: DENOM.to_string(),
         amount: Uint128::one(),

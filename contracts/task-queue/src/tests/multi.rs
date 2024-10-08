@@ -7,7 +7,7 @@ use crate::msg::{InstantiateMsg, Requestor, TimeoutInfo};
 
 // TODO: shared variable
 const BECH_PREFIX: &str = "layer";
-const DENOM: &str = "uslay";
+pub const DENOM: &str = "uslay";
 
 // Note: there is an assumption of 5 second blocks in the test framework
 // let's make this clear in the tests
