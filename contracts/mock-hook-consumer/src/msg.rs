@@ -3,6 +3,7 @@ use lavs_apis::interfaces::task_hooks::TaskHookExecuteMsg;
 
 #[cw_serde]
 pub enum ExecuteMsg {
+    AddHooks { task_queue: String },
     TaskHook(TaskHookExecuteMsg),
 }
 
