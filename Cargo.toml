@@ -75,6 +75,8 @@ dominator_helpers = "0.8.0"
 futures-signals = "0.3.34"
 gloo-events = "0.2.0"
 gloo-timers = {version = "0.3.0", features = ["futures"]}
+# TODO: waiting for https://github.com/smol-rs/async-broadcast/pull/61 to land
+async-broadcast = { git = "https://github.com/smol-rs/async-broadcast.git", rev="de420a3b6e72939d96250573c7c242d0ff195424"}
 
 # wasi stuff
 wit-bindgen-rt = { version = "0.32.0", features = ["bitflags"] }

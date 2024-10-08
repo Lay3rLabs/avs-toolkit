@@ -107,25 +107,9 @@ pub struct ConfigData {
 pub struct ChainInfo {
     pub chain: WebChainConfig,
     pub faucet: FaucetConfig,
-    pub wasmatic: WasmaticConfig,
-}
-
-#[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct WasmaticConfig {
-    pub endpoints: Vec<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct FaucetConfig {
     pub mnemonic: String,
-}
-
-#[derive(Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct GetInfo {
-    pub operators: Vec<String>,
-}
-
-pub(crate) async fn load_wasmatic_addresses(endpoints: &[String]) -> Result<Vec<String>> {
-    bail!("TODO")
 }
