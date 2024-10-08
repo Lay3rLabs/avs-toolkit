@@ -1,3 +1,4 @@
+use cosmwasm_std::coins;
 // use cw_orch::environment::IndexResponse;
 use cw_orch::prelude::*;
 
@@ -6,6 +7,7 @@ use crate::msg::{InstantiateMsg, Requestor, TimeoutInfo};
 
 // TODO: shared variable
 const BECH_PREFIX: &str = "layer";
+const DENOM: &str = "uslay";
 
 // Note: there is an assumption of 5 second blocks in the test framework
 // let's make this clear in the tests
@@ -45,6 +47,27 @@ fn task_status() {
 fn task_pagination() {
     let chain = MockBech32::new(BECH_PREFIX);
     super::common::task_pagination_works(chain);
+}
+
+#[test]
+fn task_hooks() {
+    let chain = MockBech32::new(BECH_PREFIX);
+
+    // Create consumer
+    let mock_hook_consumer = super::common::setup_mock_hooks_consumer(chain.clone());
+
+    // Fund accounts (open payment config)
+    chain
+        .add_balance(&chain.sender(), coins(10_000_000, DENOM))
+        .unwrap();
+    chain
+        .add_balance(
+            &mock_hook_consumer.address().unwrap(),
+            coins(10_000_000, DENOM),
+        )
+        .unwrap();
+
+    super::common::mock_hook_consumer_test(chain, mock_hook_consumer);
 }
 
 /// This is the simplest, most explicit test to bootstrap, before importing from common

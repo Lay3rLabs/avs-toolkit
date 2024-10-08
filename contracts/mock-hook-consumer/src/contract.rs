@@ -1,10 +1,11 @@
-use cosmwasm_std::{entry_point, Binary, Deps, Empty, StdResult};
+use cosmwasm_std::{entry_point, to_json_binary, Binary, Deps, Empty, StdResult, Uint128};
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response};
 use cw2::set_contract_version;
 use execute::{add_hooks, task_completed, task_created, task_timeout};
 use lavs_apis::interfaces::task_hooks::TaskHookExecuteMsg;
 
-use crate::msg::ExecuteMsg;
+use crate::msg::{ExecuteMsg, QueryMsg};
+use crate::state::CREATED_COUNT;
 
 // version info for migration info
 const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
@@ -18,6 +19,8 @@ pub fn instantiate(
     _msg: Empty,
 ) -> StdResult<Response> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+
+    CREATED_COUNT.save(deps.storage, &Uint128::zero())?;
 
     Ok(Response::new().add_attribute("method", "instantiate"))
 }
@@ -35,13 +38,16 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
 }
 
 mod execute {
-    use cosmwasm_std::{to_json_binary, CosmosMsg, StdError, WasmMsg};
+    use cosmwasm_std::{to_json_binary, CosmosMsg, StdError, Uint128, WasmMsg};
     use lavs_apis::{
         interfaces::task_hooks::TaskHookType,
         tasks::{ConfigResponse, Requestor, TaskResponse},
     };
 
-    use crate::msg::{TaskRequestData, TaskResponseData};
+    use crate::{
+        msg::{TaskRequestData, TaskResponseData},
+        state::CREATED_COUNT,
+    };
 
     use super::*;
 
@@ -81,14 +87,16 @@ mod execute {
         Ok(Response::default().add_messages(msgs))
     }
 
-    /// For a task created, we simply want to add an event.
+    /// For a task created, we want to increase our created counter.
     pub fn task_created(
-        _deps: DepsMut,
+        deps: DepsMut,
         _env: Env,
         _info: MessageInfo,
         _task: TaskResponse,
     ) -> StdResult<Response> {
-        Ok(Response::default().add_attribute("action", "task_created"))
+        CREATED_COUNT.update(deps.storage, |x| -> StdResult<_> { Ok(x + Uint128::one()) })?;
+
+        Ok(Response::default())
     }
 
     /// For the task completed, we want to create another task on the task queue.
@@ -166,6 +174,10 @@ mod execute {
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(_deps: Deps, _env: Env, _msg: Empty) -> StdResult<Binary> {
-    unimplemented!()
+pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
+    match msg {
+        QueryMsg::CreatedCount {} => {
+            to_json_binary(&CREATED_COUNT.may_load(deps.storage)?.unwrap_or_default())
+        }
+    }
 }

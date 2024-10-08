@@ -1,6 +1,6 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response};
+use cosmwasm_std::{to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response};
 use cw2::set_contract_version;
 
 use lavs_apis::interfaces::tasks as interface;
@@ -14,6 +14,8 @@ use crate::state::{Config, Task, CONFIG, TASKS, TASK_HOOKS};
 // version info for migration info
 const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
+
+const HOOK_ERROR_REPLY_ID: u64 = 0;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -120,17 +122,20 @@ mod execute {
 
         // Prepare hooks
         let hooks = TASK_HOOKS.created.prepare_hooks(deps.storage, |addr| {
-            Ok(SubMsg::reply_never(WasmMsg::Execute {
-                contract_addr: addr.to_string(),
-                msg: to_json_binary(&TaskHookExecuteMsg::Created(TaskResponse {
-                    description: task.description.clone(),
-                    status: task.status.clone(),
-                    id: task_id,
-                    payload: task.payload.clone(),
-                    result: None,
-                }))?,
-                funds: vec![],
-            }))
+            Ok(SubMsg::reply_on_error(
+                WasmMsg::Execute {
+                    contract_addr: addr.to_string(),
+                    msg: to_json_binary(&TaskHookExecuteMsg::Created(TaskResponse {
+                        description: task.description.clone(),
+                        status: task.status.clone(),
+                        id: task_id,
+                        payload: task.payload.clone(),
+                        result: None,
+                    }))?,
+                    funds: vec![],
+                },
+                HOOK_ERROR_REPLY_ID,
+            ))
         })?;
 
         let res = Response::new()
@@ -161,17 +166,20 @@ mod execute {
 
         // Prepare hooks
         let hooks = TASK_HOOKS.completed.prepare_hooks(deps.storage, |addr| {
-            Ok(SubMsg::reply_never(WasmMsg::Execute {
-                contract_addr: addr.to_string(),
-                msg: to_json_binary(&TaskHookExecuteMsg::Completed(TaskResponse {
-                    description: task.description.clone(),
-                    status: task.status.clone(),
-                    id: task_id,
-                    payload: task.payload.clone(),
-                    result: task.result.clone(),
-                }))?,
-                funds: vec![],
-            }))
+            Ok(SubMsg::reply_on_error(
+                WasmMsg::Execute {
+                    contract_addr: addr.to_string(),
+                    msg: to_json_binary(&TaskHookExecuteMsg::Completed(TaskResponse {
+                        description: task.description.clone(),
+                        status: task.status.clone(),
+                        id: task_id,
+                        payload: task.payload.clone(),
+                        result: task.result.clone(),
+                    }))?,
+                    funds: vec![],
+                },
+                HOOK_ERROR_REPLY_ID,
+            ))
         })?;
 
         let res = Response::new()
@@ -196,17 +204,20 @@ mod execute {
 
         // Prepare hooks
         let hooks = TASK_HOOKS.timeout.prepare_hooks(deps.storage, |addr| {
-            Ok(SubMsg::reply_never(WasmMsg::Execute {
-                contract_addr: addr.to_string(),
-                msg: to_json_binary(&TaskHookExecuteMsg::Timeout(TaskResponse {
-                    description: task.description.clone(),
-                    status: task.status.clone(),
-                    id: task_id,
-                    payload: task.payload.clone(),
-                    result: None,
-                }))?,
-                funds: vec![],
-            }))
+            Ok(SubMsg::reply_on_error(
+                WasmMsg::Execute {
+                    contract_addr: addr.to_string(),
+                    msg: to_json_binary(&TaskHookExecuteMsg::Timeout(TaskResponse {
+                        description: task.description.clone(),
+                        status: task.status.clone(),
+                        id: task_id,
+                        payload: task.payload.clone(),
+                        result: None,
+                    }))?,
+                    funds: vec![],
+                },
+                HOOK_ERROR_REPLY_ID,
+            ))
         })?;
 
         let res = Response::new()
@@ -353,6 +364,15 @@ mod query {
             .collect::<Result<Vec<_>, _>>()?;
 
         Ok(ListCompletedResponse { tasks: completed })
+    }
+}
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn reply(_deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractError> {
+    match msg.id {
+        // Allow hooks to fail
+        HOOK_ERROR_REPLY_ID => Ok(Response::default()),
+        _ => Err(ContractError::UnknownReplyId { id: msg.id }),
     }
 }
 

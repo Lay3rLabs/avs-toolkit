@@ -1,8 +1,7 @@
 use cw_orch::{interface, prelude::*};
 
-use crate::msg::ExecuteMsg;
+use crate::msg::{ExecuteMsg, QueryMsg};
 type InstantiateMsg = cosmwasm_std::Empty;
-type QueryMsg = cosmwasm_std::Empty;
 type MigrateMsg = cosmwasm_std::Empty;
 
 pub const CONTRACT_ID: &str = env!("CARGO_PKG_NAME");

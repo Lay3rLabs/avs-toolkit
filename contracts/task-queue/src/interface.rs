@@ -23,7 +23,8 @@ impl<Chain> Uploadable for Contract<Chain> {
                 crate::contract::execute,
                 crate::contract::instantiate,
                 crate::contract::query,
-            ), // .with_migrate(crate::contract::migrate),
+            )
+            .with_reply(crate::contract::reply), // .with_migrate(crate::contract::migrate),
         )
     }
 }

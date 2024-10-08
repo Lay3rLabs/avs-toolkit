@@ -37,7 +37,7 @@ The contract handles `ExecuteMsg::TaskHook` messages, which can be one of the fo
 
 ### Task Flow
 
-1. When a task is created, the contract simply adds an event attribute.
+1. When a task is created, the contract increments its created counter.
 2. When a task is completed, the contract:
    - Deserializes the task response
    - Creates a new task request (squaring the result)

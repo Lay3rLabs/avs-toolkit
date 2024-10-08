@@ -31,3 +31,4 @@ lavs-apis = { workspace = true }
 cw-multi-test = { workspace = true }
 lavs-orch = { workspace = true }
 cw-orch = { workspace = true }
+mock-hook-consumer = { path = "../mock-hook-consumer" }

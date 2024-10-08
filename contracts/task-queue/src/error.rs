@@ -41,4 +41,7 @@ pub enum ContractError {
 
     #[error("Missing result for completed task {id}")]
     MissingResultCompleted { id: TaskId },
+
+    #[error("Unknown reply id {id}")]
+    UnknownReplyId { id: u64 },
 }
