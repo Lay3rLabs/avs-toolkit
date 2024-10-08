@@ -67,7 +67,7 @@ pub struct DeployArgs {
     pub command: DeployCommand,
 }
 
-#[derive(Clone, ValueEnum)]
+#[derive(Clone, PartialEq, ValueEnum)]
 pub enum DeployMode {
     VerifierSimple,
     OracleVerifier,
