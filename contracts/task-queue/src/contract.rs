@@ -98,7 +98,6 @@ mod execute {
 
         let timing = Timing::new(&env, timeout);
         let status = Status::new();
-        dbg!(&timing);
         let task = Task {
             description,
             status,
@@ -163,6 +162,7 @@ mod execute {
 }
 
 mod query {
+    use cosmwasm_std::Timestamp;
     use cw_storage_plus::Bound;
     use lavs_apis::{id::TaskId, tasks::ConfigResponse};
 
@@ -270,7 +270,12 @@ mod query {
         let completed = TASKS
             .idx
             .status
-            .prefix(Status::Completed { completed: 0 }.as_str())
+            .prefix(
+                Status::Completed {
+                    completed: Timestamp::from_seconds(0),
+                }
+                .as_str(),
+            )
             .range(
                 deps.storage,
                 None,
