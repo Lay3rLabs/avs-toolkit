@@ -5,6 +5,7 @@ use crate::{
 };
 use anyhow::{anyhow, bail, Result};
 use cosmwasm_std::Decimal;
+use cosmwasm_std::Timestamp;
 use lavs_task_queue::msg::{Requestor, TimeoutInfo};
 use layer_climb::prelude::*;
 use std::path::PathBuf;
@@ -27,7 +28,7 @@ impl DeployContractArgs {
     pub async fn parse(
         ctx: &AppContext,
         artifacts_path: PathBuf,
-        task_timeout_seconds: u64,
+        task_timeout: Timestamp,
         required_voting_percentage: u32,
         threshold_percentage: Option<Decimal>,
         allowed_spread: Option<Decimal>,
@@ -91,7 +92,7 @@ impl DeployContractArgs {
             }
         };
 
-        let task_timeout = TimeoutInfo::new(task_timeout_seconds);
+        let task_timeout = TimeoutInfo::new(task_timeout);
 
         Ok(Self {
             artifacts_path,

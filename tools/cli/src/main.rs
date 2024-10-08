@@ -13,6 +13,7 @@ use commands::{
     wasmatic::{app, deploy, info, remove, run, test, Trigger},
 };
 use context::AppContext;
+use cosmwasm_std::Timestamp;
 use layer_climb::prelude::*;
 use layer_climb_cli::command::{ContractLog, WalletLog};
 
@@ -50,7 +51,7 @@ async fn main() -> Result<()> {
                 let args = DeployContractArgs::parse(
                     &ctx,
                     artifacts_path,
-                    task_timeout_seconds,
+                    Timestamp::from_seconds(task_timeout_seconds),
                     required_voting_percentage,
                     threshold_percentage,
                     allowed_spread,
@@ -79,6 +80,10 @@ async fn main() -> Result<()> {
                     description,
                     timeout,
                 } => {
+                    // NOTE: I've left only this input argument as u64, because of `clap` not liking
+                    // Timestamp as argument
+                    let timeout = timeout.map(Timestamp::from_seconds);
+
                     let _ = task_queue.add_task(body, description, timeout).await?;
                 }
                 TaskQueueCommand::ViewQueue { start_after, limit } => {
