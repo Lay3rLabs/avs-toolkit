@@ -154,14 +154,14 @@ pub struct Timing {
 impl Timing {
     pub fn new(env: &Env, timeout: Timestamp) -> Self {
         Timing {
-            created_at: Timestamp::from_seconds(env.block.time.seconds()),
-            expires_at: Timestamp::from_seconds(env.block.time.seconds() + timeout.seconds()),
+            created_at: env.block.time,
+            expires_at: env.block.time.plus_seconds(timeout.seconds()),
             created_height: env.block.height,
         }
     }
 
     pub fn is_expired(&self, env: &Env) -> bool {
-        self.expires_at.seconds() <= env.block.time.seconds()
+        self.expires_at <= env.block.time
     }
 }
 
