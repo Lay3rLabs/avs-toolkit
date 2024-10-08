@@ -242,11 +242,13 @@ mod query {
                         timing,
                         ..
                     },
-                )) if timing.expires_at > env.block.time.seconds() => Some(Ok(OpenTaskOverview {
-                    id,
-                    expires: timing.expires_at,
-                    payload,
-                })),
+                )) if timing.expires_at.seconds() > env.block.time.seconds() => {
+                    Some(Ok(OpenTaskOverview {
+                        id,
+                        expires: timing.expires_at,
+                        payload,
+                    }))
+                }
                 Ok(_) => None,
                 Err(e) => Some(Err(e)),
             })

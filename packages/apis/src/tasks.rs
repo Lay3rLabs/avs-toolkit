@@ -65,7 +65,7 @@ pub enum CustomExecuteMsg {
         /// Human-readable description of the task
         description: String,
         /// Specify a task timeout, or use the default
-        timeout: Option<u64>,
+        timeout: Option<Timestamp>,
         /// Machine-readable data for the AVS to use
         /// FIXME: use generic T to enforce a AVS-specific format
         payload: RequestType,
@@ -150,8 +150,7 @@ pub struct ListCompletedResponse {
 #[cw_serde]
 pub struct OpenTaskOverview {
     pub id: TaskId,
-    // TODO: this can use Timestamp
-    pub expires: u64,
+    pub expires: Timestamp,
     pub payload: RequestType,
 }
 
