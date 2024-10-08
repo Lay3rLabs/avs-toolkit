@@ -1,5 +1,5 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Coin, Env};
+use cosmwasm_std::{Coin, Env, Timestamp};
 use cw_orch::{ExecuteFns, QueryFns};
 
 use crate::id::TaskId;
@@ -32,13 +32,13 @@ pub enum Requestor {
 /// All timeouts are defined in seconds
 /// If minimum and maximum are undefined, the default value is used
 pub struct TimeoutInfo {
-    pub default: u64,
-    pub minimum: Option<u64>,
-    pub maximum: Option<u64>,
+    pub default: Timestamp,
+    pub minimum: Option<Timestamp>,
+    pub maximum: Option<Timestamp>,
 }
 
 impl TimeoutInfo {
-    pub fn new(default: u64) -> Self {
+    pub fn new(default: Timestamp) -> Self {
         Self {
             default,
             minimum: None,
@@ -150,6 +150,7 @@ pub struct ListCompletedResponse {
 #[cw_serde]
 pub struct OpenTaskOverview {
     pub id: TaskId,
+    // TODO: this can use Timestamp
     pub expires: u64,
     pub payload: RequestType,
 }
@@ -158,6 +159,7 @@ pub struct OpenTaskOverview {
 #[cw_serde]
 pub struct CompletedTaskOverview {
     pub id: TaskId,
+    // TODO: this can use `Timestamp`
     pub completed: u64,
     pub result: ResponseType,
 }
@@ -172,10 +174,11 @@ pub struct ConfigResponse {
 /// All timeouts are defined in seconds
 /// This is configured from `TimeoutInfo`, which is passed in the instantiate message
 #[cw_serde]
+// TODO: this can benefit from `Timestamp`
 pub struct TimeoutConfig {
-    pub default: u64,
-    pub minimum: u64,
-    pub maximum: u64,
+    pub default: Timestamp,
+    pub minimum: Timestamp,
+    pub maximum: Timestamp,
 }
 
 /// This is detailed information about a task, including the payload
