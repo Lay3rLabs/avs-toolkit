@@ -106,7 +106,7 @@ pub struct TaskMetadata {
 
 impl TaskMetadata {
     pub fn is_expired(&self, env: &Env) -> bool {
-        env.block.time.seconds() >= self.expires_time.seconds()
+        env.block.time >= self.expires_time
     }
 }
 
