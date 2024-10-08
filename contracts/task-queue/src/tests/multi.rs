@@ -1,3 +1,4 @@
+use cosmwasm_std::Timestamp;
 // use cw_orch::environment::IndexResponse;
 use cw_orch::prelude::*;
 
@@ -60,7 +61,7 @@ fn sanity_check() {
     let msg = InstantiateMsg {
         requestor: Requestor::Fixed(mock.sender_addr().into()),
         timeout: TimeoutInfo {
-            default: 3600,
+            default: Timestamp::from_seconds(3600),
             minimum: None,
             maximum: None,
         },

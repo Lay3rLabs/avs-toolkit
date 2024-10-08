@@ -157,12 +157,18 @@ impl Timing {
     pub fn new(env: &Env, timeout: Timestamp) -> Self {
         Timing {
             created_at: Timestamp::from_seconds(env.block.time.seconds()),
-            expires_at: Timestamp::from_nanos(env.block.time.seconds() + timeout.seconds()),
+            expires_at: Timestamp::from_seconds(env.block.time.seconds() + timeout.seconds()),
             created_height: env.block.height,
         }
     }
 
     pub fn is_expired(&self, env: &Env) -> bool {
+        dbg!(
+            &self,
+            self.expires_at.seconds(),
+            env.block.time.seconds(),
+            self.expires_at.seconds() <= env.block.time.seconds()
+        );
         self.expires_at.seconds() <= env.block.time.seconds()
     }
 }
