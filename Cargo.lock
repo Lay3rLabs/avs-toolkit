@@ -3226,7 +3226,7 @@ dependencies = [
 [[package]]
 name = "layer-climb"
 version = "0.0.0"
-source = "git+https://github.com/Lay3rLabs/climb.git?rev=6771bf76f2ba76683082caa87e0bf10a98eb6436#6771bf76f2ba76683082caa87e0bf10a98eb6436"
+source = "git+https://github.com/Lay3rLabs/climb.git?rev=6e8fa0b15ae736ef82e8dcd8d72715b4d7010444#6e8fa0b15ae736ef82e8dcd8d72715b4d7010444"
 dependencies = [
  "layer-climb-address",
  "layer-climb-config",
@@ -3237,7 +3237,7 @@ dependencies = [
 [[package]]
 name = "layer-climb-address"
 version = "0.0.0"
-source = "git+https://github.com/Lay3rLabs/climb.git?rev=6771bf76f2ba76683082caa87e0bf10a98eb6436#6771bf76f2ba76683082caa87e0bf10a98eb6436"
+source = "git+https://github.com/Lay3rLabs/climb.git?rev=6e8fa0b15ae736ef82e8dcd8d72715b4d7010444#6e8fa0b15ae736ef82e8dcd8d72715b4d7010444"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -3246,6 +3246,7 @@ dependencies = [
  "bip39",
  "cfg-if",
  "hex",
+ "js-sys",
  "k256",
  "layer-climb-config",
  "layer-climb-proto",
@@ -3254,14 +3255,16 @@ dependencies = [
  "signature",
  "subtle-encoding",
  "tendermint",
+ "thiserror",
  "wasm-bindgen",
  "wasm-bindgen-futures",
+ "web-sys",
 ]
 
 [[package]]
 name = "layer-climb-cli"
 version = "0.0.0"
-source = "git+https://github.com/Lay3rLabs/climb.git?rev=6771bf76f2ba76683082caa87e0bf10a98eb6436#6771bf76f2ba76683082caa87e0bf10a98eb6436"
+source = "git+https://github.com/Lay3rLabs/climb.git?rev=6e8fa0b15ae736ef82e8dcd8d72715b4d7010444#6e8fa0b15ae736ef82e8dcd8d72715b4d7010444"
 dependencies = [
  "anyhow",
  "bip39",
@@ -3281,7 +3284,7 @@ dependencies = [
 [[package]]
 name = "layer-climb-config"
 version = "0.0.0"
-source = "git+https://github.com/Lay3rLabs/climb.git?rev=6771bf76f2ba76683082caa87e0bf10a98eb6436#6771bf76f2ba76683082caa87e0bf10a98eb6436"
+source = "git+https://github.com/Lay3rLabs/climb.git?rev=6e8fa0b15ae736ef82e8dcd8d72715b4d7010444#6e8fa0b15ae736ef82e8dcd8d72715b4d7010444"
 dependencies = [
  "anyhow",
  "serde",
@@ -3291,7 +3294,7 @@ dependencies = [
 [[package]]
 name = "layer-climb-core"
 version = "0.0.0"
-source = "git+https://github.com/Lay3rLabs/climb.git?rev=6771bf76f2ba76683082caa87e0bf10a98eb6436#6771bf76f2ba76683082caa87e0bf10a98eb6436"
+source = "git+https://github.com/Lay3rLabs/climb.git?rev=6e8fa0b15ae736ef82e8dcd8d72715b4d7010444#6e8fa0b15ae736ef82e8dcd8d72715b4d7010444"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -3324,7 +3327,7 @@ dependencies = [
 [[package]]
 name = "layer-climb-proto"
 version = "0.0.0"
-source = "git+https://github.com/Lay3rLabs/climb.git?rev=6771bf76f2ba76683082caa87e0bf10a98eb6436#6771bf76f2ba76683082caa87e0bf10a98eb6436"
+source = "git+https://github.com/Lay3rLabs/climb.git?rev=6e8fa0b15ae736ef82e8dcd8d72715b4d7010444#6e8fa0b15ae736ef82e8dcd8d72715b4d7010444"
 dependencies = [
  "anyhow",
  "cosmos-sdk-proto 0.25.0",
