@@ -29,9 +29,9 @@ pub fn instantiate(
 pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> StdResult<Response> {
     match msg {
         ExecuteMsg::TaskHook(task_hook) => match task_hook {
-            TaskHookExecuteMsg::Created(task) => task_created(deps, env, info, task),
-            TaskHookExecuteMsg::Completed(task) => task_completed(deps, env, info, task),
-            TaskHookExecuteMsg::Timeout(task) => task_timeout(deps, env, info, task),
+            TaskHookExecuteMsg::TaskCreatedHook(task) => task_created(deps, env, info, task),
+            TaskHookExecuteMsg::TaskCompletedHook(task) => task_completed(deps, env, info, task),
+            TaskHookExecuteMsg::TaskTimeoutHook(task) => task_timeout(deps, env, info, task),
         },
         ExecuteMsg::AddHooks { task_queue } => add_hooks(deps, env, info, task_queue),
     }

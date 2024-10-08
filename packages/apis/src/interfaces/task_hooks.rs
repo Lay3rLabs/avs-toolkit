@@ -70,7 +70,7 @@ pub enum TaskHookType {
 
 #[cw_serde]
 pub enum TaskHookExecuteMsg {
-    Completed(TaskResponse),
-    Timeout(TaskResponse),
-    Created(TaskResponse),
+    TaskCompletedHook(TaskResponse),
+    TaskTimeoutHook(TaskResponse),
+    TaskCreatedHook(TaskResponse),
 }

@@ -125,7 +125,7 @@ mod execute {
             Ok(SubMsg::reply_on_error(
                 WasmMsg::Execute {
                     contract_addr: addr.to_string(),
-                    msg: to_json_binary(&TaskHookExecuteMsg::Created(TaskResponse {
+                    msg: to_json_binary(&TaskHookExecuteMsg::TaskCreatedHook(TaskResponse {
                         description: task.description.clone(),
                         status: task.status.clone(),
                         id: task_id,
@@ -169,7 +169,7 @@ mod execute {
             Ok(SubMsg::reply_on_error(
                 WasmMsg::Execute {
                     contract_addr: addr.to_string(),
-                    msg: to_json_binary(&TaskHookExecuteMsg::Completed(TaskResponse {
+                    msg: to_json_binary(&TaskHookExecuteMsg::TaskCompletedHook(TaskResponse {
                         description: task.description.clone(),
                         status: task.status.clone(),
                         id: task_id,
@@ -207,7 +207,7 @@ mod execute {
             Ok(SubMsg::reply_on_error(
                 WasmMsg::Execute {
                     contract_addr: addr.to_string(),
-                    msg: to_json_binary(&TaskHookExecuteMsg::Timeout(TaskResponse {
+                    msg: to_json_binary(&TaskHookExecuteMsg::TaskTimeoutHook(TaskResponse {
                         description: task.description.clone(),
                         status: task.status.clone(),
                         id: task_id,

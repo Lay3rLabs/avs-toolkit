@@ -58,7 +58,7 @@ fn task_hooks() {
 
     // Fund accounts (open payment config)
     chain
-        .add_balance(&chain.sender(), coins(10_000_000, DENOM))
+        .add_balance(chain.sender(), coins(10_000_000, DENOM))
         .unwrap();
     chain
         .add_balance(

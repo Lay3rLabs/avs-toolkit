@@ -31,9 +31,9 @@ pub fn instantiate(
 
 The contract handles `ExecuteMsg::TaskHook` messages, which can be one of the following:
 
-- `TaskHookExecuteMsg::Created(task)`
-- `TaskHookExecuteMsg::Completed(task)`
-- `TaskHookExecuteMsg::Timeout(task)`
+- `TaskHookExecuteMsg::TaskCreatedHook(task)`
+- `TaskHookExecuteMsg::TaskCompletedHook(task)`
+- `TaskHookExecuteMsg::TaskTimeoutHook(task)`
 
 ### Task Flow
 
