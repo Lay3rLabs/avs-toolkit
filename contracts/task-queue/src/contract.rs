@@ -76,6 +76,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<Binary, ContractErro
 }
 
 mod execute {
+    use cosmwasm_std::Timestamp;
     use cw_utils::nonpayable;
     use lavs_apis::id::TaskId;
 
@@ -88,7 +89,7 @@ mod execute {
         env: Env,
         info: MessageInfo,
         description: String,
-        timeout: Option<u64>,
+        timeout: Option<Timestamp>,
         payload: RequestType,
     ) -> Result<Response, ContractError> {
         let mut config = CONFIG.load(deps.storage)?;

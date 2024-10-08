@@ -1,5 +1,5 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Addr, Coin, Deps, Env, MessageInfo, StdError};
+use cosmwasm_std::{Addr, Coin, Deps, Env, MessageInfo, StdError, Timestamp};
 use cw_storage_plus::{Index, IndexList, IndexedMap, Item, MultiIndex};
 use cw_utils::must_pay;
 
@@ -112,7 +112,10 @@ pub fn validate_timeout_info(input: msg::TimeoutInfo) -> Result<TimeoutConfig, C
 }
 
 // TODO: use `Timestamp` here
-pub fn check_timeout(config: &TimeoutConfig, timeout: Option<u64>) -> Result<u64, ContractError> {
+pub fn check_timeout(
+    config: &TimeoutConfig,
+    timeout: Option<Timestamp>,
+) -> Result<Timestamp, ContractError> {
     match timeout {
         Some(t) if t < config.minimum => Err(ContractError::TimeoutTooShort(config.minimum)),
         Some(t) if t > config.maximum => Err(ContractError::TimeoutTooLong(config.maximum)),
@@ -142,25 +145,25 @@ impl Task {
 
 #[cw_serde]
 pub struct Timing {
-    /// Creation in UNIX seconds
-    pub created_at: u64,
-    /// Expiration in UNIX seconds
-    pub expires_at: u64,
+    /// Creation in `Timestamp` format
+    pub created_at: Timestamp,
+    /// Expiration in `Timestamp` format
+    pub expires_at: Timestamp,
     /// Creation in block height
     pub created_height: u64,
 }
 
 impl Timing {
-    pub fn new(env: &Env, timeout: u64) -> Self {
+    pub fn new(env: &Env, timeout: Timestamp) -> Self {
         Timing {
-            created_at: env.block.time.seconds(),
-            expires_at: env.block.time.seconds() + timeout,
+            created_at: Timestamp::from_seconds(env.block.time.seconds()),
+            expires_at: Timestamp::from_nanos(env.block.time.seconds() + timeout.seconds()),
             created_height: env.block.height,
         }
     }
 
     pub fn is_expired(&self, env: &Env) -> bool {
-        self.expires_at <= env.block.time.seconds()
+        self.expires_at.seconds() <= env.block.time.seconds()
     }
 }
 
