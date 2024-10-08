@@ -9,7 +9,7 @@ to demonstate how much less boilerplate is needed for building on Layer.
 
 First, install [Python 3.10 or later](https://www.python.org/) and
 [pip](https://pypi.org/project/pip/) if you don't already have them.  Then,
-install [`componentize-py`}(https://github.com/bytecodealliance/componentize-py):
+install [`componentize-py`](https://github.com/bytecodealliance/componentize-py):
 
 ```bash
 pip install componentize-py
