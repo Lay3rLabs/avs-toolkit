@@ -23,6 +23,7 @@ pub struct DeployContractArgs {
 }
 
 impl DeployContractArgs {
+    #[allow(clippy::too_many_arguments)]
     pub async fn parse(
         ctx: &AppContext,
         artifacts_path: PathBuf,

@@ -52,11 +52,11 @@ async fn main() -> Result<()> {
                     artifacts_path,
                     task_timeout_seconds,
                     required_voting_percentage,
-                    operators,
-                    requestor,
                     threshold_percentage,
                     allowed_spread,
                     slashable_spread,
+                    operators,
+                    requestor,
                 )
                 .await?;
 
