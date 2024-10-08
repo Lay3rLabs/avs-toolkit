@@ -35,7 +35,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
 
 mod execute {
     use cosmwasm_std::{to_json_binary, CosmosMsg, StdError, WasmMsg};
-    use lavs_apis::tasks::TaskResponse;
+    use lavs_apis::tasks::{ConfigResponse, Requestor, TaskResponse};
 
     use crate::msg::{TaskRequestData, TaskResponseData};
 
@@ -53,8 +53,8 @@ mod execute {
 
     /// For the task completed, we want to create another task on the task queue.
     pub fn task_completed(
-        _deps: DepsMut,
-        _env: Env,
+        deps: DepsMut,
+        env: Env,
         info: MessageInfo,
         task: TaskResponse,
     ) -> StdResult<Response> {
@@ -68,6 +68,26 @@ mod execute {
                     e
                 ))
             })?;
+
+        // Query requestor config
+        let config: ConfigResponse = deps.querier.query_wasm_smart(
+            task_queue.to_string(),
+            &lavs_apis::tasks::QueryMsg::Custom(lavs_apis::tasks::CustomQueryMsg::Config {}),
+        )?;
+
+        // Get amount to send
+        let funds = match config.requestor {
+            Requestor::Fixed(addr) => {
+                if addr == env.contract.address.to_string() {
+                    Ok(vec![])
+                } else {
+                    Err(StdError::generic_err(
+                        "Contract is not authorized to create tasks",
+                    ))
+                }
+            }
+            Requestor::OpenPayment(coin) => Ok(vec![coin]),
+        }?;
 
         // Construct a new request to square the square result
         let request = TaskRequestData { x: response.y };
@@ -86,7 +106,7 @@ mod execute {
                     })?,
                 },
             ))?,
-            funds: vec![],
+            funds,
         });
 
         Ok(Response::default()
