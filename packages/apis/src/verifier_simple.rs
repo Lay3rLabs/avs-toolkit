@@ -1,5 +1,5 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Env, Uint128};
+use cosmwasm_std::{Env, Timestamp, Uint128};
 use cw_orch::{ExecuteFns, QueryFns};
 
 use crate::id::TaskId;
@@ -101,14 +101,12 @@ pub struct TaskMetadata {
     pub power_required: Uint128,
     pub status: TaskStatus,
     pub created_height: u64,
-    /// Measured in UNIX seconds
-    // TODO: This can be `Timestamp`
-    pub expires_time: u64,
+    pub expires_time: Timestamp,
 }
 
 impl TaskMetadata {
     pub fn is_expired(&self, env: &Env) -> bool {
-        env.block.time.seconds() >= self.expires_time
+        env.block.time.seconds() >= self.expires_time.seconds()
     }
 }
 
