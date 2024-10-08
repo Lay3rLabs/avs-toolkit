@@ -96,6 +96,7 @@ impl From<RequestorConfig> for Requestor {
     }
 }
 
+// TODO: these can also use `Timestamp`
 pub fn validate_timeout_info(input: msg::TimeoutInfo) -> Result<TimeoutConfig, ContractError> {
     let default = input.default;
     let minimum = input.minimum.unwrap_or(default);
@@ -110,6 +111,7 @@ pub fn validate_timeout_info(input: msg::TimeoutInfo) -> Result<TimeoutConfig, C
     })
 }
 
+// TODO: use `Timestamp` here
 pub fn check_timeout(config: &TimeoutConfig, timeout: Option<u64>) -> Result<u64, ContractError> {
     match timeout {
         Some(t) if t < config.minimum => Err(ContractError::TimeoutTooShort(config.minimum)),

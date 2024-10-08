@@ -102,6 +102,7 @@ pub struct TaskMetadata {
     pub status: TaskStatus,
     pub created_height: u64,
     /// Measured in UNIX seconds
+    // TODO: This can be `Timestamp`
     pub expires_time: u64,
 }
 
