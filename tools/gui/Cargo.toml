@@ -19,6 +19,7 @@ lavs-mock-operators = {workspace = true}
 lavs-verifier-simple = {workspace = true}
 lavs-task-queue = {workspace = true}
 lavs-apis = { workspace = true }
+avs-toolkit-shared = {workspace = true}
 
 ######## General workspace dependencies ########
 serde = {workspace = true} 

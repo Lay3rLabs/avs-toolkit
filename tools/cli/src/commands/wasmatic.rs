@@ -1,10 +1,7 @@
-use super::wasmatic_cron_bindings as cron_bindings;
-use super::wasmatic_task_bindings as task_bindings;
+mod cron_bindings;
+mod task_bindings;
 use anyhow::{bail, Context, Result};
-use reqwest::Client;
-use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
-use sha2::{Digest, Sha256};
+use avs_toolkit_shared::file::WasmFile;
 use std::{
     path::PathBuf,
     time::{SystemTime, UNIX_EPOCH},
@@ -17,302 +14,28 @@ use wasmtime::{
 use wasmtime_wasi::{DirPerms, FilePerms, WasiCtx, WasiCtxBuilder, WasiView};
 use wasmtime_wasi_http::{WasiHttpCtx, WasiHttpView};
 
-use crate::context::AppContext;
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub enum Trigger {
-    #[serde(rename_all = "camelCase")]
-    Cron { schedule: String },
-    #[serde(rename_all = "camelCase")]
-    Queue {
-        task_queue_addr: String,
-        hd_index: u32,
-        poll_interval: u32,
-    },
-}
-
-#[allow(clippy::too_many_arguments)]
-pub async fn deploy(
-    ctx: &AppContext,
-    name: String,
-    digest: Option<String>,
-    wasm_source: String,
-    trigger: Trigger,
-    permissions_json: String,
-    env_pairs: Vec<String>,
-    testable: bool,
-) -> Result<()> {
-    let endpoints = &ctx.chain_info()?.wasmatic.endpoints;
-    let client = Client::new();
-
-    let envs = env_pairs
-        .iter()
-        .map(|env| {
-            let (k, v) = env.split_once('=').unwrap();
-            vec![k.to_string(), v.to_string()]
-        })
-        .collect::<Vec<Vec<String>>>();
-
-    // Prepare the JSON body
-    let body = json!({
-        "name": name,
-        "trigger": trigger,
-        "permissions": serde_json::from_str::<serde_json::Value>(&permissions_json).unwrap(),
-        "envs": envs,
-        "testable": testable,
-    });
-
+pub async fn wasm_arg_to_file(wasm_arg: String) -> Result<WasmFile> {
     // Check if wasm_source is a URL or a local file path
-    let json_body = if wasm_source.starts_with("http://") || wasm_source.starts_with("https://") {
-        // wasm_source is a URL, include wasmUrl in the body
-        let mut json_body = body.clone();
-
-        if digest.is_none() {
-            bail!("Error: You need to provide sha256 sum digest if wasm source is an url")
-        }
-
-        json_body["digest"] = json!(digest.unwrap());
-        json_body["wasmUrl"] = json!(wasm_source);
-
-        json_body
+    if wasm_arg.starts_with("http://") || wasm_arg.starts_with("https://") {
+        Ok(WasmFile::Url(wasm_arg))
     } else {
-        let mut json_body = body.clone();
-
-        // wasm_source is a local file, read the binary
-        let wasm_binary = fs::read(wasm_source).await?;
-
-        // calculate sha256sum
-        let mut hasher = Sha256::new();
-        hasher.update(&wasm_binary);
-        let result = hasher.finalize();
-        json_body["digest"] = json!(format!("sha256:{:x}", result));
-
-        futures::future::join_all(endpoints.iter().map(|endpoint| {
-            let client = client.clone();
-            let wasm_binary = wasm_binary.clone();
-            async move {
-                let response = client
-                    .post(format!("{}/upload", endpoint))
-                    .body(wasm_binary) // Binary data goes here
-                    .send()
-                    .await?;
-                if !response.status().is_success() {
-                    bail!("Error: {:?}", response.text().await?);
-                }
-                Ok(())
-            }
-        }))
-        .await
-        .into_iter()
-        .collect::<Result<Vec<()>, _>>()?;
-
-        json_body
-    };
-
-    futures::future::join_all(endpoints.iter().map(|endpoint| {
-        let client = client.clone();
-        let json_body = json_body.clone();
-        async move {
-            // Send the request with wasmUrl in JSON
-            let response = client
-                .post(format!("{}/app", endpoint))
-                .json(&json_body)
-                .send()
-                .await?;
-
-            if response.status().is_success() {
-                println!("Deployment successful to operator: {endpoint}");
-            } else {
-                bail!("Error: {:?}", response.text().await?);
-            }
-            Ok(())
-        }
-    }))
-    .await
-    .into_iter()
-    .collect::<Result<Vec<()>, _>>()?;
-
-    Ok(())
-}
-
-pub async fn remove(ctx: &AppContext, app_name: String) -> Result<()> {
-    let endpoints = &ctx.chain_info()?.wasmatic.endpoints;
-    let client = Client::new();
-
-    // Prepare the JSON body
-    let body = json!({
-        "apps": [app_name],
-    });
-
-    futures::future::join_all(endpoints.iter().map(|endpoint| {
-        let client = client.clone();
-        let body = body.clone();
-        async move {
-            // Send the DELETE request
-            let response = client
-                .delete(format!("{}/app", endpoint))
-                .json(&body) // JSON body goes here
-                .send()
-                .await?;
-
-            // Check if the request was successful
-            if !response.status().is_success() {
-                bail!("Error: {:?}", response.text().await?);
-            }
-            Ok(())
-        }
-    }))
-    .await
-    .into_iter()
-    .collect::<Result<Vec<()>, _>>()?;
-
-    Ok(())
-}
-
-#[derive(Deserialize, Debug, Serialize)]
-pub struct InfoResponse {
-    operators: Vec<String>,
-}
-
-pub async fn info(ctx: &AppContext) -> Result<()> {
-    let endpoints = &ctx.chain_info()?.wasmatic.endpoints;
-    let client = Client::new();
-
-    futures::future::join_all(endpoints.iter().map(|endpoint| {
-        let client = client.clone();
-        async move {
-            let response = client.get(format!("{}/info", endpoint)).send().await?;
-
-            if !response.status().is_success() {
-                bail!("Error: {:?}", response.text().await?);
-            }
-
-            let info_response: InfoResponse = response.json().await?;
-
-            println!(
-                "Output for operator `{endpoint}`: {}",
-                serde_json::to_string_pretty(&info_response)?
-            );
-
-            Ok(())
-        }
-    }))
-    .await
-    .into_iter()
-    .collect::<Result<(), _>>()
-}
-
-// Define the structure to deserialize the response
-#[derive(Deserialize, Debug, Serialize)]
-pub struct AppResponse {
-    apps: Vec<AppInfo>,
-    digests: Vec<String>,
-}
-
-#[derive(Deserialize, Debug, Serialize)]
-pub struct AppInfo {
-    name: String,
-    digest: String,
-    trigger: Trigger,
-    permissions: Value,
-    testable: bool,
-}
-
-#[derive(Deserialize, Debug, Serialize)]
-pub struct Queue {
-    task_queue_addr: String,
-    hd_index: u32,
-    poll_interval: u32,
-}
-
-pub async fn app(ctx: &AppContext, endpoint: Option<String>) -> Result<()> {
-    let endpoints = &ctx.chain_info()?.wasmatic.endpoints;
-    let client = Client::new();
-
-    let endpoint = &endpoint.unwrap_or(endpoints[0].clone());
-
-    let response = client.get(format!("{}/app", endpoint)).send().await?;
-
-    if !response.status().is_success() {
-        bail!("Error: {:?}", response.text().await?);
+        fs::read(wasm_arg)
+            .await
+            .map_err(|e| e.into())
+            .map(WasmFile::Bytes)
     }
-
-    let app_response: AppResponse = response.json().await?;
-    println!(
-        "Output for operator `{}`: {}",
-        endpoint,
-        serde_json::to_string_pretty(&app_response)?
-    );
-
-    Ok(())
-}
-
-/// This is the return value for error (message) or success (output) cases, if needed later
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct TestOutput {
-    pub message: Option<String>,
-    pub output: Option<Value>,
-}
-
-pub async fn test(ctx: &AppContext, app_name: String, input: Option<String>) -> Result<()> {
-    let endpoints = &ctx.chain_info()?.wasmatic.endpoints;
-    let client = Client::new();
-
-    // Prepare the JSON body
-    let body = if let Some(input) = input {
-        json!({
-            "name": app_name,
-            "input": serde_json::from_str::<Value>(&input)?,
-        })
-    } else {
-        json!({
-            "name": app_name,
-        })
-    };
-
-    futures::future::join_all(endpoints.iter().map(|endpoint| {
-        let client = client.clone();
-        let body = body.clone();
-        async move {
-            // Send the POST request
-            let response = client
-                .post(format!("{}/test", endpoint))
-                .header("Content-Type", "application/json")
-                .json(&body) // Send the JSON body
-                .send()
-                .await?;
-
-            // Check if the request was successful
-            if response.status().is_success() {
-                println!("Test executed successfully!");
-                let response_text = response.text().await?;
-                println!("Output for operator `{endpoint}`: {}", response_text);
-            } else {
-                // let json: TestOutput = response.json().await?;
-                let json = response.text().await?;
-                bail!("{}", json);
-            }
-            Ok(())
-        }
-    }))
-    .await
-    .into_iter()
-    .collect::<Result<Vec<()>, _>>()?;
-
-    Ok(())
 }
 
 pub async fn run(
-    wasm_source: String,
+    wasm_file: WasmFile,
     cron_trigger: bool,
     env_pairs: Vec<String>,
     app_cache_path: PathBuf,
     input: Option<String>,
 ) -> Result<String> {
     // Check if wasm_source is a URL or a local file path
-    let wasm_binary = if wasm_source.starts_with("http://") || wasm_source.starts_with("https://") {
-        match reqwest::get(wasm_source).await {
+    let wasm_binary = match wasm_file {
+        WasmFile::Url(url) => match reqwest::get(url).await {
             Ok(res) if res.status().is_success() => match res.bytes().await {
                 Ok(bytes) => bytes.to_vec(),
                 Err(err) => Err(err).context("Failed to download from specified URL")?,
@@ -322,10 +45,8 @@ pub async fn run(
                 status = res.status()
             ),
             Err(err) => Err(err).context("Failed to download from specified URL")?,
-        }
-    } else {
-        // wasm_source is a local file, read the binary
-        fs::read(wasm_source).await?
+        },
+        WasmFile::Bytes(bytes) => bytes,
     };
 
     let trigger = if cron_trigger {
