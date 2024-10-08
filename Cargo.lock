@@ -3259,6 +3259,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "mock-hook-consumer"
+version = "0.1.0"
+dependencies = [
+ "cosmwasm-schema 2.1.4",
+ "cosmwasm-std 2.1.4",
+ "cw-controllers",
+ "cw-multi-test",
+ "cw-orch",
+ "cw-storage-plus 2.0.0",
+ "cw2 2.0.0",
+ "lavs-apis",
+ "lavs-orch",
+ "schemars",
+ "serde",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
 name = "native-tls"
 version = "0.2.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
