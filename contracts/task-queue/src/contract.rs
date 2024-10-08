@@ -42,11 +42,6 @@ pub fn execute(
             interface::TaskExecuteMsg::Complete { task_id, response } => {
                 execute::complete(deps, env, info, task_id, response)
             }
-            interface::TaskExecuteMsg::AddHook(task_hook_type) => {
-                TASK_HOOKS.add_hook(deps.storage, task_hook_type, info.sender)?;
-
-                Ok(Response::new())
-            }
         },
         ExecuteMsg::Custom(custom) => match custom {
             CustomExecuteMsg::Create {
@@ -55,6 +50,11 @@ pub fn execute(
                 payload,
             } => execute::create(deps, env, info, description, timeout, payload),
             CustomExecuteMsg::Timeout { task_id } => execute::timeout(deps, env, info, task_id),
+            CustomExecuteMsg::AddHook(task_hook_type) => {
+                TASK_HOOKS.add_hook(deps.storage, task_hook_type, info.sender)?;
+
+                Ok(Response::new())
+            }
         },
     }
 }
@@ -66,9 +66,6 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<Binary, ContractErro
             TaskQueryMsg::TaskStatus { id } => {
                 Ok(to_json_binary(&query::task_status(deps, env, id)?)?)
             }
-            TaskQueryMsg::TaskHooks(task_hook_type) => Ok(to_json_binary(
-                &TASK_HOOKS.query_hooks(deps, task_hook_type)?,
-            )?),
         },
         QueryMsg::Custom(custom) => match custom {
             CustomQueryMsg::Task { id } => Ok(to_json_binary(&query::task(deps, env, id)?)?),
@@ -79,6 +76,9 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<Binary, ContractErro
                 &query::list_completed(deps, env, start_after, limit)?,
             )?),
             CustomQueryMsg::Config {} => Ok(to_json_binary(&query::config(deps, env)?)?),
+            CustomQueryMsg::TaskHooks(task_hook_type) => Ok(to_json_binary(
+                &TASK_HOOKS.query_hooks(deps, task_hook_type)?,
+            )?),
         },
     }
 }

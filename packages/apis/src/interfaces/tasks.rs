@@ -3,13 +3,10 @@
 /// This must be a subset of any of the implementation.
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, StdResult, Storage};
-use cw_controllers::HooksResponse;
 use cw_orch::{ExecuteFns, QueryFns};
 use cw_storage_plus::Map;
 
 use crate::{id::TaskId, tasks::Status, verifier_simple::TaskMetadata};
-
-use super::task_hooks::TaskHookType;
 
 // FIXME: hot to make these generic
 pub type ResponseType = serde_json::Value;
@@ -57,9 +54,6 @@ pub enum TaskExecuteMsg {
         /// The result of the task
         response: ResponseType,
     },
-    /// Adds a hook to the caller for the given task hook type
-    /// Should this be a part of the task interface?
-    AddHook(TaskHookType),
 }
 
 // FIXME: same issue as above / impl_into vs impl_from
@@ -71,8 +65,6 @@ pub enum TaskQueryMsg {
     /// Get specific task details
     #[returns(TaskStatusResponse)]
     TaskStatus { id: TaskId },
-    #[returns(HooksResponse)]
-    TaskHooks(TaskHookType),
 }
 
 /// This is detailed information about a task, including the payload
