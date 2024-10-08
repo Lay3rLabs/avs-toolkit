@@ -115,7 +115,7 @@ where
     match details.status {
         Status::Completed { completed } => {
             assert!(
-                completed >= Timestamp::from_seconds(end - 2) && completed.seconds() <= end,
+                completed >= end.minus_seconds(2) && completed <= end,
                 "completed: {}, end: {}",
                 completed,
                 end
@@ -514,9 +514,8 @@ where
 }
 
 #[track_caller]
-// TODO: change me
-pub fn get_time(chain: &impl QueryHandler) -> u64 {
-    chain.block_info().unwrap().time.seconds()
+pub fn get_time(chain: &impl QueryHandler) -> Timestamp {
+    chain.block_info().unwrap().time
 }
 
 #[track_caller]
