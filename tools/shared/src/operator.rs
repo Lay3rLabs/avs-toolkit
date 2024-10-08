@@ -1,27 +1,23 @@
-use crate::context::AppContext;
 use anyhow::Result;
 use lavs_mock_operators::msg::{AllVotersResponse, QueryMsg};
 use layer_climb::prelude::*;
 
 pub struct OperatorQuerier {
-    pub ctx: AppContext,
     pub contract_addr: Address,
-    pub querier: QueryClient,
+    pub query_client: QueryClient,
 }
 
 impl OperatorQuerier {
-    pub async fn new(ctx: AppContext, contract_addr: Address) -> Result<Self> {
-        let querier = ctx.query_client().await?;
+    pub async fn new(query_client: QueryClient, contract_addr: Address) -> Result<Self> {
         Ok(Self {
-            ctx,
             contract_addr,
-            querier,
+            query_client,
         })
     }
 
     pub async fn all_operators(&self) -> Result<Vec<Operator>> {
         let all_voters: AllVotersResponse = self
-            .querier
+            .query_client
             .contract_smart(&self.contract_addr, &QueryMsg::AllVoters {})
             .await?;
 
@@ -29,7 +25,7 @@ impl OperatorQuerier {
             .voters
             .into_iter()
             .map(|v| {
-                let address = self.ctx.chain_config()?.parse_address(&v.address)?;
+                let address = self.query_client.chain_config.parse_address(&v.address)?;
                 Ok(Operator {
                     address,
                     power: v.power.u128(),
