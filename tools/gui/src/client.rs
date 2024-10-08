@@ -1,11 +1,74 @@
-use crate::prelude::*;
-use anyhow::Chain;
+use crate::{client, prelude::*};
+use async_broadcast::{broadcast, Receiver, Sender};
+use futures::StreamExt;
 use layer_climb::prelude::*;
-use std::sync::OnceLock;
+use std::{borrow::BorrowMut, cell::RefCell, sync::OnceLock};
+use wasm_bindgen_futures::spawn_local;
 
-pub static CLIENT: OnceLock<SigningClient> = OnceLock::new();
+thread_local! {
+    static SIGNING_CLIENT: RefCell<Option<Client>> = RefCell::new(None);
+}
+
+static CLIENT_EVENTS: LazyLock<ClientEvents> = LazyLock::new(|| {
+    let (sender, receiver) = broadcast(100);
+    ClientEvents { sender, receiver }
+});
+
 pub static ENVIRONMENT: OnceLock<TargetEnvironment> = OnceLock::new();
-pub static FAUCET_CLIENT: OnceLock<SigningClient> = OnceLock::new();
+
+// this should always be called fresh, since the underlying public key can change with wallets
+pub fn signing_client() -> SigningClient {
+    SIGNING_CLIENT.with(|x| x.borrow().as_ref().unwrap_ext().signing().clone())
+}
+
+pub fn query_client() -> QueryClient {
+    SIGNING_CLIENT.with(|x| x.borrow().as_ref().unwrap_ext().signing().querier.clone())
+}
+
+pub fn has_signing_client() -> bool {
+    SIGNING_CLIENT.with(|x| x.borrow().is_some())
+}
+
+pub fn client_event_receiver() -> Receiver<ClientEvent> {
+    CLIENT_EVENTS.receiver.clone()
+}
+
+#[derive(Debug, Clone)]
+pub enum ClientEvent {
+    AddressChanged,
+}
+
+enum Client {
+    // Keplr needs to store the signer so it can keep the callbacks alive
+    Keplr {
+        client: SigningClient,
+        signer: KeplrSigner,
+    },
+    Any {
+        client: SigningClient,
+    },
+}
+
+impl Client {
+    pub fn signing(&self) -> &SigningClient {
+        match self {
+            Client::Keplr { client, .. } => client,
+            Client::Any { client } => client,
+        }
+    }
+
+    pub fn replace_signing(&mut self, client: SigningClient) {
+        match self {
+            Client::Keplr { client: old, .. } => *old = client,
+            Client::Any { client: old } => *old = client,
+        }
+    }
+}
+
+struct ClientEvents {
+    pub sender: Sender<ClientEvent>,
+    pub receiver: Receiver<ClientEvent>,
+}
 
 #[derive(Debug, Clone)]
 pub enum ClientKeyKind {
@@ -29,7 +92,6 @@ pub async fn client_connect(key_kind: ClientKeyKind, target_env: TargetEnvironme
             .context("testnet chain not configured")?
             .chain
             .clone(),
-
         TargetEnvironment::Local => CONFIG
             .data
             .local
@@ -43,7 +105,9 @@ pub async fn client_connect(key_kind: ClientKeyKind, target_env: TargetEnvironme
     let client = match key_kind {
         ClientKeyKind::DirectInput { mnemonic } => {
             let signer = KeySigner::new_mnemonic_str(&mnemonic, None)?;
-            SigningClient::new(chain_config, signer).await?
+            Client::Any {
+                client: SigningClient::new(chain_config, signer).await?,
+            }
         }
 
         ClientKeyKind::DirectEnv => {
@@ -56,17 +120,37 @@ pub async fn client_connect(key_kind: ClientKeyKind, target_env: TargetEnvironme
 
             let signer = KeySigner::new_mnemonic_str(&mnemonic, None)?;
 
-            SigningClient::new(chain_config, signer).await?
+            Client::Any {
+                client: SigningClient::new(chain_config, signer).await?,
+            }
         }
         ClientKeyKind::Keplr => {
-            let signer = KeplrSigner::new(&chain_config.chain_id).await?;
-            SigningClient::new(chain_config, signer).await?
+            let signer = KeplrSigner::new(&chain_config.chain_id, || {
+                // account was changed - replace the signing client after refreshing its inner public key etc.
+                spawn_local(async move {
+                    let mut client = signing_client();
+                    client.refresh_signer().await.unwrap_ext();
+                    SIGNING_CLIENT
+                        .with(|x| x.borrow_mut().as_mut().unwrap_ext().replace_signing(client));
+                    CLIENT_EVENTS
+                        .sender
+                        .try_broadcast(ClientEvent::AddressChanged)
+                        .unwrap_ext();
+                });
+            })
+            .await?;
+
+            Client::Keplr {
+                client: SigningClient::new(chain_config, signer.inner.clone()).await?,
+                signer,
+            }
         }
     };
 
-    log::info!("got client: {}", client.addr);
+    log::info!("got client: {}", client.signing().addr);
 
-    CLIENT.set(client);
+    SIGNING_CLIENT.with(|x| *x.borrow_mut() = Some(client));
+
     ENVIRONMENT.set(target_env);
     Ok(())
 }
@@ -84,10 +168,12 @@ pub async fn add_keplr_chain(target_env: TargetEnvironment) -> Result<()> {
             .data
             .local
             .as_ref()
-            .context("local chain not configured")?
+            .context("testnet chain not configured")?
             .chain
             .clone(),
     };
 
-    KeplrSigner::add_chain(&chain_config).await
+    KeplrSigner::add_chain(&chain_config.into())
+        .await
+        .map_err(|e| e.into())
 }

@@ -8,9 +8,9 @@ use block::events::BlockEventsUi;
 use contract::{ContractExecuteUi, ContractInstantiateUi, ContractQueryUi, ContractUploadUi};
 use wallet::faucet::WalletFaucetUi;
 
-pub struct DashboardUi {}
+pub struct MainUi {}
 
-impl DashboardUi {
+impl MainUi {
     pub fn new() -> Arc<Self> {
         Arc::new(Self {})
     }
