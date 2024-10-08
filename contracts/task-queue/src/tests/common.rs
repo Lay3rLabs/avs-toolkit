@@ -115,7 +115,7 @@ where
     match details.status {
         Status::Completed { completed } => {
             assert!(
-                completed >= end - 2 && completed <= end,
+                completed >= Timestamp::from_seconds(end - 2) && completed.seconds() <= end,
                 "completed: {}, end: {}",
                 completed,
                 end
@@ -303,7 +303,7 @@ where
         .call_as(&verifier)
         .complete(one, result.clone())
         .unwrap();
-    let completion_time = chain.block_info().unwrap().time.seconds();
+    let completion_time = Timestamp::from_nanos(chain.block_info().unwrap().time.nanos());
     chain.next_block().unwrap();
 
     // cannot complete already completed
@@ -514,6 +514,7 @@ where
 }
 
 #[track_caller]
+// TODO: change me
 pub fn get_time(chain: &impl QueryHandler) -> u64 {
     chain.block_info().unwrap().time.seconds()
 }

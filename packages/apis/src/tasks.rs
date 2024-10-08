@@ -158,8 +158,7 @@ pub struct OpenTaskOverview {
 #[cw_serde]
 pub struct CompletedTaskOverview {
     pub id: TaskId,
-    // TODO: this can use `Timestamp`
-    pub completed: u64,
+    pub completed: Timestamp,
     pub result: ResponseType,
 }
 
@@ -173,7 +172,6 @@ pub struct ConfigResponse {
 /// All timeouts are defined in seconds
 /// This is configured from `TimeoutInfo`, which is passed in the instantiate message
 #[cw_serde]
-// TODO: this can benefit from `Timestamp`
 pub struct TimeoutConfig {
     pub default: Timestamp,
     pub minimum: Timestamp,
@@ -193,7 +191,7 @@ pub struct TaskResponse {
 #[cw_serde]
 pub enum Status {
     Open {},
-    Completed { completed: u64 },
+    Completed { completed: Timestamp },
     Expired {},
 }
 
@@ -210,7 +208,7 @@ impl Status {
 
     pub fn completed(env: &Env) -> Self {
         Status::Completed {
-            completed: env.block.time.seconds(),
+            completed: env.block.time,
         }
     }
 
