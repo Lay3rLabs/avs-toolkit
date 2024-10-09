@@ -146,6 +146,10 @@ mod execute {
         task.complete(&env, response)?;
         TASKS.save(deps.storage, task_id, &task)?;
 
+        if TASK_DEPOSITS.has(deps.storage, task_id) {
+            TASK_DEPOSITS.remove(deps.storage, task_id);
+        }
+
         let res = Response::new()
             .add_attribute("action", "completed")
             .add_attribute("task_id", task_id.to_string());
@@ -174,6 +178,8 @@ mod execute {
                 to_address: task_deposit.addr.to_string(),
                 amount: vec![task_deposit.coin],
             });
+
+            TASK_DEPOSITS.remove(deps.storage, task_id);
         }
 
         Ok(res)
