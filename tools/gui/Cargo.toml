@@ -37,6 +37,7 @@ dominator_helpers = {workspace = true}
 gloo-events = {workspace = true}
 gloo-timers = {workspace = true}
 async-broadcast = {workspace = true}
+reqwest = {workspace = true}
 wasm-logger = {workspace = true, optional = true}
 console_error_panic_hook = {workspace = true, optional = true}
 

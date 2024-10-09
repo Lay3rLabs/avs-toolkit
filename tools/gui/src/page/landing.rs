@@ -1,5 +1,6 @@
 use crate::{
     client::{add_keplr_chain, client_connect, ClientKeyKind, TargetEnvironment},
+    config::set_target_environment,
     prelude::*,
 };
 
@@ -96,10 +97,10 @@ impl LandingUi {
                             }
                         },
                         Phase::Connecting => {
+                            // these unwrapped values are guaranteed, via UI blocking, to exist here
+                            set_target_environment(state.target_environment.get_cloned().unwrap_ext());
                             let res = client_connect(
-                                // guaranteed to exist here
                                 state.client_key_kind.lock().unwrap_ext().clone().unwrap_ext(),
-                                state.target_environment.get_cloned().unwrap_ext(),
                             ).await;
 
                             match res {
@@ -230,32 +231,35 @@ impl LandingUi {
             .child(html!("div", {
                 .class(&*DROPDOWNS)
                 .children([
-                    Dropdown::new()
-                        .with_label("Signer")
-                        .with_intial_selected(signer_kind.get_cloned())
-                        .with_options([
-                            ("Mnemonic".to_string(), SignerKind::Mnemonic),
-                            ("Keplr".to_string(), SignerKind::Keplr),
-                        ])
-                        .with_on_change(clone!(state, signer_kind => move |signer| {
-                            match signer {
-                                SignerKind::Mnemonic => {
-                                    *state.client_key_kind.lock().unwrap_ext() = Some(ClientKeyKind::DirectInput {
-                                        mnemonic: "".to_string()
-                                    });
-                                },
-                                SignerKind::Keplr => {
-                                    *state.client_key_kind.lock().unwrap_ext() = Some(ClientKeyKind::Keplr);
-                                    signer_kind.set(Some(SignerKind::Keplr));
-                                },
-                            }
-                            signer_kind.set(Some(*signer));
+                    Label::new()
+                        .with_text("Signer")
+                        .render(Dropdown::new()
+                            .with_intial_selected(signer_kind.get_cloned())
+                            .with_options([
+                                ("Mnemonic".to_string(), SignerKind::Mnemonic),
+                                ("Keplr".to_string(), SignerKind::Keplr),
+                            ])
+                            .with_on_change(clone!(state, signer_kind => move |signer| {
+                                match signer {
+                                    SignerKind::Mnemonic => {
+                                        *state.client_key_kind.lock().unwrap_ext() = Some(ClientKeyKind::DirectInput {
+                                            mnemonic: "".to_string()
+                                        });
+                                    },
+                                    SignerKind::Keplr => {
+                                        *state.client_key_kind.lock().unwrap_ext() = Some(ClientKeyKind::Keplr);
+                                        signer_kind.set(Some(SignerKind::Keplr));
+                                    },
+                                }
+                                signer_kind.set(Some(*signer));
 
-                        }))
-                        .render(),
+                            }))
+                            .render()
+                        ),
 
-                    Dropdown::new()
-                        .with_label("Target Environment")
+                    Label::new()
+                        .with_text("Target Environment")
+                        .render(Dropdown::new()
                         .with_intial_selected(state.target_environment.get_cloned())
                         .with_options([
                             ("Local".to_string(), TargetEnvironment::Local),
@@ -265,6 +269,7 @@ impl LandingUi {
                             state.target_environment.set(Some(*target_env));
                         }))
                         .render()
+                    )
                 ])
             }))
             .child_signal(signer_kind.signal().map(clone!(state => move |signer_kind| {

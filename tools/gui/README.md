@@ -16,8 +16,8 @@ For quicker development, you can autoconnect a wallet with a mnemonic from `.env
 trunk serve --features=autoconnect
 ```
 
-And if you're making changes to the climb package, add it to the watcher too
+And if you're making changes to the shared package, add it to the watcher too
 
 ```
-trunk serve --features=autoconnect --watch . --watch ../../packages/climb
+trunk serve --features=autoconnect --watch . --watch ../shared
 ```

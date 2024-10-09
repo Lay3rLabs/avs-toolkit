@@ -10,9 +10,9 @@ repository    = "https://github.com/Lay3rLabs/avs-toolkit"
 rust-version = "1.80.0"
 
 [workspace.dependencies]
-lavs-mock-operators = { path = "contracts/mock-operators" }
-lavs-task-queue = { path = "contracts/task-queue" }
-lavs-verifier-simple = { path = "contracts/verifier-simple" }
+lavs-mock-operators = { path = "contracts/mock-operators", features = ["library"] }
+lavs-task-queue = { path = "contracts/task-queue", features = ["library"] }
+lavs-verifier-simple = { path = "contracts/verifier-simple", features = ["library"] }
 avs-toolkit-shared = { path = "tools/shared" }
 
 lavs-apis = { path = "packages/apis" }
@@ -58,7 +58,7 @@ bip39 = "2.0.0"
 rand = "0.8"
 layer-climb = { git = "https://github.com/Lay3rLabs/climb.git", rev = "6e8fa0b15ae736ef82e8dcd8d72715b4d7010444" }
 layer-climb-cli = { git = "https://github.com/Lay3rLabs/climb.git", rev = "6e8fa0b15ae736ef82e8dcd8d72715b4d7010444" }
-reqwest = { version = "0.11", features = ["json", "rustls-tls", "stream", "blocking", "multipart"] }
+reqwest = {version = "0.12.5", features=["json"]} 
 sha2 = "0.10"
 # purposefully left in for now to make debugging easier, will remove eventually:
 # layer-climb = { path = "../climb/packages/layer-climb" }

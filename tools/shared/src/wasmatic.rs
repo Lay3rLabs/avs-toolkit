@@ -28,24 +28,16 @@ pub async fn deploy(
     digest: Option<String>,
     wasm_file: WasmFile,
     trigger: Trigger,
-    permissions_json: String,
-    env_pairs: Vec<String>,
+    permissions: impl Serialize,
+    envs: Vec<(String, String)>,
     testable: bool,
     on_deploy_success: impl Fn(&str),
 ) -> Result<()> {
-    let envs = env_pairs
-        .iter()
-        .map(|env| {
-            let (k, v) = env.split_once('=').unwrap();
-            vec![k.to_string(), v.to_string()]
-        })
-        .collect::<Vec<Vec<String>>>();
-
     // Prepare the JSON body
     let body = json!({
         "name": name,
         "trigger": trigger,
-        "permissions": serde_json::from_str::<serde_json::Value>(&permissions_json).unwrap(),
+        "permissions": permissions,
         "envs": envs,
         "testable": testable,
     });

@@ -1,8 +1,6 @@
 use crate::{prelude::*, theme::z_index::Zindex, util::mixins::set_on_hover};
 
 pub struct Dropdown<T> {
-    pub label: Option<String>,
-    pub label_color: Color,
     pub options: Vec<Arc<DropdownOption<T>>>,
     pub initial_selected: Option<T>,
     pub size: DropdownSize,
@@ -71,23 +69,11 @@ where
 {
     pub fn new() -> Self {
         Self {
-            label: None,
-            label_color: Color::Darkish,
             options: Vec::new(),
             initial_selected: None,
             size: DropdownSize::Md,
             on_change: None,
         }
-    }
-
-    pub fn with_label(mut self, label: impl Into<String>) -> Self {
-        self.label = Some(label.into());
-        self
-    }
-
-    pub fn with_label_color(mut self, label_color: Color) -> Self {
-        self.label_color = label_color;
-        self
     }
 
     pub fn with_options(mut self, options: impl IntoIterator<Item = (String, T)>) -> Self {
@@ -165,8 +151,6 @@ where
         });
 
         let Self {
-            label,
-            label_color,
             options,
             initial_selected,
             size,
@@ -195,15 +179,6 @@ where
         html!("div", {
             .class(&*CONTAINER)
             .class(&*USER_SELECT_NONE)
-            .apply_if(label.is_some(), |dom| {
-                dom.child(
-                    html!("div", {
-                        .style("color", label_color.hex_str())
-                        .class(size.text_size_class())
-                        .text(&label.unwrap_ext())
-                    })
-                )
-            })
             .child(html!("div", {
                 .class(&*CONTENT)
                 .child(html!("div", {
