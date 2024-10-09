@@ -1,13 +1,28 @@
 use core::panic;
-
-use awsm_web::env::{self, env_var};
 use cosmwasm_std::Addr;
+use std::sync::OnceLock;
 
 use crate::{
     client::{ClientKeyKind, TargetEnvironment},
     prelude::*,
     route::Route,
 };
+
+static TARGET_ENVIRONMENT: LazyLock<Mutex<Option<TargetEnvironment>>> =
+    LazyLock::new(|| Mutex::new(None));
+
+pub fn set_target_environment(target_env: TargetEnvironment) {
+    TARGET_ENVIRONMENT.lock().unwrap().replace(target_env);
+}
+
+pub fn get_target_environment() -> Result<TargetEnvironment> {
+    TARGET_ENVIRONMENT
+        .lock()
+        .unwrap()
+        .as_ref()
+        .cloned()
+        .context("target environment not set")
+}
 
 cfg_if::cfg_if! {
     if #[cfg(feature = "debug")] {
@@ -48,6 +63,14 @@ impl Config {
     pub fn app_image_url(&self, path: &str) -> String {
         format!("{}/{}", self.media_root, path)
     }
+
+    pub fn chain_info(&self) -> Result<&ChainInfo> {
+        match get_target_environment()? {
+            TargetEnvironment::Local => self.data.local.as_ref(),
+            TargetEnvironment::Testnet => self.data.testnet.as_ref(),
+        }
+        .context("chain info not found")
+    }
 }
 
 #[derive(Debug)]
@@ -60,7 +83,7 @@ impl Default for ConfigDebug {
     fn default() -> Self {
         Self {
             auto_connect: None,
-            start_route: Mutex::new(Some(Route::WalletFaucet)),
+            start_route: Mutex::new(Some(Route::Wallet(WalletRoute::Faucet))),
         }
     }
 }
@@ -75,7 +98,7 @@ cfg_if::cfg_if! {
                         //key_kind: ClientKeyKind::Keplr,
                         target_env: TargetEnvironment::Local
                     }),
-                    start_route: Mutex::new(Some(Route::BlockEvents))
+                    start_route: Mutex::new(Some(Route::Wasmatic(WasmaticRoute::Deploy)))
                 }
             }
         }
@@ -107,6 +130,12 @@ pub struct ConfigData {
 pub struct ChainInfo {
     pub chain: WebChainConfig,
     pub faucet: FaucetConfig,
+    pub wasmatic: WasmaticConfig,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct WasmaticConfig {
+    pub endpoints: Vec<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]

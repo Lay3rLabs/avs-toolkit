@@ -1,4 +1,4 @@
-use crate::{client, prelude::*};
+use crate::{client, config::get_target_environment, prelude::*};
 use async_broadcast::{broadcast, Receiver, Sender};
 use futures::StreamExt;
 use layer_climb::prelude::*;
@@ -9,12 +9,16 @@ thread_local! {
     static SIGNING_CLIENT: RefCell<Option<Client>> = RefCell::new(None);
 }
 
+static HTTP_CLIENT: LazyLock<reqwest::Client> = LazyLock::new(|| reqwest::Client::new());
+
 static CLIENT_EVENTS: LazyLock<ClientEvents> = LazyLock::new(|| {
     let (sender, receiver) = broadcast(100);
     ClientEvents { sender, receiver }
 });
 
-pub static ENVIRONMENT: OnceLock<TargetEnvironment> = OnceLock::new();
+pub fn http_client() -> reqwest::Client {
+    HTTP_CLIENT.clone()
+}
 
 // this should always be called fresh, since the underlying public key can change with wallets
 pub fn signing_client() -> SigningClient {
@@ -83,24 +87,8 @@ pub enum TargetEnvironment {
     Local,
 }
 
-pub async fn client_connect(key_kind: ClientKeyKind, target_env: TargetEnvironment) -> Result<()> {
-    let chain_config = match target_env {
-        TargetEnvironment::Testnet => CONFIG
-            .data
-            .testnet
-            .as_ref()
-            .context("testnet chain not configured")?
-            .chain
-            .clone(),
-        TargetEnvironment::Local => CONFIG
-            .data
-            .local
-            .as_ref()
-            .context("local chain not configured")?
-            .chain
-            .clone(),
-    }
-    .into();
+pub async fn client_connect(key_kind: ClientKeyKind) -> Result<()> {
+    let chain_config = CONFIG.chain_info()?.chain.clone().into();
 
     let client = match key_kind {
         ClientKeyKind::DirectInput { mnemonic } => {
@@ -111,7 +99,7 @@ pub async fn client_connect(key_kind: ClientKeyKind, target_env: TargetEnvironme
         }
 
         ClientKeyKind::DirectEnv => {
-            let env_str = match target_env {
+            let env_str = match get_target_environment()? {
                 TargetEnvironment::Testnet => option_env!("TEST_MNEMONIC"),
                 TargetEnvironment::Local => option_env!("LOCAL_MNEMONIC"),
             };
@@ -129,9 +117,13 @@ pub async fn client_connect(key_kind: ClientKeyKind, target_env: TargetEnvironme
                 // account was changed - replace the signing client after refreshing its inner public key etc.
                 spawn_local(async move {
                     let mut client = signing_client();
+
                     client.refresh_signer().await.unwrap_ext();
+
                     SIGNING_CLIENT
                         .with(|x| x.borrow_mut().as_mut().unwrap_ext().replace_signing(client));
+
+                    // inform any listeners who want to know about it
                     CLIENT_EVENTS
                         .sender
                         .try_broadcast(ClientEvent::AddressChanged)
@@ -150,8 +142,6 @@ pub async fn client_connect(key_kind: ClientKeyKind, target_env: TargetEnvironme
     log::info!("got client: {}", client.signing().addr);
 
     SIGNING_CLIENT.with(|x| *x.borrow_mut() = Some(client));
-
-    ENVIRONMENT.set(target_env);
     Ok(())
 }
 

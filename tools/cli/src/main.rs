@@ -211,6 +211,17 @@ async fn main() -> Result<()> {
                         panic!("Error: You need to provide either cron_trigger or task_trigger")
                     }
                 };
+
+                let envs = envs
+                    .iter()
+                    .map(|env| {
+                        let (k, v) = env.split_once('=').unwrap();
+                        (k.to_string(), v.to_string())
+                    })
+                    .collect::<Vec<(String, String)>>();
+
+                let permissions: serde_json::Value = serde_json::from_str(&permissions).unwrap();
+
                 wasmatic::deploy(
                     reqwest::Client::new(),
                     ctx.chain_info()?.wasmatic.endpoints.clone(),
