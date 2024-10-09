@@ -1,6 +1,7 @@
 use cw_orch::{interface, prelude::*};
 
-use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use crate::msg::{ExecuteMsg, QueryMsg};
+type InstantiateMsg = cosmwasm_std::Empty;
 type MigrateMsg = cosmwasm_std::Empty;
 
 pub const CONTRACT_ID: &str = env!("CARGO_PKG_NAME");
@@ -23,8 +24,7 @@ impl<Chain> Uploadable for Contract<Chain> {
                 crate::contract::execute,
                 crate::contract::instantiate,
                 crate::contract::query,
-            )
-            .with_reply(crate::contract::reply), // .with_migrate(crate::contract::migrate),
+            ), // .with_migrate(crate::contract::migrate),
         )
     }
 }
