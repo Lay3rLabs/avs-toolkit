@@ -76,10 +76,11 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<Binary, ContractErro
 }
 
 mod execute {
+    use cosmwasm_std::BankMsg;
     use cw_utils::nonpayable;
     use lavs_apis::id::TaskId;
 
-    use crate::state::{check_timeout, Timing};
+    use crate::state::{check_timeout, RequestorConfig, TaskDeposit, Timing, TASK_DEPOSITS};
 
     use super::*;
 
@@ -108,6 +109,17 @@ mod execute {
         TASKS.save(deps.storage, task_id, &task)?;
         config.next_id = TaskId::new(task_id.u64() + 1);
         CONFIG.save(deps.storage, &config)?;
+
+        if let RequestorConfig::OpenPayment(coin) = config.requestor {
+            TASK_DEPOSITS.save(
+                deps.storage,
+                task_id,
+                &TaskDeposit {
+                    addr: info.sender,
+                    coin,
+                },
+            )?;
+        }
 
         let res = Response::new()
             .add_attribute("action", "create")
@@ -153,9 +165,17 @@ mod execute {
         task.expire(&env)?;
         TASKS.save(deps.storage, task_id, &task)?;
 
-        let res = Response::new()
+        let mut res = Response::new()
             .add_attribute("action", "expired")
             .add_attribute("task_id", task_id.to_string());
+
+        if let Some(task_deposit) = TASK_DEPOSITS.may_load(deps.storage, task_id)? {
+            res = res.add_message(BankMsg::Send {
+                to_address: task_deposit.addr.to_string(),
+                amount: vec![task_deposit.coin],
+            });
+        }
+
         Ok(res)
     }
 }

@@ -1,3 +1,4 @@
+use cosmwasm_std::Uint128;
 // use cw_orch::environment::IndexResponse;
 use cw_orch::prelude::*;
 
@@ -6,6 +7,7 @@ use crate::msg::{InstantiateMsg, Requestor, TimeoutInfo};
 
 // TODO: shared variable
 const BECH_PREFIX: &str = "layer";
+pub const DENOM: &str = "uslay";
 
 // Note: there is an assumption of 5 second blocks in the test framework
 // let's make this clear in the tests
@@ -45,6 +47,21 @@ fn task_status() {
 fn task_pagination() {
     let chain = MockBech32::new(BECH_PREFIX);
     super::common::task_pagination_works(chain);
+}
+
+#[test]
+fn task_refunds() {
+    let chain = MockBech32::new(BECH_PREFIX);
+
+    chain
+        .add_balance(
+            &chain.sender_addr(),
+            vec![Coin {
+                denom: DENOM.to_string(),
+                amount: Uint128::new(10_000),
+            }],
+        )
+        .unwrap()
 }
 
 /// This is the simplest, most explicit test to bootstrap, before importing from common
