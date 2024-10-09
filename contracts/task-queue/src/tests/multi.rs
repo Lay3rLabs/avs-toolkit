@@ -61,7 +61,9 @@ fn task_refunds() {
                 amount: Uint128::new(10_000),
             }],
         )
-        .unwrap()
+        .unwrap();
+
+    super::common::timeout_refund_test(chain, DENOM.to_string());
 }
 
 /// This is the simplest, most explicit test to bootstrap, before importing from common
