@@ -1,8 +1,8 @@
 pub use crate::{
     atoms::*,
-    client::{client_event_receiver, query_client, signing_client, ClientEvent},
+    client::{client_event_receiver, http_client, query_client, signing_client, ClientEvent},
     config::CONFIG,
-    route::Route,
+    route::{ContractRoute, Route, WalletRoute, WasmaticRoute},
     theme::{color::*, misc::*, typography::*},
     util::mixins::*,
 };

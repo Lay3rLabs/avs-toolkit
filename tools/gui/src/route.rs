@@ -7,13 +7,40 @@ use crate::{
 #[derive(Debug, Clone, PartialEq)]
 pub enum Route {
     Landing,
-    WalletFaucet,
-    ContractUpload,
-    ContractInstantiate,
-    ContractExecute,
-    ContractQuery,
+    Wallet(WalletRoute),
+    Contract(ContractRoute),
+    Wasmatic(WasmaticRoute),
+    TaskQueue(TaskQueueRoute),
     BlockEvents,
     NotFound,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum WalletRoute {
+    Faucet,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum ContractRoute {
+    Upload,
+    Instantiate,
+    Execute,
+    Query,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum WasmaticRoute {
+    Deploy,
+    Remove,
+    Run,
+    Info,
+    Test,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum TaskQueueRoute {
+    AddTask,
+    ViewQueue,
 }
 
 impl Route {
@@ -34,11 +61,30 @@ impl Route {
         let route = match paths {
             [""] => Self::Landing,
             ["/"] => Self::Landing,
-            ["wallet", "faucet"] => Self::WalletFaucet,
-            ["contract", "upload"] => Self::ContractUpload,
-            ["contract", "instantiate"] => Self::ContractInstantiate,
-            ["contract", "execute"] => Self::ContractExecute,
-            ["contract", "query"] => Self::ContractQuery,
+            ["wallet", wallet_route] => match *wallet_route {
+                "faucet" => Self::Wallet(WalletRoute::Faucet),
+                _ => Self::NotFound,
+            },
+            ["contract", contract_route] => match *contract_route {
+                "upload" => Self::Contract(ContractRoute::Upload),
+                "instantiate" => Self::Contract(ContractRoute::Instantiate),
+                "execute" => Self::Contract(ContractRoute::Execute),
+                "query" => Self::Contract(ContractRoute::Query),
+                _ => Self::NotFound,
+            },
+            ["wasmatic", wasmatic_route] => match *wasmatic_route {
+                "deploy" => Self::Wasmatic(WasmaticRoute::Deploy),
+                "remove" => Self::Wasmatic(WasmaticRoute::Remove),
+                "run" => Self::Wasmatic(WasmaticRoute::Run),
+                "info" => Self::Wasmatic(WasmaticRoute::Info),
+                "test" => Self::Wasmatic(WasmaticRoute::Test),
+                _ => Self::NotFound,
+            },
+            ["task-queue", task_queue_route] => match *task_queue_route {
+                "add-task" => Self::TaskQueue(TaskQueueRoute::AddTask),
+                "view-queue" => Self::TaskQueue(TaskQueueRoute::ViewQueue),
+                _ => Self::NotFound,
+            },
             ["block", "events"] => Self::BlockEvents,
             _ => Self::NotFound,
         };
@@ -69,13 +115,56 @@ impl std::fmt::Display for Route {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let s: String = match self {
             Route::Landing => "".to_string(),
-            Route::WalletFaucet => "wallet/faucet".to_string(),
-            Route::ContractUpload => "contract/upload".to_string(),
-            Route::ContractInstantiate => "contract/instantiate".to_string(),
-            Route::ContractExecute => "contract/execute".to_string(),
-            Route::ContractQuery => "contract/query".to_string(),
+            Route::Wallet(wallet_route) => format!("wallet/{wallet_route}"),
+            Route::Contract(contract_route) => format!("contract/{contract_route}"),
+            Route::Wasmatic(wasmatic_route) => format!("wasmatic/{wasmatic_route}"),
+            Route::TaskQueue(task_queue_route) => format!("task-queue/{task_queue_route}"),
             Route::BlockEvents => "block/events".to_string(),
             Route::NotFound => "404".to_string(),
+        };
+        write!(f, "{}", s)
+    }
+}
+
+impl std::fmt::Display for WalletRoute {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s: String = match self {
+            WalletRoute::Faucet => "faucet".to_string(),
+        };
+        write!(f, "{}", s)
+    }
+}
+
+impl std::fmt::Display for ContractRoute {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s: String = match self {
+            ContractRoute::Upload => "upload".to_string(),
+            ContractRoute::Instantiate => "instantiate".to_string(),
+            ContractRoute::Execute => "execute".to_string(),
+            ContractRoute::Query => "query".to_string(),
+        };
+        write!(f, "{}", s)
+    }
+}
+
+impl std::fmt::Display for WasmaticRoute {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s: String = match self {
+            WasmaticRoute::Deploy => "deploy".to_string(),
+            WasmaticRoute::Remove => "remove".to_string(),
+            WasmaticRoute::Run => "run".to_string(),
+            WasmaticRoute::Info => "info".to_string(),
+            WasmaticRoute::Test => "test".to_string(),
+        };
+        write!(f, "{}", s)
+    }
+}
+
+impl std::fmt::Display for TaskQueueRoute {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s: String = match self {
+            TaskQueueRoute::AddTask => "add-task".to_string(),
+            TaskQueueRoute::ViewQueue => "view-queue".to_string(),
         };
         write!(f, "{}", s)
     }
