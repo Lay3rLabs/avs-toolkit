@@ -2,7 +2,7 @@ use std::sync::LazyLock;
 
 use wasm_bindgen_futures::spawn_local;
 
-use crate::{prelude::*, util::mixins::handle_on_click};
+use crate::{prelude::*, route::TaskQueueRoute, util::mixins::handle_on_click};
 
 pub struct Sidebar {}
 
@@ -26,13 +26,24 @@ impl Sidebar {
             .class(&*CONTAINER)
             .children([
                 self.render_section("Wallet", vec![
-                    Route::WalletFaucet,
+                    Route::Wallet(WalletRoute::Faucet),
+                ]),
+                self.render_section("Task Queue", vec![
+                    Route::TaskQueue(TaskQueueRoute::AddTask),
+                    Route::TaskQueue(TaskQueueRoute::ViewQueue),
+                ]),
+                self.render_section("Wasmatic", vec![
+                    Route::Wasmatic(WasmaticRoute::Deploy),
+                    Route::Wasmatic(WasmaticRoute::Remove),
+                    Route::Wasmatic(WasmaticRoute::Run),
+                    Route::Wasmatic(WasmaticRoute::Info),
+                    Route::Wasmatic(WasmaticRoute::Test),
                 ]),
                 self.render_section("Contract", vec![
-                    Route::ContractUpload,
-                    Route::ContractInstantiate,
-                    Route::ContractExecute,
-                    Route::ContractQuery,
+                    Route::Contract(ContractRoute::Upload),
+                    Route::Contract(ContractRoute::Instantiate),
+                    Route::Contract(ContractRoute::Execute),
+                    Route::Contract(ContractRoute::Query),
                 ]),
                 self.render_section("Block", vec![
                     Route::BlockEvents,
@@ -63,7 +74,7 @@ impl Sidebar {
             .class(&*CONTAINER)
             .children([
                 html!("div", {
-                    .class([&*TEXT_SIZE_XLG, &*TITLE, Color::Grey.class()])
+                    .class([&*TEXT_SIZE_LG, &*TITLE, Color::Grey.class()])
                     .text(title)
                 }),
                 html!("div", {
@@ -101,17 +112,32 @@ impl Sidebar {
         }));
 
         html!("div", {
-            .class([&*BUTTON_BG_CLASS, &*TEXT_SIZE_XLG, &*USER_SELECT_NONE])
+            .class([&*BUTTON_BG_CLASS, &*TEXT_SIZE_LG, &*USER_SELECT_NONE])
             .class_signal([&*SELECTED, &*TEXT_WEIGHT_BOLD] , selected_sig)
 
-            .text(match route {
-                Route::WalletFaucet => "Tap Faucet",
-                Route::ContractUpload => "Contract Upload",
-                Route::ContractInstantiate => "Contract Instantiate",
-                Route::ContractExecute => "Contract Execute",
-                Route::ContractQuery => "Contract Query",
-                Route::BlockEvents => "Block Events",
-                _ => unreachable!(),
+            .text(match &route {
+                Route::Wallet(wallet_route) => match wallet_route {
+                    WalletRoute::Faucet => "Tap Faucet"
+                },
+                Route::Contract(contract_route) => match contract_route {
+                    ContractRoute::Upload => "Upload",
+                    ContractRoute::Instantiate => "Instantiate",
+                    ContractRoute::Execute => "Execute",
+                    ContractRoute::Query => "Query",
+                },
+                Route::Wasmatic(wasmatic_route) => match wasmatic_route {
+                    WasmaticRoute::Deploy => "Deploy",
+                    WasmaticRoute::Remove => "Remove",
+                    WasmaticRoute::Run => "Run",
+                    WasmaticRoute::Info => "Info",
+                    WasmaticRoute::Test => "Test",
+                },
+                Route::TaskQueue(task_queue_route) => match task_queue_route {
+                    TaskQueueRoute::AddTask => "Add Task",
+                    TaskQueueRoute::ViewQueue => "View Queue",
+                },
+                Route::BlockEvents => "Events",
+                _ => unreachable!()
             })
             .apply(handle_on_click(move || {
                 route.go_to_url();

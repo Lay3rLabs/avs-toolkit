@@ -165,6 +165,7 @@ impl Button {
                 .style("align-items", "center")
                 .style("gap", "0.625rem")
                 .style("border-radius", "0.25rem")
+                .style("width", "fit-content")
             }
         });
 

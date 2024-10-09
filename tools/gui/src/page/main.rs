@@ -1,12 +1,16 @@
 mod block;
 mod contract;
 mod sidebar;
+mod task_queue;
 mod wallet;
+mod wasmatic;
 
-use crate::prelude::*;
+use crate::{prelude::*, route::TaskQueueRoute};
 use block::events::BlockEventsUi;
 use contract::{ContractExecuteUi, ContractInstantiateUi, ContractQueryUi, ContractUploadUi};
+use task_queue::{TaskQueueAddTaskUi, TaskQueueViewQueueUi};
 use wallet::faucet::WalletFaucetUi;
+use wasmatic::{WasmaticDeployUi, WasmaticInfoUi, WasmaticRemoveUi, WasmaticRunUi, WasmaticTestUi};
 
 pub struct MainUi {}
 
@@ -48,11 +52,26 @@ impl MainUi {
                     .class(&*CONTENT)
                     .child_signal(Route::signal().map(|route| {
                         match route {
-                            Route::WalletFaucet => Some(WalletFaucetUi::new().render()),
-                            Route::ContractUpload => Some(ContractUploadUi::new().render()),
-                            Route::ContractInstantiate => Some(ContractInstantiateUi::new().render()),
-                            Route::ContractExecute => Some(ContractExecuteUi::new().render()),
-                            Route::ContractQuery => Some(ContractQueryUi::new().render()),
+                            Route::Wallet(wallet_route) => match wallet_route {
+                                WalletRoute::Faucet => Some(WalletFaucetUi::new().render()),
+                            },
+                            Route::Contract(contract_route) => match contract_route {
+                                ContractRoute::Upload => Some(ContractUploadUi::new().render()),
+                                ContractRoute::Instantiate => Some(ContractInstantiateUi::new().render()),
+                                ContractRoute::Execute => Some(ContractExecuteUi::new().render()),
+                                ContractRoute::Query => Some(ContractQueryUi::new().render()),
+                            },
+                            Route::Wasmatic(wasmatic_route) => match wasmatic_route {
+                                WasmaticRoute::Deploy => Some(WasmaticDeployUi::new().render()),
+                                WasmaticRoute::Remove => Some(WasmaticRemoveUi::new().render()),
+                                WasmaticRoute::Run => Some(WasmaticRunUi::new().render()),
+                                WasmaticRoute::Info => Some(WasmaticInfoUi::new().render()),
+                                WasmaticRoute::Test => Some(WasmaticTestUi::new().render()),
+                            },
+                            Route::TaskQueue(task_queue_route) => match task_queue_route {
+                                TaskQueueRoute::AddTask => Some(TaskQueueAddTaskUi::new().render()),
+                                TaskQueueRoute::ViewQueue => Some(TaskQueueViewQueueUi::new().render()),
+                            },
                             Route::BlockEvents => Some(BlockEventsUi::new().render()),
                             _ => {
                                 None
