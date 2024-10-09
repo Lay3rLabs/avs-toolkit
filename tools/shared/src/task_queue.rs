@@ -1,8 +1,3 @@
-use crate::{
-    args::{TargetEnvironment, TaskQueueArgs},
-    commands::{operator::OperatorQuerier, verifier::SimpleVerifierQuerier},
-    context::AppContext,
-};
 use anyhow::{bail, Context, Result};
 use cosmwasm_std::Order;
 use lavs_apis::{
@@ -12,10 +7,11 @@ use lavs_apis::{
 use lavs_task_queue::msg::{ConfigResponse, CustomExecuteMsg, CustomQueryMsg, QueryMsg, Requestor};
 use layer_climb::{prelude::*, proto::abci::TxResponse};
 
+use crate::{operator::OperatorQuerier, verifier::SimpleVerifierQuerier};
+
 use super::operator::Operator;
 
 pub struct TaskQueue {
-    pub _ctx: AppContext,
     pub contract_addr: Address,
     // tasks have the notion of a specific admin
     // so use this one client instead of the pool
@@ -24,29 +20,13 @@ pub struct TaskQueue {
 }
 
 impl TaskQueue {
-    pub async fn new(ctx: AppContext, task_queue_args: &TaskQueueArgs) -> Result<Self> {
-        let addr_string = match task_queue_args.address.clone() {
-            Some(x) => x,
-            None => match ctx.args.target {
-                TargetEnvironment::Local => std::env::var("LOCAL_TASK_QUEUE_ADDRESS")
-                    .context("LOCAL_TASK_QUEUE_ADDRESS not found")?,
-                TargetEnvironment::Testnet => std::env::var("TEST_TASK_QUEUE_ADDRESS")
-                    .context("TEST_TASK_QUEUE_ADDRESS not found")?,
-            },
-        };
-
-        let contract_addr = ctx.chain_config()?.parse_address(&addr_string)?;
-
-        let admin = ctx.signing_client().await?;
-
+    pub async fn new(admin: SigningClient, contract_addr: Address) -> Result<Self> {
         let querier = TaskQueueQuerier {
-            ctx: ctx.clone(),
             contract_addr: contract_addr.clone(),
-            querier: ctx.query_client().await?,
+            query_client: admin.querier.clone(),
         };
 
         Ok(Self {
-            _ctx: ctx,
             contract_addr,
             admin,
             querier,
@@ -100,14 +80,13 @@ impl TaskQueue {
 }
 
 pub struct TaskQueueQuerier {
-    pub ctx: AppContext,
     pub contract_addr: Address,
-    pub querier: QueryClient,
+    pub query_client: QueryClient,
 }
 
 impl TaskQueueQuerier {
     pub async fn config(&self) -> Result<ConfigResponse> {
-        self.querier
+        self.query_client
             .contract_smart(
                 &self.contract_addr,
                 &QueryMsg::Custom(CustomQueryMsg::Config {}),
@@ -123,17 +102,17 @@ impl TaskQueueQuerier {
         let contract_config: ConfigResponse = self.config().await?;
 
         let verifier_addr = self
-            .ctx
-            .chain_config()?
+            .query_client
+            .chain_config
             .parse_address(&contract_config.verifier)?;
 
         let verifier_querier =
-            SimpleVerifierQuerier::new(self.ctx.clone(), verifier_addr.clone()).await?;
+            SimpleVerifierQuerier::new(self.query_client.clone(), verifier_addr.clone()).await?;
 
         let operator_addr = verifier_querier.operator_addr().await?;
 
         let operator_querier =
-            OperatorQuerier::new(self.ctx.clone(), operator_addr.clone()).await?;
+            OperatorQuerier::new(self.query_client.clone(), operator_addr.clone()).await?;
 
         let operators = operator_querier.all_operators().await?;
 
@@ -156,7 +135,7 @@ impl TaskQueueQuerier {
         order: Order,
     ) -> Result<Vec<TaskView>> {
         let tasks_open: ListOpenResponse = self
-            .querier
+            .query_client
             .contract_smart(
                 &self.contract_addr,
                 &QueryMsg::Custom(CustomQueryMsg::ListOpen { start_after, limit }),
@@ -164,7 +143,7 @@ impl TaskQueueQuerier {
             .await?;
 
         let tasks_completed: ListCompletedResponse = self
-            .querier
+            .query_client
             .contract_smart(
                 &self.contract_addr,
                 &QueryMsg::Custom(CustomQueryMsg::ListCompleted { start_after, limit }),
