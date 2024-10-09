@@ -493,7 +493,7 @@ where
 
     // Ensure created counter starts at 0
     let counter = mock_consumer.created_count().unwrap();
-    assert!(counter.is_zero());
+    assert!(counter == 0);
 
     // Create a task
     let payload = json!({"x": 5});
@@ -501,7 +501,7 @@ where
 
     // Verify task created hook
     let counter = mock_consumer.created_count().unwrap();
-    assert_eq!(counter, Uint128::one());
+    assert_eq!(counter, 1);
 
     // Complete the task
     let result = json!({"y": 25});

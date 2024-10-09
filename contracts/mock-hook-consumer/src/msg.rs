@@ -1,5 +1,4 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::Uint128;
 use cw_orch::{ExecuteFns, QueryFns};
 use lavs_apis::interfaces::task_hooks::TaskHookExecuteMsg;
 
@@ -16,7 +15,7 @@ pub enum ExecuteMsg {
 #[cw_serde]
 #[derive(QueryResponses, QueryFns)]
 pub enum QueryMsg {
-    #[returns(Uint128)]
+    #[returns(u64)]
     CreatedCount {},
 }
 

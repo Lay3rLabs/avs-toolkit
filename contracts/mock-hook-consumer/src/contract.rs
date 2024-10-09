@@ -1,4 +1,4 @@
-use cosmwasm_std::{entry_point, to_json_binary, Binary, Deps, Empty, StdResult, Uint128};
+use cosmwasm_std::{entry_point, to_json_binary, Binary, Deps, Empty, StdResult};
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response};
 use cw2::set_contract_version;
 use execute::{add_hooks, task_completed, task_created, task_timeout};
@@ -20,7 +20,7 @@ pub fn instantiate(
 ) -> StdResult<Response> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
-    CREATED_COUNT.save(deps.storage, &Uint128::zero())?;
+    CREATED_COUNT.save(deps.storage, &0u64)?;
 
     Ok(Response::new().add_attribute("method", "instantiate"))
 }
@@ -38,7 +38,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
 }
 
 mod execute {
-    use cosmwasm_std::{to_json_binary, CosmosMsg, StdError, Uint128, WasmMsg};
+    use cosmwasm_std::{to_json_binary, CosmosMsg, StdError, WasmMsg};
     use lavs_apis::{
         interfaces::task_hooks::TaskHookType,
         tasks::{ConfigResponse, Requestor, TaskResponse},
@@ -94,7 +94,7 @@ mod execute {
         _info: MessageInfo,
         _task: TaskResponse,
     ) -> StdResult<Response> {
-        CREATED_COUNT.update(deps.storage, |x| -> StdResult<_> { Ok(x + Uint128::one()) })?;
+        CREATED_COUNT.update(deps.storage, |x| -> StdResult<_> { Ok(x + 1) })?;
 
         Ok(Response::default())
     }
