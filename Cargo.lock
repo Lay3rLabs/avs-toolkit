@@ -375,9 +375,10 @@ dependencies = [
  "deadpool",
  "dotenvy",
  "futures",
- "lavs-apis",
- "lavs-mock-operators",
- "lavs-task-queue",
+ "lavs-apis 0.1.0",
+ "lavs-mock-operators 0.1.0",
+ "lavs-oracle-verifier",
+ "lavs-task-queue 0.1.0",
  "lavs-verifier-simple",
  "layer-climb",
  "layer-climb-cli",
@@ -393,6 +394,64 @@ dependencies = [
  "wasmtime",
  "wasmtime-wasi",
  "wasmtime-wasi-http",
+]
+
+[[package]]
+name = "avs-toolkit-gui"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "awsm_web 0.45.0",
+ "cfg-if",
+ "console_error_panic_hook",
+ "cosmwasm-std 2.1.4",
+ "dominator",
+ "dominator_helpers",
+ "dotenvy",
+ "futures",
+ "futures-signals",
+ "futures-timer",
+ "gloo-events 0.2.0",
+ "gloo-timers 0.3.0",
+ "lavs-apis",
+ "lavs-mock-operators",
+ "lavs-task-queue",
+ "lavs-verifier-simple",
+ "layer-climb",
+ "log",
+ "serde",
+ "serde_json",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "wasm-logger",
+ "web-sys",
+]
+
+[[package]]
+name = "awsm_web"
+version = "0.44.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5c3686d4463a3922eb7bea9ecac6eada9967732ee6e9abb7ee85ea028a46ca7c"
+dependencies = [
+ "cfg-if",
+ "js-sys",
+ "log",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+]
+
+[[package]]
+name = "awsm_web"
+version = "0.45.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6ac4b8179b3d9d82b21612dbd3c7a00360e44e28ddaa9869255d70e50b12b33e"
+dependencies = [
+ "cfg-if",
+ "js-sys",
+ "log",
+ "wasm-bindgen",
+ "web-sys",
 ]
 
 [[package]]
@@ -883,6 +942,16 @@ name = "colorchoice"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d3fd119d74b830634cea2a0f58bbd0d54540518a14397557951e79340abc28c0"
+
+[[package]]
+name = "console_error_panic_hook"
+version = "0.1.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a06aeb73f470f66dcdbf7223caeebb85984942f22f1adb2a088cf9668146bbbc"
+dependencies = [
+ "cfg-if",
+ "wasm-bindgen",
+]
 
 [[package]]
 name = "const-oid"
@@ -1821,6 +1890,50 @@ dependencies = [
 ]
 
 [[package]]
+name = "discard"
+version = "1.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "212d0f5754cb6769937f4501cc0e67f4f4483c8d2c3e1e922ee9edbe4ab4c7c0"
+
+[[package]]
+name = "dominator"
+version = "0.5.38"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "40348e50c3b38c0d76bc116e7e02eb98ef5dd3536d79d9411acb07663f10ec9d"
+dependencies = [
+ "discard",
+ "futures-channel",
+ "futures-signals",
+ "futures-util",
+ "gloo-events 0.1.2",
+ "js-sys",
+ "once_cell",
+ "pin-project",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+]
+
+[[package]]
+name = "dominator_helpers"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b7d34c2a3019a9cac7b189da9d1b0e04fd533b715c5a4e2acacff4b42da96643"
+dependencies = [
+ "awsm_web 0.44.0",
+ "cfg-if",
+ "discard",
+ "dominator",
+ "futures",
+ "futures-signals",
+ "serde",
+ "serde-wasm-bindgen",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+]
+
+[[package]]
 name = "dotenv"
 version = "0.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2190,6 +2303,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "futures-signals"
+version = "0.3.34"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "70abe9c40a0dccd69bf7c59ba58714ebeb6c15a88143a10c6be7130e895f1696"
+dependencies = [
+ "discard",
+ "futures-channel",
+ "futures-core",
+ "futures-util",
+ "gensym",
+ "log",
+ "pin-project",
+ "serde",
+]
+
+[[package]]
 name = "futures-sink"
 version = "0.3.30"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2207,7 +2336,7 @@ version = "3.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f288b0a4f20f9a56b5d1da57e2227c661b7b16168e2f72365f57b63326e29b24"
 dependencies = [
- "gloo-timers",
+ "gloo-timers 0.2.6",
  "send_wrapper",
 ]
 
@@ -2263,6 +2392,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "gensym"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "913dce4c5f06c2ea40fc178c06f777ac89fc6b1383e90c254fafb1abe4ba3c82"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.79",
+ "uuid",
+]
+
+[[package]]
 name = "getrandom"
 version = "0.2.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2293,10 +2434,42 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "07e28edb80900c19c28f1072f2e8aeca7fa06b23cd4169cefe1af5aa3260783f"
 
 [[package]]
+name = "gloo-events"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "68b107f8abed8105e4182de63845afcc7b69c098b7852a813ea7462a320992fc"
+dependencies = [
+ "wasm-bindgen",
+ "web-sys",
+]
+
+[[package]]
+name = "gloo-events"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "27c26fb45f7c385ba980f5fa87ac677e363949e065a083722697ef1b2cc91e41"
+dependencies = [
+ "wasm-bindgen",
+ "web-sys",
+]
+
+[[package]]
 name = "gloo-timers"
 version = "0.2.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9b995a66bb87bebce9a0f4a95aed01daca4872c050bfcb21653361c03bc35e5c"
+dependencies = [
+ "futures-channel",
+ "futures-core",
+ "js-sys",
+ "wasm-bindgen",
+]
+
+[[package]]
+name = "gloo-timers"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bbb143cf96099802033e0d4f4963b19fd2e0b728bcf076cd9cf7f6634f092994"
 dependencies = [
  "futures-channel",
  "futures-core",
@@ -2928,13 +3101,41 @@ dependencies = [
 ]
 
 [[package]]
+name = "lavs-apis"
+version = "0.1.0"
+source = "git+https://github.com/Lay3rLabs/avs-toolkit?tag=v0.1.2#bdc342892a3115711a61b7cf206ce7c529cb22e0"
+dependencies = [
+ "cosmwasm-schema 2.1.4",
+ "cosmwasm-std 2.1.4",
+ "cw-controllers",
+ "cw-orch",
+ "cw-storage-plus 2.0.0",
+ "cw-utils 2.0.0",
+ "serde",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
 name = "lavs-helpers"
 version = "0.1.0"
 dependencies = [
  "cosmwasm-std 2.1.4",
  "cw-storage-plus 2.0.0",
  "cw-utils 2.0.0",
- "lavs-apis",
+ "lavs-apis 0.1.0",
+ "thiserror",
+]
+
+[[package]]
+name = "lavs-helpers"
+version = "0.1.0"
+source = "git+https://github.com/Lay3rLabs/avs-toolkit?tag=v0.1.2#bdc342892a3115711a61b7cf206ce7c529cb22e0"
+dependencies = [
+ "cosmwasm-std 2.1.4",
+ "cw-storage-plus 2.0.0",
+ "cw-utils 2.0.0",
+ "lavs-apis 0.1.0 (git+https://github.com/Lay3rLabs/avs-toolkit?tag=v0.1.2)",
  "thiserror",
 ]
 
@@ -2949,10 +3150,49 @@ dependencies = [
  "cw-storage-plus 2.0.0",
  "cw-utils 2.0.0",
  "cw2 2.0.0",
- "lavs-apis",
- "lavs-orch",
+ "lavs-apis 0.1.0",
+ "lavs-orch 0.1.0",
  "schemars",
  "serde",
+ "thiserror",
+]
+
+[[package]]
+name = "lavs-mock-operators"
+version = "0.1.0"
+source = "git+https://github.com/Lay3rLabs/avs-toolkit?tag=v0.1.2#bdc342892a3115711a61b7cf206ce7c529cb22e0"
+dependencies = [
+ "cosmwasm-schema 2.1.4",
+ "cosmwasm-std 2.1.4",
+ "cw-orch",
+ "cw-storage-plus 2.0.0",
+ "cw-utils 2.0.0",
+ "cw2 2.0.0",
+ "lavs-apis 0.1.0 (git+https://github.com/Lay3rLabs/avs-toolkit?tag=v0.1.2)",
+ "schemars",
+ "serde",
+ "thiserror",
+]
+
+[[package]]
+name = "lavs-oracle-verifier"
+version = "0.1.0"
+dependencies = [
+ "cosmwasm-schema 2.1.4",
+ "cosmwasm-std 2.1.4",
+ "cw-multi-test",
+ "cw-orch",
+ "cw-storage-plus 2.0.0",
+ "cw-utils 2.0.0",
+ "cw2 2.0.0",
+ "lavs-apis 0.1.0 (git+https://github.com/Lay3rLabs/avs-toolkit?tag=v0.1.2)",
+ "lavs-helpers 0.1.0 (git+https://github.com/Lay3rLabs/avs-toolkit?tag=v0.1.2)",
+ "lavs-mock-operators 0.1.0 (git+https://github.com/Lay3rLabs/avs-toolkit?tag=v0.1.2)",
+ "lavs-orch 0.1.0 (git+https://github.com/Lay3rLabs/avs-toolkit?tag=v0.1.2)",
+ "lavs-task-queue 0.1.0 (git+https://github.com/Lay3rLabs/avs-toolkit?tag=v0.1.2)",
+ "schemars",
+ "serde",
+ "serde_json",
  "thiserror",
 ]
 
@@ -2968,6 +3208,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "lavs-orch"
+version = "0.1.0"
+source = "git+https://github.com/Lay3rLabs/avs-toolkit?tag=v0.1.2#bdc342892a3115711a61b7cf206ce7c529cb22e0"
+dependencies = [
+ "cosmwasm-std 2.1.4",
+ "cw-orch",
+]
+
+[[package]]
 name = "lavs-task-queue"
 version = "0.1.0"
 dependencies = [
@@ -2978,8 +3227,26 @@ dependencies = [
  "cw-storage-plus 2.0.0",
  "cw-utils 2.0.0",
  "cw2 2.0.0",
- "lavs-apis",
- "lavs-orch",
+ "lavs-apis 0.1.0",
+ "lavs-orch 0.1.0",
+ "schemars",
+ "serde",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
+name = "lavs-task-queue"
+version = "0.1.0"
+source = "git+https://github.com/Lay3rLabs/avs-toolkit?tag=v0.1.2#bdc342892a3115711a61b7cf206ce7c529cb22e0"
+dependencies = [
+ "cosmwasm-schema 2.1.4",
+ "cosmwasm-std 2.1.4",
+ "cw-orch",
+ "cw-storage-plus 2.0.0",
+ "cw-utils 2.0.0",
+ "cw2 2.0.0",
+ "lavs-apis 0.1.0 (git+https://github.com/Lay3rLabs/avs-toolkit?tag=v0.1.2)",
  "schemars",
  "serde",
  "serde_json",
@@ -2997,11 +3264,11 @@ dependencies = [
  "cw-storage-plus 2.0.0",
  "cw-utils 2.0.0",
  "cw2 2.0.0",
- "lavs-apis",
- "lavs-helpers",
- "lavs-mock-operators",
- "lavs-orch",
- "lavs-task-queue",
+ "lavs-apis 0.1.0",
+ "lavs-helpers 0.1.0",
+ "lavs-mock-operators 0.1.0",
+ "lavs-orch 0.1.0",
+ "lavs-task-queue 0.1.0",
  "schemars",
  "serde",
  "serde_json",
@@ -3011,7 +3278,7 @@ dependencies = [
 [[package]]
 name = "layer-climb"
 version = "0.0.0"
-source = "git+https://github.com/Lay3rLabs/climb.git?rev=5436381a7c35344325bd27ea32261ebcd2d76baa#5436381a7c35344325bd27ea32261ebcd2d76baa"
+source = "git+https://github.com/Lay3rLabs/climb.git?rev=6771bf76f2ba76683082caa87e0bf10a98eb6436#6771bf76f2ba76683082caa87e0bf10a98eb6436"
 dependencies = [
  "layer-climb-address",
  "layer-climb-config",
@@ -3022,7 +3289,7 @@ dependencies = [
 [[package]]
 name = "layer-climb-address"
 version = "0.0.0"
-source = "git+https://github.com/Lay3rLabs/climb.git?rev=5436381a7c35344325bd27ea32261ebcd2d76baa#5436381a7c35344325bd27ea32261ebcd2d76baa"
+source = "git+https://github.com/Lay3rLabs/climb.git?rev=6771bf76f2ba76683082caa87e0bf10a98eb6436#6771bf76f2ba76683082caa87e0bf10a98eb6436"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -3046,7 +3313,7 @@ dependencies = [
 [[package]]
 name = "layer-climb-cli"
 version = "0.0.0"
-source = "git+https://github.com/Lay3rLabs/climb.git?rev=5436381a7c35344325bd27ea32261ebcd2d76baa#5436381a7c35344325bd27ea32261ebcd2d76baa"
+source = "git+https://github.com/Lay3rLabs/climb.git?rev=6771bf76f2ba76683082caa87e0bf10a98eb6436#6771bf76f2ba76683082caa87e0bf10a98eb6436"
 dependencies = [
  "anyhow",
  "bip39",
@@ -3066,16 +3333,17 @@ dependencies = [
 [[package]]
 name = "layer-climb-config"
 version = "0.0.0"
-source = "git+https://github.com/Lay3rLabs/climb.git?rev=5436381a7c35344325bd27ea32261ebcd2d76baa#5436381a7c35344325bd27ea32261ebcd2d76baa"
+source = "git+https://github.com/Lay3rLabs/climb.git?rev=6771bf76f2ba76683082caa87e0bf10a98eb6436#6771bf76f2ba76683082caa87e0bf10a98eb6436"
 dependencies = [
  "anyhow",
  "serde",
+ "url",
 ]
 
 [[package]]
 name = "layer-climb-core"
 version = "0.0.0"
-source = "git+https://github.com/Lay3rLabs/climb.git?rev=5436381a7c35344325bd27ea32261ebcd2d76baa#5436381a7c35344325bd27ea32261ebcd2d76baa"
+source = "git+https://github.com/Lay3rLabs/climb.git?rev=6771bf76f2ba76683082caa87e0bf10a98eb6436#6771bf76f2ba76683082caa87e0bf10a98eb6436"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -3108,7 +3376,7 @@ dependencies = [
 [[package]]
 name = "layer-climb-proto"
 version = "0.0.0"
-source = "git+https://github.com/Lay3rLabs/climb.git?rev=5436381a7c35344325bd27ea32261ebcd2d76baa#5436381a7c35344325bd27ea32261ebcd2d76baa"
+source = "git+https://github.com/Lay3rLabs/climb.git?rev=6771bf76f2ba76683082caa87e0bf10a98eb6436#6771bf76f2ba76683082caa87e0bf10a98eb6436"
 dependencies = [
  "anyhow",
  "cosmos-sdk-proto 0.25.0",
@@ -5328,6 +5596,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "22b896fa8ceb71091ace9bcb81e853f54043183a1c9667cf93422c40252ffa0a"
 dependencies = [
  "leb128",
+]
+
+[[package]]
+name = "wasm-logger"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "074649a66bb306c8f2068c9016395fa65d8e08d2affcbf95acf3c24c3ab19718"
+dependencies = [
+ "log",
+ "wasm-bindgen",
+ "web-sys",
 ]
 
 [[package]]
