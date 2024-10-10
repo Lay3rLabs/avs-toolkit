@@ -64,14 +64,14 @@ impl EnvsUi {
     pub fn render(self: &Arc<Self>) -> Dom {
         let state = self;
 
-        static SECTIONS:LazyLock<String> = LazyLock::new(|| {
+        static SECTIONS: LazyLock<String> = LazyLock::new(|| {
             class! {
                 .style("display", "flex")
                 .style("flex-direction", "column")
                 .style("gap", "1rem")
             }
         });
-        static ROW:LazyLock<String> = LazyLock::new(|| {
+        static ROW: LazyLock<String> = LazyLock::new(|| {
             class! {
                 .style("display", "flex")
                 .style("align-items", "center")
