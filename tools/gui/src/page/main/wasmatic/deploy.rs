@@ -76,6 +76,10 @@ impl WasmaticDeployUi {
 
         html!("div", {
             .class(&*CONTAINER)
+            .child(html!("div", {
+                .class(&*TEXT_SIZE_LG)
+                .text("Deploy Wasmatic App")
+            }))
             .child(Label::new()
                 .with_text("Name")
                 .with_direction(LabelDirection::Column)
