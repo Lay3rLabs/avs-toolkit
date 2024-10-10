@@ -1,5 +1,6 @@
 use crate::{
     client::{add_keplr_chain, client_connect, ClientKeyKind, TargetEnvironment},
+    config::set_target_environment,
     prelude::*,
 };
 
@@ -96,10 +97,10 @@ impl LandingUi {
                             }
                         },
                         Phase::Connecting => {
+                            // these unwrapped values are guaranteed, via UI blocking, to exist here
+                            set_target_environment(state.target_environment.get_cloned().unwrap_ext());
                             let res = client_connect(
-                                // guaranteed to exist here
                                 state.client_key_kind.lock().unwrap_ext().clone().unwrap_ext(),
-                                state.target_environment.get_cloned().unwrap_ext(),
                             ).await;
 
                             match res {
@@ -108,6 +109,7 @@ impl LandingUi {
                                 },
                                 Err(e) => {
                                     log::error!("Error connecting: {:?}", e);
+
                                     match state.client_key_kind.lock().unwrap_ext().as_ref().unwrap_ext() {
                                         ClientKeyKind::DirectEnv => {
                                             state.error.set(Some("Unable to connect".to_string()));
@@ -116,14 +118,31 @@ impl LandingUi {
                                             state.error.set(Some("Unable to connect".to_string()));
                                         },
                                         ClientKeyKind::Keplr => {
-                                            state.phase.set(Phase::NoKeplr)
+                                            if let Some(e) = e.downcast_ref::<KeplrError>() {
+                                                match e {
+                                                    KeplrError::MissingChain => {
+                                                        state.phase.set(Phase::MissingKeplrChain);
+                                                    },
+                                                    KeplrError::NoExist => {
+                                                        state.phase.set(Phase::KeplrError("Couldn't find Keplr, have you installed the extension?".to_string()));
+                                                    },
+                                                    KeplrError::FailedEnable => {
+                                                        state.phase.set(Phase::KeplrError("Failed to enable Keplr, if you cancelled - just try again".to_string()));
+                                                    },
+                                                    _ => {
+                                                        state.phase.set(Phase::KeplrError(e.to_string()));
+                                                    }
+                                                }
+                                            } else {
+                                                state.phase.set(Phase::KeplrError(e.to_string()));
+                                            }
                                         }
                                     }
                                 }
                             }
                         },
 
-                        Phase::NoKeplr => {
+                        Phase::KeplrError(_) | Phase::MissingKeplrChain => {
                             // do nothing, waiting for user to hit button to add keplr
                         },
 
@@ -149,7 +168,7 @@ impl LandingUi {
             .child_signal(state.phase.signal_cloned().map(clone!(state => move |phase_value| {
                 Some(match phase_value {
                     Phase::Init => {
-                        state.render_wallet_select()
+                        state.render_wallet_select(None)
                     },
                     Phase::Connecting => {
                         html!("div", {
@@ -157,8 +176,11 @@ impl LandingUi {
                             .text("Connecting...")
                         })
                     },
-                    Phase::NoKeplr => {
-                        state.render_no_keplr()
+                    Phase::KeplrError(e) => {
+                        state.render_wallet_select(Some(e))
+                    }
+                    Phase::MissingKeplrChain => {
+                        state.render_missing_keplr_chain()
                     },
                     Phase::InstallingKeplr => {
                         html!("div", {
@@ -171,7 +193,7 @@ impl LandingUi {
         })
     }
 
-    fn render_wallet_select(self: &Arc<Self>) -> Dom {
+    fn render_wallet_select(self: &Arc<Self>, error: Option<String>) -> Dom {
         let state = self;
 
         static CONTAINER: LazyLock<String> = LazyLock::new(|| {
@@ -209,32 +231,35 @@ impl LandingUi {
             .child(html!("div", {
                 .class(&*DROPDOWNS)
                 .children([
-                    Dropdown::new()
-                        .with_label("Signer")
-                        .with_intial_selected(signer_kind.get_cloned())
-                        .with_options([
-                            ("Mnemonic".to_string(), SignerKind::Mnemonic),
-                            ("Keplr".to_string(), SignerKind::Keplr),
-                        ])
-                        .with_on_change(clone!(state, signer_kind => move |signer| {
-                            match signer {
-                                SignerKind::Mnemonic => {
-                                    *state.client_key_kind.lock().unwrap_ext() = Some(ClientKeyKind::DirectInput {
-                                        mnemonic: "".to_string()
-                                    });
-                                },
-                                SignerKind::Keplr => {
-                                    *state.client_key_kind.lock().unwrap_ext() = Some(ClientKeyKind::Keplr);
-                                    signer_kind.set(Some(SignerKind::Keplr));
-                                },
-                            }
-                            signer_kind.set(Some(*signer));
+                    Label::new()
+                        .with_text("Signer")
+                        .render(Dropdown::new()
+                            .with_intial_selected(signer_kind.get_cloned())
+                            .with_options([
+                                ("Mnemonic".to_string(), SignerKind::Mnemonic),
+                                ("Keplr".to_string(), SignerKind::Keplr),
+                            ])
+                            .with_on_change(clone!(state, signer_kind => move |signer| {
+                                match signer {
+                                    SignerKind::Mnemonic => {
+                                        *state.client_key_kind.lock().unwrap_ext() = Some(ClientKeyKind::DirectInput {
+                                            mnemonic: "".to_string()
+                                        });
+                                    },
+                                    SignerKind::Keplr => {
+                                        *state.client_key_kind.lock().unwrap_ext() = Some(ClientKeyKind::Keplr);
+                                        signer_kind.set(Some(SignerKind::Keplr));
+                                    },
+                                }
+                                signer_kind.set(Some(*signer));
 
-                        }))
-                        .render(),
+                            }))
+                            .render()
+                        ),
 
-                    Dropdown::new()
-                        .with_label("Target Environment")
+                    Label::new()
+                        .with_text("Target Environment")
+                        .render(Dropdown::new()
                         .with_intial_selected(state.target_environment.get_cloned())
                         .with_options([
                             ("Local".to_string(), TargetEnvironment::Local),
@@ -244,6 +269,7 @@ impl LandingUi {
                             state.target_environment.set(Some(*target_env));
                         }))
                         .render()
+                    )
                 ])
             }))
             .child_signal(signer_kind.signal().map(clone!(state => move |signer_kind| {
@@ -275,10 +301,17 @@ impl LandingUi {
                 }))
                 .render()
             )
+            .apply_if(error.is_some(), |dom| {
+                dom.child(html!("div", {
+                    .style("margin-top", "1rem")
+                    .class([&*TEXT_SIZE_MD, Color::Red.class()])
+                    .text(error.as_ref().unwrap_ext())
+                }))
+            })
         })
     }
 
-    fn render_no_keplr(self: &Arc<Self>) -> Dom {
+    fn render_missing_keplr_chain(self: &Arc<Self>) -> Dom {
         let state = self;
 
         static CONTAINER: LazyLock<String> = LazyLock::new(|| {
@@ -308,6 +341,7 @@ impl LandingUi {
 enum Phase {
     Init,
     Connecting,
-    NoKeplr,
+    MissingKeplrChain,
     InstallingKeplr,
+    KeplrError(String),
 }

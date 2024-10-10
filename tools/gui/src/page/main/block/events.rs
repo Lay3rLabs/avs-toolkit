@@ -6,7 +6,6 @@ use futures_signals::{signal, signal_vec};
 use layer_climb::querier::stream::BlockEvents;
 
 pub struct BlockEventsUi {
-    pub client: SigningClient,
     pub error: Mutable<Option<String>>,
     pub stream_ready: Mutable<bool>,
     pub only_blocks_with_events: Mutable<bool>,
@@ -15,7 +14,6 @@ pub struct BlockEventsUi {
 impl BlockEventsUi {
     pub fn new() -> Arc<Self> {
         Arc::new(Self {
-            client: CLIENT.get().unwrap_ext().clone(),
             error: Mutable::new(None),
             stream_ready: Mutable::new(false),
             only_blocks_with_events: Mutable::new(false),
@@ -55,7 +53,7 @@ impl BlockEventsUi {
     }
     fn render_list(self: &Arc<Self>) -> Dom {
         let state = self;
-        let stream = state.client.querier.clone().stream_block_events(None);
+        let stream = query_client().stream_block_events(None);
 
         html!("div", {
             .child_signal(signal::from_future(stream).map(clone!(state => move |block_events| {

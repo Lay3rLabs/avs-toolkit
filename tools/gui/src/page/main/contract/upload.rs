@@ -9,7 +9,6 @@ pub struct ContractUploadUi {
     pub file: Mutable<Option<File>>,
     pub error: Mutable<Option<String>>,
     pub success: Mutable<Option<(u64, TxResponse)>>,
-    pub client: SigningClient,
 }
 
 impl ContractUploadUi {
@@ -19,7 +18,6 @@ impl ContractUploadUi {
             file: Mutable::new(None),
             error: Mutable::new(None),
             success: Mutable::new(None),
-            client: CLIENT.get().unwrap_ext().clone(),
         })
     }
 
@@ -66,10 +64,11 @@ impl ContractUploadUi {
                             match JsFuture::from(file.array_buffer()).await {
                                 Ok(array_buffer) => {
                                     let wasm_byte_code = js_sys::Uint8Array::new(&array_buffer).to_vec();
-                                    let mut tx_builder = state.client.tx_builder();
+                                    let client = signing_client();
+                                    let mut tx_builder = client.tx_builder();
                                     tx_builder.set_gas_simulate_multiplier(2.0);
 
-                                    match state.client.contract_upload_file(wasm_byte_code, Some(tx_builder)).await {
+                                    match client.contract_upload_file(wasm_byte_code, Some(tx_builder)).await {
                                         Ok((code_id, tx_resp)) => {
                                             state.success.set(Some((code_id, tx_resp)));
                                         },

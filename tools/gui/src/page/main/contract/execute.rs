@@ -8,7 +8,6 @@ pub struct ContractExecuteUi {
     pub msg: Mutable<Option<String>>,
     pub error: Mutable<Option<String>>,
     pub success: Mutable<Option<TxResponse>>,
-    pub client: SigningClient,
 }
 
 impl ContractExecuteUi {
@@ -19,7 +18,6 @@ impl ContractExecuteUi {
             msg: Mutable::new(None),
             error: Mutable::new(None),
             success: Mutable::new(None),
-            client: CLIENT.get().unwrap_ext().clone(),
         })
     }
 
@@ -48,7 +46,7 @@ impl ContractExecuteUi {
                         match address {
                             None => state.address.set(None),
                             Some(address) => {
-                                let address = state.client.querier.chain_config.parse_address(&address).ok();
+                                let address = query_client().chain_config.parse_address(&address).ok();
                                 state.address.set(address);
                             }
                         }
@@ -88,7 +86,7 @@ impl ContractExecuteUi {
                                     state.error.set(Some(err.to_string()));
                                 },
                                 Ok(msg) => {
-                                    let resp = state.client.contract_execute(
+                                    let resp = signing_client().contract_execute(
                                         &address,
                                         &msg,
                                         Vec::new(),
