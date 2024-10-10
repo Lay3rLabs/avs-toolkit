@@ -19,7 +19,7 @@ use wasmtime_wasi_http::{WasiHttpCtx, WasiHttpView};
 
 use crate::context::AppContext;
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub enum Trigger {
     #[serde(rename_all = "camelCase")]
@@ -166,6 +166,84 @@ pub async fn remove(ctx: &AppContext, app_name: String) -> Result<()> {
     .await
     .into_iter()
     .collect::<Result<Vec<()>, _>>()?;
+
+    Ok(())
+}
+
+#[derive(Deserialize, Debug, Serialize)]
+pub struct InfoResponse {
+    operators: Vec<String>,
+}
+
+pub async fn info(ctx: &AppContext) -> Result<()> {
+    let endpoints = &ctx.chain_info()?.wasmatic.endpoints;
+    let client = Client::new();
+
+    futures::future::join_all(endpoints.iter().map(|endpoint| {
+        let client = client.clone();
+        async move {
+            let response = client.get(format!("{}/info", endpoint)).send().await?;
+
+            if !response.status().is_success() {
+                bail!("Error: {:?}", response.text().await?);
+            }
+
+            let info_response: InfoResponse = response.json().await?;
+
+            println!(
+                "Output for operator `{endpoint}`: {}",
+                serde_json::to_string_pretty(&info_response)?
+            );
+
+            Ok(())
+        }
+    }))
+    .await
+    .into_iter()
+    .collect::<Result<(), _>>()
+}
+
+// Define the structure to deserialize the response
+#[derive(Deserialize, Debug, Serialize)]
+pub struct AppResponse {
+    apps: Vec<AppInfo>,
+    digests: Vec<String>,
+}
+
+#[derive(Deserialize, Debug, Serialize)]
+pub struct AppInfo {
+    name: String,
+    digest: String,
+    trigger: Trigger,
+    permissions: Value,
+    testable: bool,
+}
+
+#[derive(Deserialize, Debug, Serialize)]
+pub struct Queue {
+    task_queue_addr: String,
+    hd_index: u32,
+    poll_interval: u32,
+}
+
+pub async fn app(ctx: &AppContext, endpoint: Option<String>) -> Result<()> {
+    let endpoints = &ctx.chain_info()?.wasmatic.endpoints;
+    let client = Client::new();
+
+    let endpoint = &endpoint.unwrap_or(endpoints[0].clone());
+
+    let response = client.get(format!("{}/app", endpoint)).send().await?;
+
+    if !response.status().is_success() {
+        bail!("Error: {:?}", response.text().await?);
+    }
+
+    let app_response: AppResponse = response.json().await?;
+    println!(
+        "Output for operator `{}`: {}",
+        endpoint,
+        serde_json::to_string_pretty(&app_response)?
+    );
 
     Ok(())
 }
