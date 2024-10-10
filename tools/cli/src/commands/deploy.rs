@@ -132,7 +132,7 @@ pub async fn deploy_contracts(
         bail!("Error: Threshold percentage, allowed spread and slashable spread arguments are required during oracle price verifier deployment");
     }
 
-    let wasm_files = WasmFiles::read(artifacts_path.clone()).await?;
+    let wasm_files = WasmFiles::read(artifacts_path.clone(), &mode).await?;
 
     let CodeIds {
         operators: operators_code_id,
@@ -235,10 +235,14 @@ struct WasmFiles {
 }
 
 impl WasmFiles {
-    pub async fn read(artifacts_path: PathBuf) -> Result<Self> {
+    pub async fn read(artifacts_path: PathBuf, mode: &DeployMode) -> Result<Self> {
         let operators_path = artifacts_path.join("lavs_mock_operators.wasm");
         let task_queue_path = artifacts_path.join("lavs_task_queue.wasm");
-        let verifier_simple_path = artifacts_path.join("lavs_verifier_simple.wasm");
+
+        let verifier_simple_path = match mode {
+            DeployMode::VerifierSimple => artifacts_path.join("lavs_verifier_simple.wasm"),
+            DeployMode::OracleVerifier => artifacts_path.join("lavs_oracle_verifier.wasm"),
+        };
 
         if !operators_path.exists() {
             bail!(
