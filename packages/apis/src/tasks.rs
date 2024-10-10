@@ -20,6 +20,10 @@ pub struct InstantiateMsg {
     pub timeout: TimeoutInfo,
     /// Which contract can verify results
     pub verifier: String,
+    /// Title of the service
+    pub title: String,
+    /// Description of the service
+    pub description: String,
 }
 
 #[cw_serde]
@@ -122,6 +126,17 @@ pub enum CustomQueryMsg {
     /// Get task configuration
     #[returns(ConfigResponse)]
     Config {},
+    /// Get service info
+    #[returns(InfoResponse)]
+    Info {},
+}
+
+#[cw_serde]
+pub struct InfoResponse {
+    /// Title of the service
+    pub title: String,
+    /// Description of the service
+    pub description: String,
 }
 
 impl From<TaskQueryMsg> for QueryMsg {

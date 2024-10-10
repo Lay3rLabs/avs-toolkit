@@ -82,6 +82,12 @@ pub enum DeployCommand {
         /// The default task timeout, in seconds
         #[clap(short, long, default_value_t = 300)]
         timeout: u64,
+        /// The default title
+        #[clap(short, long, default_value_t = String::from("Task Queue"))]
+        title: String,
+        /// The default task timeout, in seconds
+        #[clap(short, long, default_value_t = String::from("Task Queue Contract") )]
+        description: String,
         /// The required voting percentage for a task to be approved
         #[clap(short, long, default_value_t = 70)]
         percentage: u32,

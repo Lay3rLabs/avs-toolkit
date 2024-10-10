@@ -43,6 +43,8 @@ async fn main() -> Result<()> {
                 percentage: required_voting_percentage,
                 operators,
                 requestor,
+                title,
+                description,
             } => {
                 let args = DeployContractArgs::parse(
                     &ctx,
@@ -51,6 +53,8 @@ async fn main() -> Result<()> {
                     required_voting_percentage,
                     operators,
                     requestor,
+                    title,
+                    description,
                 )
                 .await?;
 

@@ -22,7 +22,6 @@ impl Guest for Component {
             .map_err(|e| anyhow!("Could not deserialize input request from JSON: {}", e))
             .unwrap();
         let y = x * x;
-        println!("{}^2 = {}", x, y);
 
         Ok(serde_json::to_vec(&TaskResponseData { y })
             .map_err(|e| anyhow!("Could not serialize output data into JSON: {}", e))

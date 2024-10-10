@@ -9,7 +9,7 @@ use lavs_apis::tasks::{CustomExecuteMsg, CustomQueryMsg, TaskQueryMsg};
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::msg::{RequestType, ResponseType, Status};
-use crate::state::{Config, Task, CONFIG, TASKS};
+use crate::state::{Config, Info, Task, CONFIG, INFO, TASKS};
 
 // version info for migration info
 const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
@@ -22,8 +22,16 @@ pub fn instantiate(
     _info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
-    let config = Config::validate(deps.as_ref(), msg)?;
+    let config = Config::validate(deps.as_ref(), msg.clone())?;
     CONFIG.save(deps.storage, &config)?;
+
+    INFO.save(
+        deps.storage,
+        &Info {
+            title: msg.title,
+            description: msg.description,
+        },
+    )?;
 
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
@@ -71,6 +79,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<Binary, ContractErro
                 &query::list_completed(deps, env, start_after, limit)?,
             )?),
             CustomQueryMsg::Config {} => Ok(to_json_binary(&query::config(deps, env)?)?),
+            CustomQueryMsg::Info {} => Ok(to_json_binary(&query::info(deps, env)?)?),
         },
     }
 }
@@ -162,7 +171,10 @@ mod execute {
 
 mod query {
     use cw_storage_plus::Bound;
-    use lavs_apis::{id::TaskId, tasks::ConfigResponse};
+    use lavs_apis::{
+        id::TaskId,
+        tasks::{ConfigResponse, InfoResponse},
+    };
 
     use crate::msg::{
         CompletedTaskOverview, ListCompletedResponse, ListOpenResponse, OpenTaskOverview,
@@ -209,6 +221,15 @@ mod query {
             requestor: config.requestor.into(),
             timeout: config.timeout,
             verifier: config.verifier.into_string(),
+        };
+        Ok(r)
+    }
+
+    pub fn info(deps: Deps, _env: Env) -> Result<InfoResponse, ContractError> {
+        let info = INFO.load(deps.storage)?;
+        let r = InfoResponse {
+            title: info.title,
+            description: info.description,
         };
         Ok(r)
     }

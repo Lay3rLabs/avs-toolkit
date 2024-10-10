@@ -36,6 +36,8 @@ where
         requestor: Requestor::Fixed(chain.sender_addr().into()),
         timeout: mock_timeout(timeout),
         verifier: verifier.addr().into(),
+        title: "Title".to_string(),
+        description: "Description".to_string(),
     };
 
     let contract = setup(chain.clone(), msg);
