@@ -175,11 +175,15 @@ async fn main() -> Result<()> {
             } => {
                 let trigger = match (cron_trigger, task_trigger) {
                     (Some(cron), None) => Trigger::Cron { schedule: cron },
-                    (None, Some(task)) => Trigger::Queue {
-                        task_queue_addr: task,
-                        hd_index,
-                        poll_interval,
-                    },
+                    (None, Some(task)) => {
+                        Address::new_cosmos_string(&task, None)
+                            .expect("Invalid Task Address {task}");
+                        Trigger::Queue {
+                            task_queue_addr: task,
+                            hd_index,
+                            poll_interval,
+                        }
+                    }
                     _ => {
                         panic!("Error: You need to provide either cron_trigger or task_trigger")
                     }
