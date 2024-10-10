@@ -43,18 +43,24 @@ async fn main() -> Result<()> {
                 percentage: required_voting_percentage,
                 operators,
                 requestor,
+                threshold_percentage,
+                allowed_spread,
+                slashable_spread,
             } => {
                 let args = DeployContractArgs::parse(
                     &ctx,
                     artifacts_path,
                     task_timeout_seconds,
                     required_voting_percentage,
+                    threshold_percentage,
+                    allowed_spread,
+                    slashable_spread,
                     operators,
                     requestor,
                 )
                 .await?;
 
-                let addrs = deploy_contracts(ctx, args).await?;
+                let addrs = deploy_contracts(ctx, deploy_args.mode, args).await?;
                 tracing::info!("---- All contracts instantiated successfully ----");
                 tracing::info!("Mock Operators: {}", addrs.operators);
                 tracing::info!("Verifier Simple: {}", addrs.verifier_simple);
