@@ -156,10 +156,13 @@ impl Timing {
     pub fn new(env: &Env, timeout_duration: Nanos) -> Self {
         Timing {
             created_at: env.block.time,
+            // TODO: pick up from here
             expires_at: env
                 .block
                 .time
-                .plus_nanos(env.block.time.nanos() + timeout_duration.u64()),
+                .plus_seconds(timeout_duration.u64() / 1_000_000_000)
+                // to add the remaining nanoseconds part
+                .plus_nanos(timeout_duration.u64() % 1_000_000_000),
             created_height: env.block.height,
         }
     }
