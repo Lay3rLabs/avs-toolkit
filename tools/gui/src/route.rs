@@ -31,8 +31,7 @@ pub enum ContractRoute {
 #[derive(Debug, Clone, PartialEq)]
 pub enum WasmaticRoute {
     Deploy,
-    Remove,
-    Run,
+    List,
     Info,
     Test,
 }
@@ -74,8 +73,7 @@ impl Route {
             },
             ["wasmatic", wasmatic_route] => match *wasmatic_route {
                 "deploy" => Self::Wasmatic(WasmaticRoute::Deploy),
-                "remove" => Self::Wasmatic(WasmaticRoute::Remove),
-                "run" => Self::Wasmatic(WasmaticRoute::Run),
+                "list" => Self::Wasmatic(WasmaticRoute::List),
                 "info" => Self::Wasmatic(WasmaticRoute::Info),
                 "test" => Self::Wasmatic(WasmaticRoute::Test),
                 _ => Self::NotFound,
@@ -151,8 +149,7 @@ impl std::fmt::Display for WasmaticRoute {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let s: String = match self {
             WasmaticRoute::Deploy => "deploy".to_string(),
-            WasmaticRoute::Remove => "remove".to_string(),
-            WasmaticRoute::Run => "run".to_string(),
+            WasmaticRoute::List => "list".to_string(),
             WasmaticRoute::Info => "info".to_string(),
             WasmaticRoute::Test => "test".to_string(),
         };

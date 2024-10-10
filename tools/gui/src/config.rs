@@ -98,7 +98,7 @@ cfg_if::cfg_if! {
                         //key_kind: ClientKeyKind::Keplr,
                         target_env: TargetEnvironment::Local
                     }),
-                    start_route: Mutex::new(Some(Route::Wasmatic(WasmaticRoute::Deploy)))
+                    start_route: Mutex::new(Some(Route::Wasmatic(WasmaticRoute::List)))
                 }
             }
         }

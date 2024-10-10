@@ -34,8 +34,7 @@ impl Sidebar {
                 ]),
                 self.render_section("Wasmatic", vec![
                     Route::Wasmatic(WasmaticRoute::Deploy),
-                    Route::Wasmatic(WasmaticRoute::Remove),
-                    Route::Wasmatic(WasmaticRoute::Run),
+                    Route::Wasmatic(WasmaticRoute::List),
                     Route::Wasmatic(WasmaticRoute::Info),
                     Route::Wasmatic(WasmaticRoute::Test),
                 ]),
@@ -127,8 +126,7 @@ impl Sidebar {
                 },
                 Route::Wasmatic(wasmatic_route) => match wasmatic_route {
                     WasmaticRoute::Deploy => "Deploy",
-                    WasmaticRoute::Remove => "Remove",
-                    WasmaticRoute::Run => "Run",
+                    WasmaticRoute::List => "List",
                     WasmaticRoute::Info => "Info",
                     WasmaticRoute::Test => "Test",
                 },
