@@ -21,10 +21,6 @@ impl Nanos {
     pub fn u64(self) -> u64 {
         self.0.u64()
     }
-
-    pub fn to_timestamp(self) -> Timestamp {
-        Timestamp::from_nanos(self.0.u64())
-    }
 }
 
 impl std::fmt::Display for Nanos {
