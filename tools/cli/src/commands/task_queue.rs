@@ -4,10 +4,11 @@ use crate::{
     context::AppContext,
 };
 use anyhow::{bail, Context, Result};
-use cosmwasm_std::{Order, Timestamp};
+use cosmwasm_std::Order;
 use lavs_apis::{
     id::TaskId,
     tasks::{CompletedTaskOverview, ListCompletedResponse, ListOpenResponse, OpenTaskOverview},
+    Nanos,
 };
 use lavs_task_queue::msg::{ConfigResponse, CustomExecuteMsg, CustomQueryMsg, QueryMsg, Requestor};
 use layer_climb::{prelude::*, proto::abci::TxResponse};
@@ -57,7 +58,7 @@ impl TaskQueue {
         &self,
         body: String,
         description: String,
-        timeout: Option<Timestamp>,
+        timeout: Option<Nanos>,
     ) -> Result<(TaskId, TxResponse)> {
         let payload = serde_json::from_str(&body).context("Failed to parse body into JSON")?;
 

@@ -2,6 +2,7 @@ use cosmwasm_std::Timestamp;
 use cw_orch::environment::{ChainState, CwEnv};
 use cw_orch::prelude::*;
 use lavs_apis::id::TaskId;
+use lavs_apis::Nanos;
 use serde_json::json;
 
 use lavs_apis::tasks::{Requestor, Status, TaskStatus, TimeoutInfo};
@@ -58,7 +59,7 @@ where
     // Upload and instantiate task queue, acknowledging the verifier
     let msg = TasksInstantiateMsg {
         requestor: Requestor::Fixed(chain.sender_addr().into()),
-        timeout: TimeoutInfo::new(Timestamp::from_seconds(600)),
+        timeout: TimeoutInfo::new(Nanos::new(600)),
         verifier: verifier.addr_str().unwrap(),
     };
     let tasker = TasksContract::new(chain.clone());
@@ -128,7 +129,7 @@ where
     // Upload and instantiate task queue, acknowledging the verifier
     let msg = TasksInstantiateMsg {
         requestor: Requestor::Fixed(chain.sender_addr().into()),
-        timeout: TimeoutInfo::new(Timestamp::from_seconds(600)),
+        timeout: TimeoutInfo::new(Nanos::new(600)),
         verifier: verifier.addr_str().unwrap(),
     };
     let tasker = TasksContract::new(chain.clone());
@@ -201,7 +202,7 @@ where
 pub fn make_task<C: ChainState + TxHandler>(
     contract: &TasksContract<C>,
     name: &str,
-    timeout: impl Into<Option<Timestamp>>,
+    timeout: impl Into<Option<Nanos>>,
     payload: &serde_json::Value,
 ) -> TaskId {
     let res = contract

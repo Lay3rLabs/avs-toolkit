@@ -1,6 +1,6 @@
 use crate::{args::DeployTaskRequestor, config::load_wasmatic_addresses, context::AppContext};
 use anyhow::{anyhow, bail, Result};
-use cosmwasm_std::Timestamp;
+use lavs_apis::Nanos;
 use lavs_task_queue::msg::{Requestor, TimeoutInfo};
 use layer_climb::prelude::*;
 use std::path::PathBuf;
@@ -19,7 +19,7 @@ impl DeployContractArgs {
     pub async fn parse(
         ctx: &AppContext,
         artifacts_path: PathBuf,
-        task_timeout: Timestamp,
+        task_timeout: Nanos,
         required_voting_percentage: u32,
         operators: Vec<String>,
         requestor: DeployTaskRequestor,

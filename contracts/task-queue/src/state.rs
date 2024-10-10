@@ -5,6 +5,7 @@ use cw_utils::must_pay;
 
 use lavs_apis::id::TaskId;
 use lavs_apis::tasks::{Requestor, Status, TimeoutConfig};
+use lavs_apis::Nanos;
 
 use crate::error::ContractError;
 use crate::msg::{self, InstantiateMsg, RequestType, ResponseType};
@@ -112,8 +113,8 @@ pub fn validate_timeout_info(input: msg::TimeoutInfo) -> Result<TimeoutConfig, C
 
 pub fn check_timeout(
     config: &TimeoutConfig,
-    timeout: Option<Timestamp>,
-) -> Result<Timestamp, ContractError> {
+    timeout: Option<Nanos>,
+) -> Result<Nanos, ContractError> {
     match timeout {
         Some(t) if t < config.minimum => Err(ContractError::TimeoutTooShort(config.minimum)),
         Some(t) if t > config.maximum => Err(ContractError::TimeoutTooLong(config.maximum)),
