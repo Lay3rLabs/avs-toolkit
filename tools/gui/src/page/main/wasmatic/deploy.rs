@@ -201,7 +201,11 @@ impl WasmaticDeployUi {
         let name = state.form.name.get_cloned().context("name is required")?;
 
         let trigger = state.form.trigger.extract().await?;
-        let permissions = state.form.permissions.extract().unwrap_or_else(|| serde_json::Value::Object(serde_json::Map::new()));
+        let permissions = state
+            .form
+            .permissions
+            .extract()
+            .unwrap_or_else(|| serde_json::Value::Object(serde_json::Map::new()));
 
         let testable = state.form.testable.get();
 

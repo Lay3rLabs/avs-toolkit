@@ -7,7 +7,7 @@ use sha2::{Digest, Sha256};
 
 use crate::file::WasmFile;
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub enum Trigger {
     #[serde(rename_all = "camelCase")]
@@ -203,24 +203,24 @@ pub async fn info(
 // Define the structure to deserialize the response
 #[derive(Deserialize, Debug, Serialize)]
 pub struct AppResponse {
-    apps: Vec<AppInfo>,
-    digests: Vec<String>,
+    pub apps: Vec<AppInfo>,
+    pub digests: Vec<String>,
 }
 
-#[derive(Deserialize, Debug, Serialize)]
+#[derive(Deserialize, Debug, Serialize, PartialEq)]
 pub struct AppInfo {
-    name: String,
-    digest: String,
-    trigger: Trigger,
-    permissions: Value,
-    testable: bool,
+    pub name: String,
+    pub digest: String,
+    pub trigger: Trigger,
+    pub permissions: Value,
+    pub testable: bool,
 }
 
 #[derive(Deserialize, Debug, Serialize)]
 pub struct Queue {
-    task_queue_addr: String,
-    hd_index: u32,
-    poll_interval: u32,
+    pub task_queue_addr: String,
+    pub hd_index: u32,
+    pub poll_interval: u32,
 }
 
 pub async fn app(client: reqwest::Client, endpoint: String) -> Result<AppResponse> {
@@ -231,6 +231,43 @@ pub async fn app(client: reqwest::Client, endpoint: String) -> Result<AppRespons
     }
 
     response.json().await.map_err(|e| e.into())
+}
+
+#[derive(Deserialize, Debug, Serialize)]
+pub struct AppEndpointResponse {
+    pub app: AppResponse,
+    pub endpoint: String,
+}
+
+pub async fn all_apps(
+    client: reqwest::Client,
+    endpoints: Vec<String>,
+    on_app_success: impl Fn(&AppEndpointResponse),
+) -> Result<Vec<AppEndpointResponse>> {
+    let on_app_success = Arc::new(on_app_success);
+
+    futures::future::join_all(endpoints.into_iter().map(|endpoint| {
+        let client = client.clone();
+        let on_app_success = on_app_success.clone();
+        async move {
+            let response = client.get(format!("{}/app", endpoint)).send().await?;
+
+            if response.status().is_success() {
+                let app: AppResponse = response.json().await?;
+
+                let result = AppEndpointResponse { endpoint, app };
+
+                on_app_success(&result);
+
+                Ok(result)
+            } else {
+                bail!("Error: {:?}", response.text().await?);
+            }
+        }
+    }))
+    .await
+    .into_iter()
+    .collect::<Result<Vec<AppEndpointResponse>>>()
 }
 
 /// This is the return value for error (message) or success (output) cases, if needed later
