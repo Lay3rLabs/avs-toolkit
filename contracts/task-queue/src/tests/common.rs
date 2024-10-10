@@ -1,3 +1,4 @@
+use cosmwasm_std::Uint128;
 use cw_orch::environment::{ChainState, CwEnv, Environment, IndexResponse, QueryHandler};
 use cw_orch::prelude::*;
 use lavs_apis::id::TaskId;
@@ -455,6 +456,72 @@ where
     );
 }
 
+pub fn timeout_refund_test<C>(chain: C, denom: String)
+where
+    C: CwEnv + AltSigner,
+    C::Sender: Addressable,
+{
+    // Setup
+    let coin = Coin {
+        denom,
+        amount: Uint128::new(100),
+    };
+    let funds = vec![coin.clone()];
+
+    let verifier = chain.alt_signer(VERIFIER_INDEX);
+    let msg = InstantiateMsg {
+        requestor: Requestor::OpenPayment(coin.clone()),
+        timeout: mock_timeout(200),
+        verifier: verifier.addr().into(),
+    };
+    let task_contract = setup(chain.clone(), msg);
+
+    // Get initial balance
+    let binding = chain
+        .balance(&chain.sender_addr(), Some(coin.denom.clone()))
+        .unwrap();
+    let initial_balance = binding.first().unwrap();
+
+    // Create a task
+    let payload = json!({"test": "data"});
+    let task_id = make_task_with_funds(&task_contract, "Refund Test", Some(100), &payload, &funds);
+
+    // Check balance after task creation
+    let binding = chain
+        .balance(&chain.sender_addr(), Some(coin.denom.clone()))
+        .unwrap();
+    let balance_after_creation = binding.first().unwrap();
+    assert_eq!(
+        balance_after_creation.amount,
+        initial_balance.amount - coin.amount,
+        "Balance should decrease by task cost after creation"
+    );
+
+    // Wait for the task to expire
+    chain.wait_seconds(200).unwrap();
+
+    // Timeout the task
+    task_contract.call_as(&verifier).timeout(task_id).unwrap();
+
+    // Check balance after timeout
+    let binding = chain
+        .balance(&chain.sender_addr(), Some(coin.denom.clone()))
+        .unwrap();
+    let balance_after_timeout = binding.first().unwrap();
+    assert_eq!(
+        balance_after_timeout, initial_balance,
+        "Balance should be refunded to initial amount after timeout"
+    );
+
+    // Verify task status
+    let task_status = task_contract.task_status(task_id).unwrap();
+    assert_eq!(
+        task_status.status,
+        TaskStatus::Expired,
+        "Task status should be Expired after timeout"
+    );
+}
+
 #[track_caller]
 pub fn get_time(chain: &impl QueryHandler) -> u64 {
     chain.block_info().unwrap().time.seconds()
@@ -469,6 +536,20 @@ pub fn make_task<C: ChainState + TxHandler>(
 ) -> TaskId {
     let res = contract
         .create(name.to_string(), timeout.into(), payload.clone(), &[])
+        .unwrap();
+    get_task_id(&res)
+}
+
+#[track_caller]
+pub fn make_task_with_funds<C: ChainState + TxHandler>(
+    contract: &TaskContract<C>,
+    name: &str,
+    timeout: impl Into<Option<u64>>,
+    payload: &serde_json::Value,
+    funds: &[Coin],
+) -> TaskId {
+    let res = contract
+        .create(name.to_string(), timeout.into(), payload.clone(), funds)
         .unwrap();
     get_task_id(&res)
 }
