@@ -201,7 +201,7 @@ impl WasmaticDeployUi {
         let name = state.form.name.get_cloned().context("name is required")?;
 
         let trigger = state.form.trigger.extract().await?;
-        let permissions = state.form.permissions.extract();
+        let permissions = state.form.permissions.extract().unwrap_or_else(|| serde_json::Value::Object(serde_json::Map::new()));
 
         let testable = state.form.testable.get();
 
@@ -254,7 +254,7 @@ struct FormData {
     digest: Option<String>,
     trigger: Trigger,
     name: String,
-    permissions: Option<serde_json::Value>,
+    permissions: serde_json::Value,
     testable: bool,
     envs: Vec<(String, String)>,
 }

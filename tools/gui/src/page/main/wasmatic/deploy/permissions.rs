@@ -38,6 +38,11 @@ impl PermissionsUi {
                 .with_text("Permissions (in JSON format)")
                 .with_direction(LabelDirection::Column)
                 .render(TextArea::new()
+                    .with_mixin(|dom| {
+                        dom
+                            .style("width", "30rem")
+                            .style("height", "5rem")
+                    })
                     .with_on_input(clone!(state => move |input| {
                         match input {
                             None => {

@@ -1,4 +1,4 @@
-use crate::prelude::*;
+use crate::{prelude::*, util::signal::enumerate_signal};
 
 pub struct EnvsUi {
     envs: MutableVec<EnvData>,
@@ -18,6 +18,7 @@ impl EnvData {
 
         self.error.set(match (has_key, has_value) {
             (true, true) => None,
+            (false, false) => Some("Key and Value are required".to_string()),
             (false, _) => Some("Key is required".to_string()),
             (_, false) => Some("Value is required".to_string()),
         });
@@ -63,15 +64,51 @@ impl EnvsUi {
     pub fn render(self: &Arc<Self>) -> Dom {
         let state = self;
 
+        static SECTIONS:LazyLock<String> = LazyLock::new(|| {
+            class! {
+                .style("display", "flex")
+                .style("flex-direction", "column")
+                .style("gap", "1rem")
+            }
+        });
+        static ROW:LazyLock<String> = LazyLock::new(|| {
+            class! {
+                .style("display", "flex")
+                .style("align-items", "center")
+                .style("gap", "1rem")
+            }
+        });
         Label::new()
             .with_text("Environment Variables")
             .with_direction(LabelDirection::Column)
             .render(html!("div", {
-                .children_signal_vec(state.envs.signal_vec_cloned().map(clone!(state => move |data| {
+                .class(&*SECTIONS)
+                .child(Button::new()
+                    .with_text("Add")
+                    .with_size(ButtonSize::Md)
+                    .with_on_click(clone!(state => move || {
+                        let data = EnvData {
+                            key: Mutable::new(None),
+                            value: Mutable::new(None),
+                            error: Mutable::new(None),
+                        };
+                        data.evaluate();
+                        state.envs.lock_mut().push_cloned(data);
+                    }))
+                    .render()
+                )
+                .children_signal_vec(enumerate_signal(state.envs.signal_vec_cloned()).map(clone!(state => move |(data, index)| {
                     html!("div", {
-                        .style("display", "flex")
-                        .style("gap", "1rem")
+                        .class(&*ROW)
                         .children(&mut [
+                            Button::new()
+                                .with_size(ButtonSize::Sm)
+                                .with_color(ButtonColor::Red)
+                                .with_text("Delete")
+                                .with_on_click(clone!(state => move || {
+                                    state.envs.lock_mut().remove(index);
+                                }))
+                                .render(),
                             TextInput::new()
                                 .with_placeholder("Key")
                                 .with_on_input(clone!(data => move |input| {
