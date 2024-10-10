@@ -153,10 +153,10 @@ pub struct Timing {
 }
 
 impl Timing {
-    pub fn new(env: &Env, timeout: Timestamp) -> Self {
+    pub fn new(env: &Env, timeout_duration: Nanos) -> Self {
         Timing {
             created_at: env.block.time,
-            expires_at: env.block.time.plus_seconds(timeout.seconds()),
+            expires_at: env.block.time.plus_nanos(timeout_duration.u64()),
             created_height: env.block.height,
         }
     }

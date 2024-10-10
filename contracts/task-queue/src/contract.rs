@@ -95,7 +95,7 @@ mod execute {
         let timeout = check_timeout(&config.timeout, timeout)?;
         config.requestor.check_requestor(&info)?;
 
-        let timing = Timing::new(&env, timeout.to_timestamp());
+        let timing = Timing::new(&env, timeout);
         let status = Status::new();
         let task = Task {
             description,
