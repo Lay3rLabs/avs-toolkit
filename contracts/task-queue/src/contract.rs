@@ -76,9 +76,8 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<Binary, ContractErro
 }
 
 mod execute {
-    use cosmwasm_std::Timestamp;
     use cw_utils::nonpayable;
-    use lavs_apis::id::TaskId;
+    use lavs_apis::{id::TaskId, Nanos};
 
     use crate::state::{check_timeout, Timing};
 
@@ -89,14 +88,14 @@ mod execute {
         env: Env,
         info: MessageInfo,
         description: String,
-        timeout: Option<Timestamp>,
+        timeout: Option<Nanos>,
         payload: RequestType,
     ) -> Result<Response, ContractError> {
         let mut config = CONFIG.load(deps.storage)?;
         let timeout = check_timeout(&config.timeout, timeout)?;
         config.requestor.check_requestor(&info)?;
 
-        let timing = Timing::new(&env, timeout);
+        let timing = Timing::new(&env, timeout.to_timestamp());
         let status = Status::new();
         let task = Task {
             description,

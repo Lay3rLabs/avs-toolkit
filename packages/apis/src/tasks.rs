@@ -2,11 +2,11 @@ use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Coin, Env, Timestamp};
 use cw_orch::{ExecuteFns, QueryFns};
 
-use crate::id::TaskId;
 pub use crate::interfaces::tasks::{
     TaskExecuteMsg, TaskExecuteMsgFns, TaskQueryMsg, TaskQueryMsgFns, TaskStatus,
     TaskStatusResponse,
 };
+use crate::{id::TaskId, Nanos};
 
 // FIXME: make these generic
 pub type RequestType = serde_json::Value;
@@ -32,13 +32,13 @@ pub enum Requestor {
 /// All timeouts are defined in seconds
 /// If minimum and maximum are undefined, the default value is used
 pub struct TimeoutInfo {
-    pub default: Timestamp,
-    pub minimum: Option<Timestamp>,
-    pub maximum: Option<Timestamp>,
+    pub default: Nanos,
+    pub minimum: Option<Nanos>,
+    pub maximum: Option<Nanos>,
 }
 
 impl TimeoutInfo {
-    pub fn new(default: Timestamp) -> Self {
+    pub fn new(default: Nanos) -> Self {
         Self {
             default,
             minimum: None,
@@ -65,7 +65,7 @@ pub enum CustomExecuteMsg {
         /// Human-readable description of the task
         description: String,
         /// Specify a task timeout, or use the default
-        timeout: Option<Timestamp>,
+        timeout: Option<Nanos>,
         /// Machine-readable data for the AVS to use
         /// FIXME: use generic T to enforce a AVS-specific format
         payload: RequestType,
@@ -173,9 +173,9 @@ pub struct ConfigResponse {
 /// This is configured from `TimeoutInfo`, which is passed in the instantiate message
 #[cw_serde]
 pub struct TimeoutConfig {
-    pub default: Timestamp,
-    pub minimum: Timestamp,
-    pub maximum: Timestamp,
+    pub default: Nanos,
+    pub minimum: Nanos,
+    pub maximum: Nanos,
 }
 
 /// This is detailed information about a task, including the payload
