@@ -24,7 +24,7 @@ strip = true
 lto = true
 
 [package.metadata.component]
-package = "lay3r:oracle-example"
+package = "lay3r-examples:oracle-example"
 target = "lay3r:avs/task-queue@0.3.0"
 
 [package.metadata.component.dependencies]
