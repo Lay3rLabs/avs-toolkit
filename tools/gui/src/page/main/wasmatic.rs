@@ -1,12 +1,12 @@
 use crate::prelude::*;
 mod deploy;
 mod info;
-mod remove;
+mod list;
 mod run;
 mod test;
 
 pub use deploy::*;
 pub use info::*;
-pub use remove::*;
+pub use list::*;
 pub use run::*;
 pub use test::*;
