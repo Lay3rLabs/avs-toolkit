@@ -120,6 +120,7 @@ impl WasmaticDeployUi {
                                 Ok(FormData { file, digest, trigger, name, permissions, envs, testable }) => {
                                     match wasmatic::deploy(
                                         http_client(),
+                                        &query_client(),
                                         CONFIG.chain_info().unwrap_ext().wasmatic.endpoints.clone(),
                                         name,
                                         digest,

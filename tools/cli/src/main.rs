@@ -224,6 +224,7 @@ async fn main() -> Result<()> {
 
                 wasmatic::deploy(
                     reqwest::Client::new(),
+                    &ctx.query_client().await?,
                     ctx.chain_info()?.wasmatic.endpoints.clone(),
                     name,
                     digest,
