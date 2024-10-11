@@ -341,7 +341,6 @@ where
     let status_one = contract.task_status(one).unwrap();
     let status_two = contract.task_status(two).unwrap();
 
-    dbg!(status_one.created_time, status_one.expires_time);
     assert_eq!(
         status_one.created_time.plus_nanos(300),
         status_one.expires_time

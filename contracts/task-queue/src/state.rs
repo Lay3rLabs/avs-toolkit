@@ -163,14 +163,12 @@ impl Timing {
     }
 
     pub fn is_expired(&self, env: &Env) -> bool {
-        dbg!(self.expires_at, env.block.time);
         self.expires_at <= env.block.time
     }
 }
 
 impl Task {
     pub fn complete(&mut self, env: &Env, result: ResponseType) -> Result<(), ContractError> {
-        dbg!(&self.status, !self.timing.is_expired(env));
         match self.status {
             Status::Open {} if !self.timing.is_expired(env) => {}
             Status::Open {} | Status::Expired {} => return Err(ContractError::TaskExpired),
