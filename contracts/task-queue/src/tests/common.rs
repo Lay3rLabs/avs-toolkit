@@ -3,8 +3,7 @@ use cw_orch::environment::{ChainState, CwEnv, Environment, IndexResponse, QueryH
 use cw_orch::prelude::*;
 use lavs_apis::id::TaskId;
 use lavs_apis::tasks::TaskStatus;
-use lavs_apis::time::Duration;
-use lavs_helpers::contracts_test_helpers::ExpirationCalculator;
+use lavs_apis::time::{Duration, NANOS_PER_SECONDS};
 use serde_json::json;
 
 use crate::error::ContractError;
@@ -214,11 +213,15 @@ where
     let ListOpenResponse { tasks } = contract.list_open(None, None).unwrap();
     assert_eq!(tasks.len(), 3);
 
-    let expiration_calculator = ExpirationCalculator::new(
-        Duration::new_seconds(block_time),
-        Duration::new_seconds(offset),
-    );
-    let task_three_expiration = expiration_calculator.calculate(start, 2, 200);
+    let calculate_expiration =
+        |start: Timestamp, n_blocks: u64, timeout_seconds: u64| -> Timestamp {
+            let duration = Duration::new_nanos(
+                (n_blocks * block_time + offset + timeout_seconds) * NANOS_PER_SECONDS,
+            );
+            Timestamp::from_nanos(start.nanos() + duration.as_nanos())
+        };
+
+    let task_three_expiration = calculate_expiration(start, 2, 200);
 
     assert_eq!(
         tasks[0],
@@ -229,7 +232,7 @@ where
         }
     );
 
-    let task_two_expiration = expiration_calculator.calculate(start, 1, 100);
+    let task_two_expiration = calculate_expiration(start, 1, 100);
     assert_eq!(
         tasks[1],
         OpenTaskOverview {
@@ -239,7 +242,7 @@ where
         }
     );
 
-    let task_one_expiration = expiration_calculator.calculate(start, 0, 300);
+    let task_one_expiration = calculate_expiration(start, 0, 300);
     assert_eq!(
         tasks[2],
         OpenTaskOverview {
