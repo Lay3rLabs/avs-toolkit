@@ -342,11 +342,11 @@ where
     let status_two = contract.task_status(two).unwrap();
 
     assert_eq!(
-        status_one.created_time.plus_nanos(300),
+        status_one.created_time.plus_seconds(300),
         status_one.expires_time
     );
     assert_eq!(
-        status_two.created_time.plus_nanos(100),
+        status_two.created_time.plus_seconds(100),
         status_two.expires_time
     );
     assert!(status_one.created_height < status_two.created_height);
