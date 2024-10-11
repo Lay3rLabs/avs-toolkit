@@ -1,7 +1,7 @@
 use avs_toolkit_shared::{file::WasmFile, wasmatic::Trigger};
 use web_sys::File;
 
-use crate::prelude::*;
+use crate::{config::get_default_task_queue_addr, prelude::*};
 
 pub struct TriggerUi {
     selected: Mutable<TriggerChoice>,
@@ -23,7 +23,7 @@ impl TriggerUi {
         Arc::new(Self {
             selected: Mutable::new(TriggerChoice::Task),
             cron_job: Mutable::new(None),
-            task_address: Mutable::new(None),
+            task_address: Mutable::new(get_default_task_queue_addr()),
             task_hd_index: Mutable::new(0),
             task_poll_interval_seconds: Mutable::new(3),
             error: Mutable::new(None),
@@ -154,6 +154,7 @@ impl TriggerUi {
                 .with_direction(LabelDirection::Column)
                 .render(TextInput::new()
                     .with_placeholder("e.g. slayaddr...")
+                    .with_intial_value(state.task_address.get_cloned().map(|addr| addr.to_string()).unwrap_or_default())
                     .with_mixin(|dom| {
                         dom
                             .style("width", "30rem")

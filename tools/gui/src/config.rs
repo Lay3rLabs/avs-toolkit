@@ -24,6 +24,21 @@ pub fn get_target_environment() -> Result<TargetEnvironment> {
         .context("target environment not set")
 }
 
+pub fn get_default_task_queue_addr() -> Option<Address> {
+    let env_str = match get_target_environment().ok()? {
+        TargetEnvironment::Local => option_env!("LOCAL_TASK_QUEUE_ADDRESS"),
+        TargetEnvironment::Testnet => option_env!("TEST_TASK_QUEUE_ADDRESS"),
+    }?;
+
+    CONFIG
+        .chain_info()
+        .ok()?
+        .chain
+        .address_kind
+        .parse_address(env_str)
+        .ok()
+}
+
 cfg_if::cfg_if! {
     if #[cfg(feature = "debug")] {
 
@@ -98,7 +113,7 @@ cfg_if::cfg_if! {
                         //key_kind: ClientKeyKind::Keplr,
                         target_env: TargetEnvironment::Local
                     }),
-                    start_route: Mutex::new(Some(Route::Wasmatic(WasmaticRoute::List)))
+                    start_route: Mutex::new(Some(Route::Wasmatic(WasmaticRoute::ListApps)))
                 }
             }
         }

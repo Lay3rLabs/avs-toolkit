@@ -25,18 +25,18 @@ impl Sidebar {
         html!("div", {
             .class(&*CONTAINER)
             .children([
-                self.render_section("Wallet", vec![
-                    Route::Wallet(WalletRoute::Faucet),
-                ]),
                 self.render_section("Task Queue", vec![
                     Route::TaskQueue(TaskQueueRoute::AddTask),
                     Route::TaskQueue(TaskQueueRoute::ViewQueue),
                 ]),
                 self.render_section("Wasmatic", vec![
-                    Route::Wasmatic(WasmaticRoute::Deploy),
-                    Route::Wasmatic(WasmaticRoute::List),
+                    Route::Wasmatic(WasmaticRoute::AddApp),
+                    Route::Wasmatic(WasmaticRoute::ListApps),
                     Route::Wasmatic(WasmaticRoute::Info),
-                    Route::Wasmatic(WasmaticRoute::Test),
+                    Route::Wasmatic(WasmaticRoute::TestApp),
+                ]),
+                self.render_section("Wallet", vec![
+                    Route::Wallet(WalletRoute::Faucet),
                 ]),
                 self.render_section("Contract", vec![
                     Route::Contract(ContractRoute::Upload),
@@ -125,10 +125,10 @@ impl Sidebar {
                     ContractRoute::Query => "Query",
                 },
                 Route::Wasmatic(wasmatic_route) => match wasmatic_route {
-                    WasmaticRoute::Deploy => "Deploy",
-                    WasmaticRoute::List => "List",
+                    WasmaticRoute::AddApp => "Add App",
+                    WasmaticRoute::ListApps => "List Apps",
                     WasmaticRoute::Info => "Info",
-                    WasmaticRoute::Test => "Test",
+                    WasmaticRoute::TestApp => "Test App",
                 },
                 Route::TaskQueue(task_queue_route) => match task_queue_route {
                     TaskQueueRoute::AddTask => "Add Task",

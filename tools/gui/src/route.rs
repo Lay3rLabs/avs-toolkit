@@ -30,10 +30,10 @@ pub enum ContractRoute {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum WasmaticRoute {
-    Deploy,
-    List,
+    AddApp,
+    ListApps,
     Info,
-    Test,
+    TestApp,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -72,10 +72,10 @@ impl Route {
                 _ => Self::NotFound,
             },
             ["wasmatic", wasmatic_route] => match *wasmatic_route {
-                "deploy" => Self::Wasmatic(WasmaticRoute::Deploy),
-                "list" => Self::Wasmatic(WasmaticRoute::List),
+                "add-app" => Self::Wasmatic(WasmaticRoute::AddApp),
+                "list-apps" => Self::Wasmatic(WasmaticRoute::ListApps),
                 "info" => Self::Wasmatic(WasmaticRoute::Info),
-                "test" => Self::Wasmatic(WasmaticRoute::Test),
+                "test-app" => Self::Wasmatic(WasmaticRoute::TestApp),
                 _ => Self::NotFound,
             },
             ["task-queue", task_queue_route] => match *task_queue_route {
@@ -148,10 +148,10 @@ impl std::fmt::Display for ContractRoute {
 impl std::fmt::Display for WasmaticRoute {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let s: String = match self {
-            WasmaticRoute::Deploy => "deploy".to_string(),
-            WasmaticRoute::List => "list".to_string(),
+            WasmaticRoute::AddApp => "add-app".to_string(),
+            WasmaticRoute::ListApps => "list-apps".to_string(),
             WasmaticRoute::Info => "info".to_string(),
-            WasmaticRoute::Test => "test".to_string(),
+            WasmaticRoute::TestApp => "test-app".to_string(),
         };
         write!(f, "{}", s)
     }

@@ -10,7 +10,9 @@ use block::events::BlockEventsUi;
 use contract::{ContractExecuteUi, ContractInstantiateUi, ContractQueryUi, ContractUploadUi};
 use task_queue::{TaskQueueAddTaskUi, TaskQueueViewQueueUi};
 use wallet::faucet::WalletFaucetUi;
-use wasmatic::{WasmaticDeployUi, WasmaticInfoUi, WasmaticListUi, WasmaticRunUi, WasmaticTestUi};
+use wasmatic::{
+    WasmaticAddAppUi, WasmaticInfoUi, WasmaticListAppsUi, WasmaticRunUi, WasmaticTestAppUi,
+};
 
 pub struct MainUi {}
 
@@ -62,10 +64,10 @@ impl MainUi {
                                 ContractRoute::Query => Some(ContractQueryUi::new().render()),
                             },
                             Route::Wasmatic(wasmatic_route) => match wasmatic_route {
-                                WasmaticRoute::Deploy => Some(WasmaticDeployUi::new().render()),
-                                WasmaticRoute::List => Some(WasmaticListUi::new().render()),
+                                WasmaticRoute::AddApp => Some(WasmaticAddAppUi::new().render()),
+                                WasmaticRoute::ListApps => Some(WasmaticListAppsUi::new().render()),
                                 WasmaticRoute::Info => Some(WasmaticInfoUi::new().render()),
-                                WasmaticRoute::Test => Some(WasmaticTestUi::new().render()),
+                                WasmaticRoute::TestApp => Some(WasmaticTestAppUi::new().render()),
                             },
                             Route::TaskQueue(task_queue_route) => match task_queue_route {
                                 TaskQueueRoute::AddTask => Some(TaskQueueAddTaskUi::new().render()),

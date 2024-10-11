@@ -1,8 +1,8 @@
 use crate::prelude::*;
 
-pub struct WasmaticTestUi {}
+pub struct WasmaticTestAppUi {}
 
-impl WasmaticTestUi {
+impl WasmaticTestAppUi {
     pub fn new() -> Arc<Self> {
         Arc::new(Self {})
     }
