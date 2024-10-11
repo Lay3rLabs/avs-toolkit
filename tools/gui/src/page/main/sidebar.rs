@@ -32,8 +32,8 @@ impl Sidebar {
                 self.render_section("Wasmatic", vec![
                     Route::Wasmatic(WasmaticRoute::AddApp),
                     Route::Wasmatic(WasmaticRoute::ListApps),
-                    Route::Wasmatic(WasmaticRoute::Info),
                     Route::Wasmatic(WasmaticRoute::TestApp),
+                    Route::Wasmatic(WasmaticRoute::Info),
                 ]),
                 self.render_section("Wallet", vec![
                     Route::Wallet(WalletRoute::Faucet),
