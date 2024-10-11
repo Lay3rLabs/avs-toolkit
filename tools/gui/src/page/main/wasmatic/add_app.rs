@@ -17,14 +17,14 @@ use wasm_bindgen_futures::JsFuture;
 use wasm_source::WasmSourceUi;
 use web_sys::{js_sys, File};
 
-pub struct WasmaticDeployUi {
+pub struct WasmaticAddAppUi {
     pub loader: AsyncLoader,
     pub error: Mutable<Option<String>>,
     pub success: Mutable<Option<String>>,
-    pub form: WasmaticDeployForm,
+    pub form: WasmaticAddAppForm,
 }
 
-struct WasmaticDeployForm {
+struct WasmaticAddAppForm {
     pub wasm_source: Arc<WasmSourceUi>,
     pub trigger: Arc<TriggerUi>,
     pub permissions: Arc<PermissionsUi>,
@@ -33,7 +33,7 @@ struct WasmaticDeployForm {
     pub testable: Mutable<bool>,
 }
 
-impl WasmaticDeployForm {
+impl WasmaticAddAppForm {
     pub fn new() -> Self {
         Self {
             wasm_source: WasmSourceUi::new(),
@@ -46,13 +46,13 @@ impl WasmaticDeployForm {
     }
 }
 
-impl WasmaticDeployUi {
+impl WasmaticAddAppUi {
     pub fn new() -> Arc<Self> {
         Arc::new(Self {
             loader: AsyncLoader::new(),
             error: Mutable::new(None),
             success: Mutable::new(None),
-            form: WasmaticDeployForm::new(),
+            form: WasmaticAddAppForm::new(),
         })
     }
 
@@ -78,7 +78,7 @@ impl WasmaticDeployUi {
             .class(&*CONTAINER)
             .child(html!("div", {
                 .class(&*TEXT_SIZE_LG)
-                .text("Deploy Wasmatic App")
+                .text("Add Wasmatic App")
             }))
             .child(Label::new()
                 .with_text("Name")
@@ -130,15 +130,15 @@ impl WasmaticDeployUi {
                                         envs,
                                         testable,
                                         |endpoint| {
-                                            log::info!("Deployment successful to: {endpoint}");
+                                            log::info!("App added to: {endpoint}");
                                         },
                                     )
                                     .await {
                                         Ok(_) => {
-                                            state.success.set(Some("Deployments successful!".to_string()));
+                                            state.success.set(Some("App added to all endpoints".to_string()));
                                         }
                                         Err(err) => {
-                                            state.error.set(Some(format!("Error deploying : {:?}", err)));
+                                            state.error.set(Some(format!("Error adding app: {:?}", err)));
                                         }
                                     }
                                 },

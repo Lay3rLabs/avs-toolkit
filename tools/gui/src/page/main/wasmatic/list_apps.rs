@@ -5,12 +5,12 @@ use wasm_bindgen_futures::spawn_local;
 
 use crate::{prelude::*, util::signal::enumerate_signal};
 
-pub struct WasmaticListUi {
+pub struct WasmaticListAppsUi {
     apps: Mutable<Option<MutableVec<Arc<AppEntry>>>>,
     error: Mutable<Option<String>>,
 }
 
-impl WasmaticListUi {
+impl WasmaticListAppsUi {
     pub fn new() -> Arc<Self> {
         Arc::new(Self {
             apps: Mutable::new(None),

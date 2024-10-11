@@ -1,12 +1,12 @@
 use crate::prelude::*;
-mod deploy;
+mod add_app;
 mod info;
-mod list;
+mod list_apps;
 mod run;
-mod test;
+mod test_app;
 
-pub use deploy::*;
+pub use add_app::*;
 pub use info::*;
-pub use list::*;
+pub use list_apps::*;
 pub use run::*;
-pub use test::*;
+pub use test_app::*;
