@@ -6,6 +6,7 @@ use crate::{
 use anyhow::{anyhow, bail, Result};
 use cosmwasm_std::Decimal;
 use cosmwasm_std::Timestamp;
+use lavs_apis::time::Duration;
 use lavs_apis::Nanos;
 use lavs_task_queue::msg::{Requestor, TimeoutInfo};
 use layer_climb::prelude::*;
@@ -29,7 +30,7 @@ impl DeployContractArgs {
     pub async fn parse(
         ctx: &AppContext,
         artifacts_path: PathBuf,
-        task_timeout: Nanos,
+        task_timeout: Duration,
         required_voting_percentage: u32,
         threshold_percentage: Option<Decimal>,
         allowed_spread: Option<Decimal>,

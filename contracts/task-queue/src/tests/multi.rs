@@ -1,5 +1,5 @@
 use cw_orch::prelude::*;
-use lavs_apis::Nanos;
+use lavs_apis::time::Duration;
 
 use crate::interface::Contract;
 use crate::msg::{InstantiateMsg, Requestor, TimeoutInfo};
@@ -60,7 +60,7 @@ fn sanity_check() {
     let msg = InstantiateMsg {
         requestor: Requestor::Fixed(mock.sender_addr().into()),
         timeout: TimeoutInfo {
-            default: Nanos::new(3600),
+            default: Duration::new(3600),
             minimum: None,
             maximum: None,
         },

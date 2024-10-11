@@ -3,7 +3,7 @@ use cw_orch::environment::{ChainState, CwEnv, Environment, IndexResponse, QueryH
 use cw_orch::prelude::*;
 use lavs_apis::id::TaskId;
 use lavs_apis::tasks::TaskStatus;
-use lavs_apis::Nanos;
+use lavs_apis::time::Duration;
 use serde_json::json;
 
 use crate::error::ContractError;
@@ -36,7 +36,7 @@ where
     let verifier = chain.alt_signer(VERIFIER_INDEX);
     let msg = InstantiateMsg {
         requestor: Requestor::Fixed(chain.sender_addr().into()),
-        timeout: mock_timeout(Nanos::new(timeout)),
+        timeout: mock_timeout(Duration::new(timeout)),
         verifier: verifier.addr().into(),
     };
 
@@ -63,10 +63,10 @@ where
     let result = json!({ "result": "success" });
 
     // create two tasks
-    let one = make_task(&contract, "One", Some(Nanos::new(300)), &payload_one);
+    let one = make_task(&contract, "One", Some(Duration::new(300)), &payload_one);
     let start = get_time(contract.environment());
     contract.environment().next_block().unwrap();
-    let two = make_task(&contract, "Two", Some(Nanos::new(100)), &payload_two);
+    let two = make_task(&contract, "Two", Some(Duration::new(100)), &payload_two);
     let start_two = get_time(contract.environment());
     contract.environment().next_block().unwrap();
     assert_ne!(start, start_two);
@@ -125,9 +125,9 @@ where
     let payload = json! ({ "pair": ["eth", "usd"]});
 
     let config = contract.config().unwrap();
-    assert_eq!(config.timeout.default, Nanos::new(200));
-    assert_eq!(config.timeout.minimum, Nanos::new(100));
-    assert_eq!(config.timeout.maximum, Nanos::new(400));
+    assert_eq!(config.timeout.default, Duration::new(200));
+    assert_eq!(config.timeout.minimum, Duration::new(100));
+    assert_eq!(config.timeout.maximum, Duration::new(400));
     assert_eq!(
         config.requestor,
         Requestor::Fixed(chain.sender_addr().into())
@@ -140,7 +140,7 @@ where
     let err = contract
         .create(
             "Too Short".to_string(),
-            Some(Nanos::new(4)),
+            Some(Duration::new(4)),
             payload.clone(),
             &[],
         )
@@ -148,7 +148,7 @@ where
     assert!(
         err.root()
             .to_string()
-            .contains(&ContractError::TimeoutTooShort(Nanos::new(100)).to_string()),
+            .contains(&ContractError::TimeoutTooShort(Duration::new(100)).to_string()),
         "Unexpected error: {}",
         err.root()
     );
@@ -184,9 +184,9 @@ where
     let payload_three = json! ({ "pair": ["atom", "eur"]});
 
     let start = chain.block_info().unwrap().time.seconds();
-    let one = make_task(&contract, "One", Some(Nanos::new(300)), &payload_one);
+    let one = make_task(&contract, "One", Some(Duration::new(300)), &payload_one);
     chain.next_block().unwrap();
-    let two = make_task(&contract, "Two", Some(Nanos::new(100)), &payload_two);
+    let two = make_task(&contract, "Two", Some(Duration::new(100)), &payload_two);
     chain.next_block().unwrap();
     let three = make_task(&contract, "Two", None, &payload_three); // uses default of 200
 
@@ -251,9 +251,9 @@ where
     let payload = json! ({ "pair": ["eth", "usd"]});
     let result = json! ({ "price": "1234.56"});
 
-    let one = make_task(&contract, "One", Some(Nanos::new(300)), &payload);
+    let one = make_task(&contract, "One", Some(Duration::new(300)), &payload);
     chain.next_block().unwrap();
-    let two = make_task(&contract, "Two", Some(Nanos::new(100)), &payload);
+    let two = make_task(&contract, "Two", Some(Duration::new(100)), &payload);
 
     // list completed empty
     let ListCompletedResponse { tasks } = contract.list_completed(None, None).unwrap();
@@ -333,9 +333,9 @@ where
     let payload = json! ({ "pair": ["eth", "usd"]});
     let result = json! ({ "price": "1234.56"});
 
-    let one = make_task(&contract, "One", Some(Nanos::new(300)), &payload);
+    let one = make_task(&contract, "One", Some(Duration::new(300)), &payload);
     chain.next_block().unwrap();
-    let two = make_task(&contract, "Two", Some(Nanos::new(100)), &payload);
+    let two = make_task(&contract, "Two", Some(Duration::new(100)), &payload);
 
     // check open status
     let status_one = contract.task_status(one).unwrap();
@@ -392,7 +392,7 @@ where
         let task_id = make_task(
             &contract,
             &format!("Task {}", i),
-            Some(Nanos::new(1000 + i * 100)),
+            Some(Duration::new(1000 + i * 100)),
             &payload,
         );
         created_tasks.push(task_id);
@@ -485,7 +485,7 @@ pub fn get_time(chain: &impl QueryHandler) -> Timestamp {
 pub fn make_task<C: ChainState + TxHandler>(
     contract: &TaskContract<C>,
     name: &str,
-    timeout: impl Into<Option<Nanos>>,
+    timeout: impl Into<Option<Duration>>,
     payload: &serde_json::Value,
 ) -> TaskId {
     let res = contract
@@ -509,10 +509,10 @@ pub fn get_task_id(res: &impl IndexResponse) -> TaskId {
 }
 
 // sets up a range around 50% to 200% of the default timeout
-pub fn mock_timeout(default: Nanos) -> TimeoutInfo {
+pub fn mock_timeout(default: Duration) -> TimeoutInfo {
     TimeoutInfo {
         default,
-        minimum: Some(Nanos::new(default.u64() / 2)),
-        maximum: Some(Nanos::new(default.u64() * 2)),
+        minimum: Some(Duration::new(default.seconds() / 2)),
+        maximum: Some(Duration::new(default.seconds() * 2)),
     }
 }

@@ -77,7 +77,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<Binary, ContractErro
 
 mod execute {
     use cw_utils::nonpayable;
-    use lavs_apis::{id::TaskId, Nanos};
+    use lavs_apis::{id::TaskId, time::Duration};
 
     use crate::state::{check_timeout, Timing};
 
@@ -88,7 +88,7 @@ mod execute {
         env: Env,
         info: MessageInfo,
         description: String,
-        timeout: Option<Nanos>,
+        timeout: Option<Duration>,
         payload: RequestType,
     ) -> Result<Response, ContractError> {
         let mut config = CONFIG.load(deps.storage)?;

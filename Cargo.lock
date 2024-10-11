@@ -3245,9 +3245,27 @@ dependencies = [
  "cw-storage-plus 2.0.0",
  "cw-utils 2.0.0",
  "cw2 2.0.0",
- "lavs-apis",
- "lavs-helpers",
- "lavs-orch",
+ "lavs-apis 0.1.0",
+ "lavs-helpers 0.1.0",
+ "lavs-orch 0.1.0",
+ "schemars",
+ "serde",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
+name = "lavs-task-queue"
+version = "0.1.0"
+source = "git+https://github.com/Lay3rLabs/avs-toolkit?tag=v0.1.2#bdc342892a3115711a61b7cf206ce7c529cb22e0"
+dependencies = [
+ "cosmwasm-schema 2.1.4",
+ "cosmwasm-std 2.1.4",
+ "cw-orch",
+ "cw-storage-plus 2.0.0",
+ "cw-utils 2.0.0",
+ "cw2 2.0.0",
+ "lavs-apis 0.1.0 (git+https://github.com/Lay3rLabs/avs-toolkit?tag=v0.1.2)",
  "schemars",
  "serde",
  "serde_json",

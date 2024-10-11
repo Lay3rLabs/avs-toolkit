@@ -5,7 +5,7 @@ use cw_utils::must_pay;
 
 use lavs_apis::id::TaskId;
 use lavs_apis::tasks::{Requestor, Status, TimeoutConfig};
-use lavs_apis::Nanos;
+use lavs_apis::time::Duration;
 
 use crate::error::ContractError;
 use crate::msg::{self, InstantiateMsg, RequestType, ResponseType};
@@ -113,8 +113,8 @@ pub fn validate_timeout_info(input: msg::TimeoutInfo) -> Result<TimeoutConfig, C
 
 pub fn check_timeout(
     config: &TimeoutConfig,
-    timeout: Option<Nanos>,
-) -> Result<Nanos, ContractError> {
+    timeout: Option<Duration>,
+) -> Result<Duration, ContractError> {
     match timeout {
         Some(t) if t < config.minimum => Err(ContractError::TimeoutTooShort(config.minimum)),
         Some(t) if t > config.maximum => Err(ContractError::TimeoutTooLong(config.maximum)),
@@ -153,27 +153,24 @@ pub struct Timing {
 }
 
 impl Timing {
-    pub fn new(env: &Env, timeout_duration: Nanos) -> Self {
+    pub fn new(env: &Env, timeout_duration: Duration) -> Self {
         Timing {
             created_at: env.block.time,
             // TODO: pick up from here
-            expires_at: env
-                .block
-                .time
-                .plus_seconds(timeout_duration.u64() / 1_000_000_000)
-                // to add the remaining nanoseconds part
-                .plus_nanos(timeout_duration.u64() % 1_000_000_000),
+            expires_at: env.block.time.plus_seconds(timeout_duration.seconds()),
             created_height: env.block.height,
         }
     }
 
     pub fn is_expired(&self, env: &Env) -> bool {
+        dbg!(self.expires_at, env.block.time);
         self.expires_at <= env.block.time
     }
 }
 
 impl Task {
     pub fn complete(&mut self, env: &Env, result: ResponseType) -> Result<(), ContractError> {
+        dbg!(&self.status, !self.timing.is_expired(env));
         match self.status {
             Status::Open {} if !self.timing.is_expired(env) => {}
             Status::Open {} | Status::Expired {} => return Err(ContractError::TaskExpired),
