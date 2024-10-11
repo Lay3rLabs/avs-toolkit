@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use anyhow::{bail, Result, Context};
+use anyhow::{bail, Context, Result};
 use layer_climb::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -40,7 +40,7 @@ pub async fn deploy(
     } = &trigger
     {
         let address = query_client
-            .chain_config 
+            .chain_config
             .parse_address(task_queue_addr)
             .context(format!("Invalid Task Address: `{task_queue_addr}`"))?;
 
