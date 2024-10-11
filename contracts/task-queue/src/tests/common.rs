@@ -29,7 +29,6 @@ pub fn setup<Chain: CwEnv>(chain: Chain, msg: InstantiateMsg) -> TaskContract<Ch
     tasker
 }
 
-//TODO: change `timeout` to Duration / change name
 fn fixed_requestor<Chain>(chain: &Chain, timeout: Duration) -> (TaskContract<Chain>, Chain::Sender)
 where
     Chain: CwEnv + AltSigner,
