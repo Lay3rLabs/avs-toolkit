@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
-use anyhow::{bail, Result};
+use anyhow::{bail, Result, Context};
+use layer_climb::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
@@ -22,7 +23,8 @@ pub enum Trigger {
 
 #[allow(clippy::too_many_arguments)]
 pub async fn deploy(
-    client: reqwest::Client,
+    http_client: reqwest::Client,
+    query_client: &QueryClient,
     endpoints: Vec<String>,
     name: String,
     digest: Option<String>,
@@ -33,6 +35,21 @@ pub async fn deploy(
     testable: bool,
     on_deploy_success: impl Fn(&str),
 ) -> Result<()> {
+    if let Trigger::Queue {
+        task_queue_addr, ..
+    } = &trigger
+    {
+        let address = query_client
+            .chain_config 
+            .parse_address(task_queue_addr)
+            .context(format!("Invalid Task Address: `{task_queue_addr}`"))?;
+
+        query_client
+            .contract_info(&address)
+            .await
+            .context(format!("Contract Not Found: `{task_queue_addr}`"))?;
+    }
+
     // Prepare the JSON body
     let body = json!({
         "name": name,
@@ -67,10 +84,10 @@ pub async fn deploy(
             json_body["digest"] = json!(format!("sha256:{:x}", result));
 
             futures::future::join_all(endpoints.iter().map(|endpoint| {
-                let client = client.clone();
+                let http_client = http_client.clone();
                 let wasm_binary = wasm_binary.clone();
                 async move {
-                    let response = client
+                    let response = http_client
                         .post(format!("{}/upload", endpoint))
                         .body(wasm_binary) // Binary data goes here
                         .send()
@@ -92,12 +109,12 @@ pub async fn deploy(
     let on_deploy_success = Arc::new(on_deploy_success);
 
     futures::future::join_all(endpoints.iter().map(|endpoint| {
-        let client = client.clone();
+        let http_client = http_client.clone();
         let json_body = json_body.clone();
         let on_deploy_success = on_deploy_success.clone();
         async move {
             // Send the request with wasmUrl in JSON
-            let response = client
+            let response = http_client
                 .post(format!("{}/app", endpoint))
                 .json(&json_body)
                 .send()
