@@ -9,7 +9,7 @@ if ! groups | grep -q docker; then
 fi
 
 U="cosmwasm"
-V="0.16.0"
+V="0.16.1"
 
 M=$(uname -m)
 #M="x86_64" # Force Intel arch
