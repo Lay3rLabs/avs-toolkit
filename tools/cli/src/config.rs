@@ -13,7 +13,7 @@ impl Config {
     // but in theory this could be from chain, http endpoint, avs, etc.
     // internally, it does additional loads as needed (e.g. from wasmatic endpoint)
     pub async fn load() -> Result<Self> {
-        let config: Config = serde_json::from_str(include_str!("../config.json"))
+        let config: Config = serde_json::from_str(include_str!("../../config.json"))
             .context("Failed to parse config")?;
 
         // SANITY CHECK
