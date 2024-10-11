@@ -156,7 +156,7 @@ impl Timing {
     pub fn new(env: &Env, timeout_duration: Duration) -> Self {
         Timing {
             created_at: env.block.time,
-            expires_at: env.block.time.plus_seconds(timeout_duration.seconds()),
+            expires_at: env.block.time.plus_nanos(timeout_duration.as_nanos()),
             created_height: env.block.height,
         }
     }

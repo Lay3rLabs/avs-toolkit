@@ -59,7 +59,7 @@ where
     // Upload and instantiate task queue, acknowledging the verifier
     let msg = TasksInstantiateMsg {
         requestor: Requestor::Fixed(chain.sender_addr().into()),
-        timeout: TimeoutInfo::new(Duration::new(600)),
+        timeout: TimeoutInfo::new(Duration::new_seconds(600)),
         verifier: verifier.addr_str().unwrap(),
     };
     let tasker = TasksContract::new(chain.clone());
@@ -129,7 +129,7 @@ where
     // Upload and instantiate task queue, acknowledging the verifier
     let msg = TasksInstantiateMsg {
         requestor: Requestor::Fixed(chain.sender_addr().into()),
-        timeout: TimeoutInfo::new(Duration::new(600)),
+        timeout: TimeoutInfo::new(Duration::new_seconds(600)),
         verifier: verifier.addr_str().unwrap(),
     };
     let tasker = TasksContract::new(chain.clone());

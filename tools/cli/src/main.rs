@@ -51,7 +51,7 @@ async fn main() -> Result<()> {
                 let args = DeployContractArgs::parse(
                     &ctx,
                     artifacts_path,
-                    Duration::new(task_timeout_seconds),
+                    Duration::new_seconds(task_timeout_seconds),
                     required_voting_percentage,
                     threshold_percentage,
                     allowed_spread,
@@ -82,7 +82,7 @@ async fn main() -> Result<()> {
                 } => {
                     // NOTE: I've left only this input argument as u64, because of `clap` not liking
                     // Timestamp as argument
-                    let timeout = timeout.map(Duration::new);
+                    let timeout = timeout.map(Duration::new_seconds);
 
                     let _ = task_queue.add_task(body, description, timeout).await?;
                 }

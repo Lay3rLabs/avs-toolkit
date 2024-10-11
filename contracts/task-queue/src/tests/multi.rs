@@ -60,7 +60,7 @@ fn sanity_check() {
     let msg = InstantiateMsg {
         requestor: Requestor::Fixed(mock.sender_addr().into()),
         timeout: TimeoutInfo {
-            default: Duration::new(3600),
+            default: Duration::new_seconds(3600),
             minimum: None,
             maximum: None,
         },
