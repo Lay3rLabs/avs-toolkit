@@ -1,3 +1,4 @@
+// this file isn't named `test_app` because `test_` prefix causes issues, in VSCode at least
 use crate::prelude::*;
 
 pub struct WasmaticTestAppUi {}

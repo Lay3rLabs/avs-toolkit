@@ -5,7 +5,7 @@ use std::sync::OnceLock;
 use crate::{
     client::{ClientKeyKind, TargetEnvironment},
     prelude::*,
-    route::Route,
+    route::{Route, TaskQueueRoute},
 };
 
 static TARGET_ENVIRONMENT: LazyLock<Mutex<Option<TargetEnvironment>>> =
@@ -98,7 +98,7 @@ impl Default for ConfigDebug {
     fn default() -> Self {
         Self {
             auto_connect: None,
-            start_route: Mutex::new(Some(Route::Wallet(WalletRoute::Faucet))),
+            start_route: Mutex::new(Some(Route::TaskQueue(TaskQueueRoute::AddTask))),
         }
     }
 }
@@ -113,7 +113,7 @@ cfg_if::cfg_if! {
                         //key_kind: ClientKeyKind::Keplr,
                         target_env: TargetEnvironment::Local
                     }),
-                    start_route: Mutex::new(Some(Route::Wasmatic(WasmaticRoute::ListApps)))
+                    start_route: Mutex::new(Some(Route::Wasmatic(WasmaticRoute::TestApp)))
                 }
             }
         }

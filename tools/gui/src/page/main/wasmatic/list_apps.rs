@@ -41,6 +41,11 @@ impl WasmaticListAppsUi {
             class! {
                 .style("display", "flex")
                 .style("flex-direction", "column")
+                .style("gap", "0.5rem")
+                .style("padding", "1rem")
+                .style("border-radius", "0.25rem")
+                .style("border-width", "1px")
+                .style("border-style", "solid")
             }
         });
 
