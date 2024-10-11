@@ -83,7 +83,7 @@ where
         .call_as(&op_node)
         .executed_task(tasker.addr_str().unwrap(), task_id, result)
         .unwrap();
-    let completed = Timestamp::from_seconds(chain.block_info().unwrap().time.seconds());
+    let completed = Timestamp::from_nanos(chain.block_info().unwrap().time.nanos());
 
     // Check it is marked as completed (both in verifier and task queue)
     let status = tasker.task(task_id).unwrap();
@@ -185,7 +185,7 @@ where
         .call_as(&op_nodes[2])
         .executed_task(tasker.addr_str().unwrap(), task_id, result)
         .unwrap();
-    let completed = Timestamp::from_seconds(chain.block_info().unwrap().time.seconds());
+    let completed = Timestamp::from_nanos(chain.block_info().unwrap().time.nanos());
 
     // Check it is marked as completed (both in verifier and task queue)
     let status = tasker.task(task_id).unwrap();
