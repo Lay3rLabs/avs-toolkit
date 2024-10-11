@@ -1,7 +1,7 @@
 use super::wasmatic_cron_bindings as cron_bindings;
 use super::wasmatic_task_bindings as task_bindings;
 use anyhow::{bail, Context, Result};
-use layer_climb::prelude::Address;
+use layer_climb::prelude::*;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -48,7 +48,9 @@ pub async fn deploy(
         task_queue_addr, ..
     } = &trigger
     {
-        let address = Address::new_cosmos_string(task_queue_addr, None)
+        let address = ctx
+            .chain_config()?
+            .parse_address(task_queue_addr)
             .context(format!("Invalid Task Address: `{task_queue_addr}`"))?;
         ctx.query_client()
             .await?
