@@ -1,5 +1,5 @@
-use cosmwasm_std::StdError;
 use cosmwasm_std::{Attribute, Event};
+use cosmwasm_std::{Decimal, StdError};
 use lavs_apis::id::TaskId;
 
 pub trait TypedEvent: TryFrom<Event> + Into<Event> {
@@ -10,18 +10,29 @@ pub trait TypedEvent: TryFrom<Event> + Into<Event> {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct TaskExecutedEvent {
-    pub task_id: TaskId,
-    pub task_queue: String,
-    pub operator: String,
-    pub completed: bool,
+pub enum TaskEvent {
+    Executed {
+        task_id: TaskId,
+        task_queue: String,
+        operator: String,
+        completed: bool,
+    },
+    VoteStored {
+        task_id: TaskId,
+        task_queue_contract: String,
+        new_price: Decimal,
+    },
+    ThresholdNotMet {
+        task_id: TaskId,
+        task_queue_contract: String,
+    },
 }
 
-impl TypedEvent for TaskExecutedEvent {
+impl TypedEvent for TaskEvent {
     const NAME: &'static str = "task_executed";
 }
 
-impl TryFrom<&Event> for TaskExecutedEvent {
+impl TryFrom<&Event> for TaskEvent {
     type Error = StdError;
 
     fn try_from(event: &Event) -> Result<Self, Self::Error> {
