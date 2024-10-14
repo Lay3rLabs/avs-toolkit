@@ -88,7 +88,9 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<Binary, ContractErro
 mod execute {
     use cosmwasm_std::{SubMsg, WasmMsg};
     use cw_utils::nonpayable;
-    use lavs_apis::{id::TaskId, interfaces::task_hooks::TaskHookExecuteMsg, tasks::TaskResponse};
+    use lavs_apis::{
+        id::TaskId, interfaces::task_hooks::TaskHookExecuteMsg, tasks::TaskResponse, time::Duration,
+    };
 
     use crate::state::{check_timeout, Timing};
 
@@ -99,7 +101,7 @@ mod execute {
         env: Env,
         info: MessageInfo,
         description: String,
-        timeout: Option<u64>,
+        timeout: Option<Duration>,
         payload: RequestType,
     ) -> Result<Response, ContractError> {
         let mut config = CONFIG.load(deps.storage)?;
@@ -229,6 +231,7 @@ mod execute {
 }
 
 mod query {
+    use cosmwasm_std::Timestamp;
     use cw_storage_plus::Bound;
     use lavs_apis::{id::TaskId, tasks::ConfigResponse};
 
@@ -309,7 +312,7 @@ mod query {
                         timing,
                         ..
                     },
-                )) if timing.expires_at > env.block.time.seconds() => Some(Ok(OpenTaskOverview {
+                )) if timing.expires_at > env.block.time => Some(Ok(OpenTaskOverview {
                     id,
                     expires: timing.expires_at,
                     payload,
@@ -334,7 +337,12 @@ mod query {
         let completed = TASKS
             .idx
             .status
-            .prefix(Status::Completed { completed: 0 }.as_str())
+            .prefix(
+                Status::Completed {
+                    completed: Timestamp::from_seconds(0),
+                }
+                .as_str(),
+            )
             .range(
                 deps.storage,
                 None,

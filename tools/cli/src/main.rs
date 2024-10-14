@@ -13,6 +13,7 @@ use commands::{
     wasmatic::{app, deploy, info, remove, run, test, Trigger},
 };
 use context::AppContext;
+use lavs_apis::time::Duration;
 use layer_climb::prelude::*;
 use layer_climb_cli::command::{ContractLog, WalletLog};
 
@@ -43,18 +44,24 @@ async fn main() -> Result<()> {
                 percentage: required_voting_percentage,
                 operators,
                 requestor,
+                threshold_percentage,
+                allowed_spread,
+                slashable_spread,
             } => {
                 let args = DeployContractArgs::parse(
                     &ctx,
                     artifacts_path,
-                    task_timeout_seconds,
+                    Duration::new_seconds(task_timeout_seconds),
                     required_voting_percentage,
+                    threshold_percentage,
+                    allowed_spread,
+                    slashable_spread,
                     operators,
                     requestor,
                 )
                 .await?;
 
-                let addrs = deploy_contracts(ctx, args).await?;
+                let addrs = deploy_contracts(ctx, deploy_args.mode, args).await?;
                 tracing::info!("---- All contracts instantiated successfully ----");
                 tracing::info!("Mock Operators: {}", addrs.operators);
                 tracing::info!("Verifier Simple: {}", addrs.verifier_simple);
@@ -73,6 +80,10 @@ async fn main() -> Result<()> {
                     description,
                     timeout,
                 } => {
+                    // NOTE: I've left only this input argument as u64, because of `clap` not liking
+                    // Timestamp as argument
+                    let timeout = timeout.map(Duration::new_seconds);
+
                     let _ = task_queue.add_task(body, description, timeout).await?;
                 }
                 TaskQueueCommand::ViewQueue { start_after, limit } => {

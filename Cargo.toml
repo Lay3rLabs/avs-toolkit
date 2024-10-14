@@ -1,5 +1,5 @@
 [workspace]
-members = ["packages/*", "contracts/*", "wasi/*", "tools/cli"]
+members = ["packages/*", "contracts/*", "wasi/square", "wasi/oracle-example", "tools/cli", "tools/gui"]
 resolver = "2"
 
 [workspace.package]
@@ -13,6 +13,7 @@ rust-version = "1.80.0"
 lavs-mock-operators = { path = "contracts/mock-operators" }
 lavs-task-queue = { path = "contracts/task-queue" }
 lavs-verifier-simple = { path = "contracts/verifier-simple" }
+lavs-oracle-verifier = { path = "contracts/oracle-verifier" }
 
 lavs-apis = { path = "packages/apis" }
 lavs-orch = { path = "packages/orch" }
@@ -34,6 +35,7 @@ serde_json       = { version = "1.0.128" }
 thiserror        = "1.0.59"
 semver = "1.0.22"
 itertools = "0.12.1"
+cfg-if = "1.0.0"
 tempfile = "3.13.0"
 wasmtime = { version = "24.0.0", features = ["cache", "component-model", "async", "runtime", "std"] }
 wasmtime-wasi-http = "24.0.0"
@@ -54,13 +56,25 @@ dotenvy = {version = "0.15.7", features = ["cli"]}
 tracing-subscriber = "0.3.18"
 bip39 = "2.0.0"
 rand = "0.8"
-layer-climb = { git = "https://github.com/Lay3rLabs/climb.git", rev = "5436381a7c35344325bd27ea32261ebcd2d76baa" }
-layer-climb-cli = { git = "https://github.com/Lay3rLabs/climb.git", rev = "5436381a7c35344325bd27ea32261ebcd2d76baa" }
+layer-climb = { git = "https://github.com/Lay3rLabs/climb.git", rev = "6771bf76f2ba76683082caa87e0bf10a98eb6436" }
+layer-climb-cli = { git = "https://github.com/Lay3rLabs/climb.git", rev = "6771bf76f2ba76683082caa87e0bf10a98eb6436" }
 reqwest = { version = "0.11", features = ["json", "rustls-tls", "stream", "blocking", "multipart"] }
 sha2 = "0.10"
 # purposefully left in for now to make debugging easier, will remove eventually:
 # layer-climb = { path = "../climb/packages/layer-climb" }
 deadpool = "0.12.1"
+
+# gui tooling
+wasm-bindgen = "0.2.93"
+wasm-bindgen-futures = "0.4.43"
+wasm-logger = "0.2.0"
+log = "0.4.22"
+console_error_panic_hook = "0.1.7"
+dominator = "0.5.38"
+dominator_helpers = "0.8.0"
+futures-signals = "0.3.34"
+gloo-events = "0.2.0"
+gloo-timers = {version = "0.3.0", features = ["futures"]}
 
 # wasi stuff
 wit-bindgen-rt = { version = "0.32.0", features = ["bitflags"] }

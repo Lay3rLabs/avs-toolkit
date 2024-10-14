@@ -1,0 +1,65 @@
+[package]
+name = "avs-toolkit-gui"
+version = "0.0.0"
+edition = "2021"
+license = "Apache-2.0"
+
+[features]
+default = ["dev", "debug"]
+autoconnect = []
+debug = []
+dev = ["wasm-logger", "console_error_panic_hook","awsm_web/unwrap_verbose"]
+
+[build-dependencies]
+dotenvy = "0.15.7"
+
+[dependencies]
+######## Project dependencies ########
+lavs-mock-operators = {workspace = true}
+lavs-verifier-simple = {workspace = true}
+lavs-task-queue = {workspace = true}
+lavs-apis = { workspace = true }
+
+######## General workspace dependencies ########
+serde = {workspace = true} 
+serde_json = {workspace = true} 
+anyhow = {workspace = true} 
+futures = {workspace = true} 
+cosmwasm-std = {workspace = true} 
+wasm-bindgen = {workspace = true}
+wasm-bindgen-futures = {workspace = true}
+dominator = {workspace = true}
+futures-signals = {workspace = true}
+cfg-if = {workspace = true}
+log = {workspace = true}
+dominator_helpers = {workspace = true}
+gloo-events = {workspace = true}
+gloo-timers = {workspace = true}
+wasm-logger = {workspace = true, optional = true}
+console_error_panic_hook = {workspace = true, optional = true}
+
+######## Proprietary dependencies ########
+futures-timer = {version = "3.0.3", features=["wasm-bindgen"], default-features = false}
+awsm_web = { version = "0.45.0", default-features = false }
+layer-climb = { git = "https://github.com/Lay3rLabs/climb.git", rev = "6771bf76f2ba76683082caa87e0bf10a98eb6436", features = ["web"] }
+# purposefully left here to make debugging easier
+# layer-climb = { path = "../../../climb/packages/layer-climb", features = ["web"] }
+
+[dependencies.web-sys]
+version = "0.3.69"
+features = [
+    "console",
+    "MouseEvent",
+    "Document",
+    "Element",
+    "HtmlElement",
+    "HtmlImageElement",
+    "HtmlInputElement",
+    "FileList",
+    "File",
+    "Window",
+    "Url",
+]
+
+[lib]
+crate-type = ["cdylib", "rlib"]
