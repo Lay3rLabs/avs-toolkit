@@ -22,17 +22,17 @@ pub struct TaskQueue {
 }
 
 impl TaskQueue {
-    pub async fn new(admin: SigningClient, contract_addr: Address) -> Result<Self> {
+    pub async fn new(admin: SigningClient, contract_addr: Address) -> Self {
         let querier = TaskQueueQuerier {
             contract_addr: contract_addr.clone(),
             query_client: admin.querier.clone(),
         };
 
-        Ok(Self {
+        Self {
             contract_addr,
             admin,
             querier,
-        })
+        }
     }
 
     pub async fn add_task(
@@ -172,6 +172,7 @@ impl TaskQueueQuerier {
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct TaskQueueView {
     pub verifier_addr: Address,
     pub operator_addr: Address,
@@ -212,6 +213,7 @@ impl TaskQueueView {
     }
 }
 
+#[derive(Clone, Debug)]
 pub enum TaskView {
     Open(OpenTaskOverview),
     Completed(CompletedTaskOverview),

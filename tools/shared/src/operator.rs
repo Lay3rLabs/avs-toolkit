@@ -35,6 +35,7 @@ impl OperatorQuerier {
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct Operator {
     pub address: Address,
     pub power: u128,

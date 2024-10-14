@@ -88,7 +88,7 @@ async fn main() -> Result<()> {
 
             let contract_addr = ctx.chain_config()?.parse_address(&addr_string)?;
 
-            let task_queue = TaskQueue::new(ctx.signing_client().await?, contract_addr).await?;
+            let task_queue = TaskQueue::new(ctx.signing_client().await?, contract_addr).await;
 
             match task_queue_args.command {
                 TaskQueueCommand::AddTask {
