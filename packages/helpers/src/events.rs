@@ -28,11 +28,98 @@ pub enum TaskEvent {
     },
 }
 
-impl TypedEvent for TaskEvent {
+#[derive(Debug, Clone, PartialEq)]
+pub struct TaskExecutedEvent {
+    pub task_id: TaskId,
+    pub task_queue: String,
+    pub operator: Option<String>,
+    pub completed: Option<bool>,
+    pub method: Option<String>,
+    pub status: Option<String>,
+    pub new_price: Option<Decimal>,
+    pub action: Option<String>,
+}
+#[derive(Default)]
+pub struct TaskExecutedEventBuilder {
+    // Fields corresponding to TaskExecutedEvent
+    task_id: Option<TaskId>,
+    task_queue: Option<String>,
+    operator: Option<String>,
+    completed: Option<bool>,
+    method: Option<String>,
+    status: Option<String>,
+    new_price: Option<Decimal>,
+    action: Option<String>,
+}
+
+impl TaskExecutedEventBuilder {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn task_id(mut self, task_id: TaskId) -> Self {
+        self.task_id = Some(task_id);
+        self
+    }
+
+    pub fn task_queue(mut self, task_queue: String) -> Self {
+        self.task_queue = Some(task_queue);
+        self
+    }
+
+    pub fn operator(mut self, operator: String) -> Self {
+        self.operator = Some(operator);
+        self
+    }
+
+    pub fn completed(mut self, completed: bool) -> Self {
+        self.completed = Some(completed);
+        self
+    }
+
+    pub fn method(mut self, method: String) -> Self {
+        self.method = Some(method);
+        self
+    }
+
+    pub fn status(mut self, status: String) -> Self {
+        self.status = Some(status);
+        self
+    }
+
+    pub fn new_price(mut self, new_price: Decimal) -> Self {
+        self.new_price = Some(new_price);
+        self
+    }
+
+    pub fn action(mut self, action: String) -> Self {
+        self.action = Some(action);
+        self
+    }
+
+    pub fn build(self) -> Result<TaskExecutedEvent, StdError> {
+        Ok(TaskExecutedEvent {
+            task_id: self
+                .task_id
+                .ok_or_else(|| StdError::generic_err("task_id is required"))?,
+            task_queue: self
+                .task_queue
+                .ok_or_else(|| StdError::generic_err("task_queue is required"))?,
+            operator: self.operator,
+            completed: self.completed,
+            method: self.method,
+            status: self.status,
+            new_price: self.new_price,
+            action: self.action,
+        })
+    }
+}
+
+impl TypedEvent for TaskExecutedEvent {
     const NAME: &'static str = "task_executed";
 }
 
-impl TryFrom<&Event> for TaskEvent {
+impl TryFrom<&Event> for TaskExecutedEvent {
     type Error = StdError;
 
     fn try_from(event: &Event) -> Result<Self, Self::Error> {
