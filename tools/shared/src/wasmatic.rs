@@ -294,6 +294,7 @@ pub struct TestOutput {
     pub output: Option<Value>,
 }
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct TestResult {
     pub endpoint: String,
     pub response_text: String,
