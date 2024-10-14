@@ -940,9 +940,7 @@ pub mod wasi {
                             }
                             ptr
                         } else {
-                            {
-                                ::core::ptr::null_mut()
-                            }
+                            ::core::ptr::null_mut()
                         };
                         for (i, e) in vec3.into_iter().enumerate() {
                             let base = result3.add(i * 16);
@@ -1093,9 +1091,7 @@ pub mod wasi {
                             }
                             ptr
                         } else {
-                            {
-                                ::core::ptr::null_mut()
-                            }
+                            ::core::ptr::null_mut()
                         };
                         for (i, e) in vec2.into_iter().enumerate() {
                             let base = result2.add(i * 8);
@@ -5891,9 +5887,7 @@ pub mod wasi {
                         }
                         ptr
                     } else {
-                        {
-                            ::core::ptr::null_mut()
-                        }
+                        ::core::ptr::null_mut()
                     };
                     for (i, e) in vec0.into_iter().enumerate() {
                         let base = result0.add(i * 4);
@@ -7091,7 +7085,7 @@ macro_rules! __export_task_queue_impl {
 #[doc(inline)]
 pub(crate) use __export_task_queue_impl as export;
 #[cfg(target_arch = "wasm32")]
-#[link_section = "component-type:wit-bindgen:0.30.0:task-queue:encoded world"]
+#[link_section = "component-type:wit-bindgen:0.31.0:lay3r:avs@0.3.0:task-queue:encoded world"]
 #[doc(hidden)]
 pub static __WIT_BINDGEN_COMPONENT_TYPE: [u8; 6655] = *b"\
 \0asm\x0d\0\x01\0\0\x19\x16wit-component-encoding\x04\0\x07\xfe2\x01A\x02\x01A\x1d\
@@ -7226,7 +7220,7 @@ s\x04\0\x05error\x03\0\x04\x01j\x01\x01\x01\x05\x04\0\x06output\x03\0\x06\x03\x0
 k-queue-input\x03\0\x10\x02\x03\0\x06\x06output\x03\0\x06output\x03\0\x12\x01@\x01\
 \x07request\x11\0\x13\x04\0\x08run-task\x01\x14\x04\x01\x1alay3r:avs/task-queue@\
 0.3.0\x04\0\x0b\x10\x01\0\x0atask-queue\x03\0\0\0G\x09producers\x01\x0cprocessed\
--by\x02\x0dwit-component\x070.215.0\x10wit-bindgen-rust\x060.30.0";
+-by\x02\x0dwit-component\x070.216.0\x10wit-bindgen-rust\x060.31.0";
 #[inline(never)]
 #[doc(hidden)]
 pub fn __link_custom_section_describing_imports() {

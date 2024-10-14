@@ -1,10 +1,11 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Addr, Coin, Deps, Env, MessageInfo, StdError};
+use cosmwasm_std::{Addr, Coin, Deps, Env, MessageInfo, StdError, Timestamp};
 use cw_storage_plus::{Index, IndexList, IndexedMap, Item, MultiIndex};
 use cw_utils::must_pay;
 
 use lavs_apis::id::TaskId;
 use lavs_apis::tasks::{Requestor, Status, TimeoutConfig};
+use lavs_apis::time::Duration;
 
 use crate::error::ContractError;
 use crate::msg::{self, InstantiateMsg, RequestType, ResponseType};
@@ -110,7 +111,10 @@ pub fn validate_timeout_info(input: msg::TimeoutInfo) -> Result<TimeoutConfig, C
     })
 }
 
-pub fn check_timeout(config: &TimeoutConfig, timeout: Option<u64>) -> Result<u64, ContractError> {
+pub fn check_timeout(
+    config: &TimeoutConfig,
+    timeout: Option<Duration>,
+) -> Result<Duration, ContractError> {
     match timeout {
         Some(t) if t < config.minimum => Err(ContractError::TimeoutTooShort(config.minimum)),
         Some(t) if t > config.maximum => Err(ContractError::TimeoutTooLong(config.maximum)),
@@ -140,25 +144,25 @@ impl Task {
 
 #[cw_serde]
 pub struct Timing {
-    /// Creation in UNIX seconds
-    pub created_at: u64,
-    /// Expiration in UNIX seconds
-    pub expires_at: u64,
+    /// Creation in `Timestamp` format
+    pub created_at: Timestamp,
+    /// Expiration in `Timestamp` format
+    pub expires_at: Timestamp,
     /// Creation in block height
     pub created_height: u64,
 }
 
 impl Timing {
-    pub fn new(env: &Env, timeout: u64) -> Self {
+    pub fn new(env: &Env, timeout_duration: Duration) -> Self {
         Timing {
-            created_at: env.block.time.seconds(),
-            expires_at: env.block.time.seconds() + timeout,
+            created_at: env.block.time,
+            expires_at: env.block.time.plus_nanos(timeout_duration.as_nanos()),
             created_height: env.block.height,
         }
     }
 
     pub fn is_expired(&self, env: &Env) -> bool {
-        self.expires_at <= env.block.time.seconds()
+        self.expires_at <= env.block.time
     }
 }
 

@@ -1,6 +1,6 @@
 use cosmwasm_std::StdError;
 use cw_utils::PaymentError;
-use lavs_apis::id::TaskId;
+use lavs_apis::{id::TaskId, time::Duration};
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -18,10 +18,10 @@ pub enum ContractError {
     InvalidTimeoutInfo,
 
     #[error("Timeout is shorter than allowed minimum {0}")]
-    TimeoutTooShort(u64),
+    TimeoutTooShort(Duration),
 
     #[error("Timeout is longer than allowed maximum {0}")]
-    TimeoutTooLong(u64),
+    TimeoutTooLong(Duration),
 
     #[error("You need to pay at least {0} {1} to create a task")]
     InsufficientPayment(u128, String),

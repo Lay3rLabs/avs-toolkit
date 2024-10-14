@@ -2,7 +2,7 @@
 /// by other contracts. This specifies the required APIs for on-chain interactions.
 /// This must be a subset of any of the implementation.
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Addr, StdResult, Storage};
+use cosmwasm_std::{Addr, StdResult, Storage, Timestamp};
 use cw_orch::{ExecuteFns, QueryFns};
 use cw_storage_plus::Map;
 
@@ -74,10 +74,10 @@ pub struct TaskStatusResponse {
     pub status: TaskStatus,
     /// We need the height to query the voting power
     pub created_height: u64,
-    /// Time it was created in UNIX seconds
-    pub created_time: u64,
-    /// Expiration of the task in UNIX seconds
-    pub expires_time: u64,
+    /// Time it was created
+    pub created_time: Timestamp,
+    /// Expiration of the task
+    pub expires_time: Timestamp,
 }
 
 #[derive(Copy)]
