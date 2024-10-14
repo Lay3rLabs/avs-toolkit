@@ -1,12 +1,13 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Coin, Env, Timestamp};
+use cw_controllers::HooksResponse;
 use cw_orch::{ExecuteFns, QueryFns};
 
 pub use crate::interfaces::tasks::{
     TaskExecuteMsg, TaskExecuteMsgFns, TaskQueryMsg, TaskQueryMsgFns, TaskStatus,
     TaskStatusResponse,
 };
-use crate::{id::TaskId, time::Duration};
+use crate::{id::TaskId, interfaces::task_hooks::TaskHookType, time::Duration};
 
 // FIXME: make these generic
 pub type RequestType = serde_json::Value;
@@ -77,6 +78,8 @@ pub enum CustomExecuteMsg {
         /// The task ID to complete
         task_id: TaskId,
     },
+    /// Adds a hook to the caller for the given task hook type
+    AddHook(TaskHookType),
 }
 
 impl From<CustomExecuteMsg> for ExecuteMsg {
@@ -125,6 +128,9 @@ pub enum CustomQueryMsg {
     /// Get task configuration
     #[returns(ConfigResponse)]
     Config {},
+    /// Gets the task hooks for the given task hook type
+    #[returns(HooksResponse)]
+    TaskHooks(TaskHookType),
 }
 
 impl From<TaskQueryMsg> for QueryMsg {
