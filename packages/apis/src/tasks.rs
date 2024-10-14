@@ -29,12 +29,11 @@ pub enum Requestor {
 }
 
 #[cw_serde]
-/// All timeouts are defined in seconds
 /// If minimum and maximum are undefined, the default value is used
 /// # Fields
-/// * `default` - default timeout duration in nanoseconds.
-/// * `minimum` - the minimum allowed timeout duration in nanoseconds.
-/// * `maximum` - maximum allowed timeout duration in nanoseconds.
+/// * `default` - default timeout duration.
+/// * `minimum` - the minimum allowed timeout duration.
+/// * `maximum` - maximum allowed timeout duration.
 pub struct TimeoutInfo {
     pub default: Duration,
     pub minimum: Option<Duration>,
