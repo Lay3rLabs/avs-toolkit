@@ -1,6 +1,7 @@
 use super::wasmatic_cron_bindings as cron_bindings;
 use super::wasmatic_task_bindings as task_bindings;
 use anyhow::{bail, Context, Result};
+use layer_climb::prelude::*;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -43,6 +44,21 @@ pub async fn deploy(
     env_pairs: Vec<String>,
     testable: bool,
 ) -> Result<()> {
+    if let Trigger::Queue {
+        task_queue_addr, ..
+    } = &trigger
+    {
+        let address = ctx
+            .chain_config()?
+            .parse_address(task_queue_addr)
+            .context(format!("Invalid Task Address: `{task_queue_addr}`"))?;
+        ctx.query_client()
+            .await?
+            .contract_info(&address)
+            .await
+            .context(format!("Contract Not Found: `{task_queue_addr}`"))?;
+    }
+
     let endpoints = &ctx.chain_info()?.wasmatic.endpoints;
     let client = Client::new();
 
@@ -392,6 +408,7 @@ async fn instantiate_and_invoke(
     builder
         .preopened_dir(app_cache_path, ".", DirPerms::all(), FilePerms::all())
         .expect("preopen failed");
+    builder.inherit_stdio();
     let ctx = builder.build();
 
     let host = Host {

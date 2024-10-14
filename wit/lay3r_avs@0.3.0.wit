@@ -6,6 +6,7 @@ interface types {
   type serialized-json = list<u8>;
 
   record task-queue-input {
+    // this does *not* match the contract. TBD
     timestamp: u64,
     request: serialized-json,
   }

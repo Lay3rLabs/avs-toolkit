@@ -1,5 +1,5 @@
 [workspace]
-members = ["packages/*", "contracts/*", "wasi/*", "tools/cli", "tools/gui"]
+members = ["packages/*", "contracts/*", "wasi/square", "wasi/oracle-example", "tools/cli", "tools/gui"]
 resolver = "2"
 
 [workspace.package]
@@ -13,6 +13,7 @@ rust-version = "1.80.0"
 lavs-mock-operators = { path = "contracts/mock-operators" }
 lavs-task-queue = { path = "contracts/task-queue" }
 lavs-verifier-simple = { path = "contracts/verifier-simple" }
+lavs-oracle-verifier = { path = "contracts/oracle-verifier" }
 
 lavs-apis = { path = "packages/apis" }
 lavs-orch = { path = "packages/orch" }

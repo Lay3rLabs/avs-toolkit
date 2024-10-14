@@ -1,12 +1,12 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Coin, Env};
+use cosmwasm_std::{Coin, Env, Timestamp};
 use cw_orch::{ExecuteFns, QueryFns};
 
-use crate::id::TaskId;
 pub use crate::interfaces::tasks::{
     TaskExecuteMsg, TaskExecuteMsgFns, TaskQueryMsg, TaskQueryMsgFns, TaskStatus,
     TaskStatusResponse,
 };
+use crate::{id::TaskId, time::Duration};
 
 // FIXME: make these generic
 pub type RequestType = serde_json::Value;
@@ -29,16 +29,19 @@ pub enum Requestor {
 }
 
 #[cw_serde]
-/// All timeouts are defined in seconds
 /// If minimum and maximum are undefined, the default value is used
+/// # Fields
+/// * `default` - default timeout duration.
+/// * `minimum` - the minimum allowed timeout duration.
+/// * `maximum` - maximum allowed timeout duration.
 pub struct TimeoutInfo {
-    pub default: u64,
-    pub minimum: Option<u64>,
-    pub maximum: Option<u64>,
+    pub default: Duration,
+    pub minimum: Option<Duration>,
+    pub maximum: Option<Duration>,
 }
 
 impl TimeoutInfo {
-    pub fn new(default: u64) -> Self {
+    pub fn new(default: Duration) -> Self {
         Self {
             default,
             minimum: None,
@@ -65,7 +68,7 @@ pub enum CustomExecuteMsg {
         /// Human-readable description of the task
         description: String,
         /// Specify a task timeout, or use the default
-        timeout: Option<u64>,
+        timeout: Option<Duration>,
         /// Machine-readable data for the AVS to use
         /// FIXME: use generic T to enforce a AVS-specific format
         payload: RequestType,
@@ -150,7 +153,7 @@ pub struct ListCompletedResponse {
 #[cw_serde]
 pub struct OpenTaskOverview {
     pub id: TaskId,
-    pub expires: u64,
+    pub expires: Timestamp,
     pub payload: RequestType,
 }
 
@@ -158,7 +161,7 @@ pub struct OpenTaskOverview {
 #[cw_serde]
 pub struct CompletedTaskOverview {
     pub id: TaskId,
-    pub completed: u64,
+    pub completed: Timestamp,
     pub result: ResponseType,
 }
 
@@ -173,9 +176,9 @@ pub struct ConfigResponse {
 /// This is configured from `TimeoutInfo`, which is passed in the instantiate message
 #[cw_serde]
 pub struct TimeoutConfig {
-    pub default: u64,
-    pub minimum: u64,
-    pub maximum: u64,
+    pub default: Duration,
+    pub minimum: Duration,
+    pub maximum: Duration,
 }
 
 /// This is detailed information about a task, including the payload
@@ -191,7 +194,7 @@ pub struct TaskResponse {
 #[cw_serde]
 pub enum Status {
     Open {},
-    Completed { completed: u64 },
+    Completed { completed: Timestamp },
     Expired {},
 }
 
@@ -208,7 +211,7 @@ impl Status {
 
     pub fn completed(env: &Env) -> Self {
         Status::Completed {
-            completed: env.block.time.seconds(),
+            completed: env.block.time,
         }
     }
 

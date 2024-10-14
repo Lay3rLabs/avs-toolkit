@@ -8,6 +8,7 @@ use cosmwasm_std::Order;
 use lavs_apis::{
     id::TaskId,
     tasks::{CompletedTaskOverview, ListCompletedResponse, ListOpenResponse, OpenTaskOverview},
+    time::Duration,
 };
 use lavs_task_queue::msg::{ConfigResponse, CustomExecuteMsg, CustomQueryMsg, QueryMsg, Requestor};
 use layer_climb::{prelude::*, proto::abci::TxResponse};
@@ -57,7 +58,7 @@ impl TaskQueue {
         &self,
         body: String,
         description: String,
-        timeout: Option<u64>,
+        timeout: Option<Duration>,
     ) -> Result<(TaskId, TxResponse)> {
         let payload = serde_json::from_str(&body).context("Failed to parse body into JSON")?;
 

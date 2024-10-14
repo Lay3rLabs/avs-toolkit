@@ -1,6 +1,7 @@
 use anyhow::{anyhow, Result};
 use clap::Parser;
-use clap::{Args, Subcommand};
+use clap::{Args, Subcommand, ValueEnum};
+use cosmwasm_std::Decimal;
 use lavs_apis::id::TaskId;
 use layer_climb_cli::command::{ContractCommand, WalletCommand};
 use std::path::PathBuf;
@@ -59,8 +60,17 @@ pub enum Command {
 
 #[derive(Clone, Args)]
 pub struct DeployArgs {
+    #[clap(short, long)]
+    pub mode: DeployMode,
+
     #[command(subcommand)]
     pub command: DeployCommand,
+}
+
+#[derive(Clone, PartialEq, ValueEnum)]
+pub enum DeployMode {
+    VerifierSimple,
+    OracleVerifier,
 }
 
 #[derive(Clone, Subcommand)]
@@ -85,6 +95,15 @@ pub enum DeployCommand {
         /// The required voting percentage for a task to be approved
         #[clap(short, long, default_value_t = 70)]
         percentage: u32,
+        /// What percentage of the operators must submit their vote (optional for certain contracts)
+        #[clap(long)]
+        threshold_percentage: Option<Decimal>,
+        /// Maximum allowed difference between the votes of operators (optional for certain contracts)
+        #[clap(long)]
+        allowed_spread: Option<Decimal>,
+        /// Difference bigger than `slashable_spread` would slash the operators (optional for certain contracts)
+        #[clap(long)]
+        slashable_spread: Option<Decimal>,
         /// The rules for allowed task requestors
         ///
         /// Examples:

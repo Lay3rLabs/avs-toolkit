@@ -1,6 +1,6 @@
 use cosmwasm_std::Uint128;
-// use cw_orch::environment::IndexResponse;
 use cw_orch::prelude::*;
+use lavs_apis::time::Duration;
 
 use crate::interface::Contract;
 use crate::msg::{InstantiateMsg, Requestor, TimeoutInfo};
@@ -79,7 +79,7 @@ fn sanity_check() {
     let msg = InstantiateMsg {
         requestor: Requestor::Fixed(mock.sender_addr().into()),
         timeout: TimeoutInfo {
-            default: 3600,
+            default: Duration::new_seconds(3600),
             minimum: None,
             maximum: None,
         },

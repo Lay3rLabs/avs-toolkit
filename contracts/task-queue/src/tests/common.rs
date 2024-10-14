@@ -1,8 +1,9 @@
-use cosmwasm_std::Uint128;
+use cosmwasm_std::{Timestamp, Uint128};
 use cw_orch::environment::{ChainState, CwEnv, Environment, IndexResponse, QueryHandler};
 use cw_orch::prelude::*;
 use lavs_apis::id::TaskId;
 use lavs_apis::tasks::TaskStatus;
+use lavs_apis::time::Duration;
 use serde_json::json;
 
 use crate::error::ContractError;
@@ -27,7 +28,7 @@ pub fn setup<Chain: CwEnv>(chain: Chain, msg: InstantiateMsg) -> TaskContract<Ch
     tasker
 }
 
-fn fixed_requestor<Chain>(chain: &Chain, timeout: u64) -> (TaskContract<Chain>, Chain::Sender)
+fn fixed_requestor<Chain>(chain: &Chain, timeout: Duration) -> (TaskContract<Chain>, Chain::Sender)
 where
     Chain: CwEnv + AltSigner,
     Chain::Sender: Addressable,
@@ -51,7 +52,7 @@ where
     C: CwEnv + AltSigner,
     C::Sender: Addressable,
 {
-    let (contract, verifier) = fixed_requestor(&chain, 200);
+    let (contract, verifier) = fixed_requestor(&chain, Duration::new_seconds(200));
 
     contract.code_id().expect("Code not uploaded");
     contract.address().expect("Contract not instantiated");
@@ -62,10 +63,20 @@ where
     let result = json!({ "result": "success" });
 
     // create two tasks
-    let one = make_task(&contract, "One", 300, &payload_one);
+    let one = make_task(
+        &contract,
+        "One",
+        Some(Duration::new_seconds(300)),
+        &payload_one,
+    );
     let start = get_time(contract.environment());
     contract.environment().next_block().unwrap();
-    let two = make_task(&contract, "Two", 100, &payload_two);
+    let two = make_task(
+        &contract,
+        "Two",
+        Some(Duration::new_seconds(100)),
+        &payload_two,
+    );
     let start_two = get_time(contract.environment());
     contract.environment().next_block().unwrap();
     assert_ne!(start, start_two);
@@ -105,7 +116,7 @@ where
     match details.status {
         Status::Completed { completed } => {
             assert!(
-                completed >= end - 2 && completed <= end,
+                completed >= end.minus_seconds(2) && completed <= end,
                 "completed: {}, end: {}",
                 completed,
                 end
@@ -120,13 +131,13 @@ where
     C: CwEnv + AltSigner,
     C::Sender: Addressable,
 {
-    let (contract, verifier) = fixed_requestor(&chain, 200);
+    let (contract, verifier) = fixed_requestor(&chain, Duration::new_seconds(200));
     let payload = json! ({ "pair": ["eth", "usd"]});
 
     let config = contract.config().unwrap();
-    assert_eq!(config.timeout.default, 200);
-    assert_eq!(config.timeout.minimum, 100);
-    assert_eq!(config.timeout.maximum, 400);
+    assert_eq!(config.timeout.default, Duration::new_seconds(200));
+    assert_eq!(config.timeout.minimum, Duration::new_seconds(100));
+    assert_eq!(config.timeout.maximum, Duration::new_seconds(400));
     assert_eq!(
         config.requestor,
         Requestor::Fixed(chain.sender_addr().into())
@@ -137,12 +148,17 @@ where
     // {} will just show the method call,
     // {:#} or {:?} will show the full error chain (but :# is nicer to read)
     let err = contract
-        .create("Too Short".to_string(), Some(4), payload.clone(), &[])
+        .create(
+            "Too Short".to_string(),
+            Some(Duration::new_seconds(4)),
+            payload.clone(),
+            &[],
+        )
         .unwrap_err();
     assert!(
         err.root()
             .to_string()
-            .contains(&ContractError::TimeoutTooShort(100).to_string()),
+            .contains(&ContractError::TimeoutTooShort(Duration::new_seconds(100)).to_string()),
         "Unexpected error: {}",
         err.root()
     );
@@ -172,41 +188,64 @@ where
     C: CwEnv + AltSigner,
     C::Sender: Addressable,
 {
-    let (contract, _verifier) = fixed_requestor(&chain, 200);
+    let (contract, _verifier) = fixed_requestor(&chain, Duration::new_seconds(200));
     let payload_one = json! ({ "pair": ["eth", "usd"]});
     let payload_two = json! ({ "pair": ["btc", "usd"]});
     let payload_three = json! ({ "pair": ["atom", "eur"]});
 
-    let start = chain.block_info().unwrap().time.seconds();
-    let one = make_task(&contract, "One", 300, &payload_one);
+    let start = chain.block_info().unwrap().time;
+    let one = make_task(
+        &contract,
+        "One",
+        Some(Duration::new_seconds(300)),
+        &payload_one,
+    );
     chain.next_block().unwrap();
-    let two = make_task(&contract, "Two", 100, &payload_two);
+    let two = make_task(
+        &contract,
+        "Two",
+        Some(Duration::new_seconds(100)),
+        &payload_two,
+    );
     chain.next_block().unwrap();
     let three = make_task(&contract, "Two", None, &payload_three); // uses default of 200
 
     let ListOpenResponse { tasks } = contract.list_open(None, None).unwrap();
     assert_eq!(tasks.len(), 3);
+
+    let calculate_expiration =
+        |start: Timestamp, n_blocks: u64, timeout_seconds: u64| -> Timestamp {
+            let duration = Duration::new_seconds(n_blocks * block_time + offset + timeout_seconds);
+            Timestamp::from_nanos(start.nanos() + duration.as_nanos())
+        };
+
+    let task_three_expiration = calculate_expiration(start, 2, 200);
+
     assert_eq!(
         tasks[0],
         OpenTaskOverview {
             id: three,
-            expires: start + 200 + 2 * block_time + offset, // we waited two blocks to create
+            expires: task_three_expiration, // we waited two blocks to create
             payload: payload_three,
         }
     );
+
+    let task_two_expiration = calculate_expiration(start, 1, 100);
     assert_eq!(
         tasks[1],
         OpenTaskOverview {
             id: two,
-            expires: start + 100 + block_time + offset, // we waited one block to create
+            expires: task_two_expiration, // we waited one block to create
             payload: payload_two,
         }
     );
+
+    let task_one_expiration = calculate_expiration(start, 0, 300);
     assert_eq!(
         tasks[2],
         OpenTaskOverview {
             id: one,
-            expires: start + 300 + offset,
+            expires: task_one_expiration,
             payload: payload_one,
         }
     );
@@ -235,13 +274,13 @@ where
     C: CwEnv + AltSigner,
     C::Sender: Addressable,
 {
-    let (contract, verifier) = fixed_requestor(&chain, 200);
+    let (contract, verifier) = fixed_requestor(&chain, Duration::new_seconds(200));
     let payload = json! ({ "pair": ["eth", "usd"]});
     let result = json! ({ "price": "1234.56"});
 
-    let one = make_task(&contract, "One", 300, &payload);
+    let one = make_task(&contract, "One", Some(Duration::new_seconds(300)), &payload);
     chain.next_block().unwrap();
-    let two = make_task(&contract, "Two", 100, &payload);
+    let two = make_task(&contract, "Two", Some(Duration::new_seconds(100)), &payload);
 
     // list completed empty
     let ListCompletedResponse { tasks } = contract.list_completed(None, None).unwrap();
@@ -262,7 +301,7 @@ where
         .call_as(&verifier)
         .complete(one, result.clone())
         .unwrap();
-    let completion_time = chain.block_info().unwrap().time.seconds();
+    let completion_time = Timestamp::from_nanos(chain.block_info().unwrap().time.nanos());
     chain.next_block().unwrap();
 
     // cannot complete already completed
@@ -317,19 +356,26 @@ where
     C: CwEnv + AltSigner,
     C::Sender: Addressable,
 {
-    let (contract, verifier) = fixed_requestor(&chain, 200);
+    let (contract, verifier) = fixed_requestor(&chain, Duration::new_seconds(200));
     let payload = json! ({ "pair": ["eth", "usd"]});
     let result = json! ({ "price": "1234.56"});
 
-    let one = make_task(&contract, "One", 300, &payload);
+    let one = make_task(&contract, "One", Some(Duration::new_seconds(300)), &payload);
     chain.next_block().unwrap();
-    let two = make_task(&contract, "Two", 100, &payload);
+    let two = make_task(&contract, "Two", Some(Duration::new_seconds(100)), &payload);
 
     // check open status
     let status_one = contract.task_status(one).unwrap();
     let status_two = contract.task_status(two).unwrap();
-    assert_eq!(status_one.created_time + 300, status_one.expires_time);
-    assert_eq!(status_two.created_time + 100, status_two.expires_time);
+
+    assert_eq!(
+        status_one.created_time.plus_seconds(300),
+        status_one.expires_time
+    );
+    assert_eq!(
+        status_two.created_time.plus_seconds(100),
+        status_two.expires_time
+    );
     assert!(status_one.created_height < status_two.created_height);
     assert_eq!(status_one.status, TaskStatus::Open);
     assert_eq!(status_two.status, TaskStatus::Open);
@@ -363,7 +409,7 @@ where
     C: CwEnv + AltSigner,
     C::Sender: Addressable,
 {
-    let (contract, _verifier) = fixed_requestor(&chain, 1000);
+    let (contract, _verifier) = fixed_requestor(&chain, Duration::new_seconds(1000));
     let payload = json!({"pair": ["eth", "usd"]});
 
     // Create 10 tasks with increasing timeouts
@@ -372,7 +418,7 @@ where
         let task_id = make_task(
             &contract,
             &format!("Task {}", i),
-            Some(1000 + i * 100),
+            Some(Duration::new_seconds(1000 + i * 100)),
             &payload,
         );
         created_tasks.push(task_id);
@@ -523,15 +569,15 @@ where
 }
 
 #[track_caller]
-pub fn get_time(chain: &impl QueryHandler) -> u64 {
-    chain.block_info().unwrap().time.seconds()
+pub fn get_time(chain: &impl QueryHandler) -> Timestamp {
+    chain.block_info().unwrap().time
 }
 
 #[track_caller]
 pub fn make_task<C: ChainState + TxHandler>(
     contract: &TaskContract<C>,
     name: &str,
-    timeout: impl Into<Option<u64>>,
+    timeout: impl Into<Option<Duration>>,
     payload: &serde_json::Value,
 ) -> TaskId {
     let res = contract
@@ -569,10 +615,10 @@ pub fn get_task_id(res: &impl IndexResponse) -> TaskId {
 }
 
 // sets up a range around 50% to 200% of the default timeout
-pub fn mock_timeout(default: u64) -> TimeoutInfo {
+pub fn mock_timeout(default: Duration) -> TimeoutInfo {
     TimeoutInfo {
         default,
-        minimum: Some(default / 2),
-        maximum: Some(default * 2),
+        minimum: Some(Duration::new_seconds(default.as_seconds() / 2)),
+        maximum: Some(Duration::new_seconds(default.as_seconds() * 2)),
     }
 }
