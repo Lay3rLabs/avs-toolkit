@@ -3,6 +3,7 @@ use cw_orch::environment::{ChainState, CwEnv};
 use cw_orch::prelude::*;
 use lavs_apis::id::TaskId;
 use lavs_apis::time::Duration;
+use lavs_helpers::events::TaskExecutedEvent;
 use serde_json::json;
 
 use lavs_apis::tasks::{Requestor, Status, TaskStatus, TimeoutInfo};
@@ -79,11 +80,20 @@ where
 
     // Operator can verify
     let result = r#"{"y": 289}"#.to_string();
-    verifier
+    let call_result = verifier
         .call_as(&op_node)
         .executed_task(tasker.addr_str().unwrap(), task_id, result)
         .unwrap();
-    let completed = chain.block_info().unwrap().time;
+
+    let event = call_result
+        .events()
+        .iter()
+        .find_map(|event| TaskExecutedEvent::try_from(event).ok())
+        .unwrap();
+
+    assert!(event.completed);
+
+    let completed = chain.block_info().unwrap().time.seconds();
 
     // Check it is marked as completed (both in verifier and task queue)
     let status = tasker.task(task_id).unwrap();
@@ -197,6 +207,8 @@ where
         .unwrap();
     assert_eq!(v_status.unwrap().status, TaskStatus::Completed);
 }
+
+// TODO: add a
 
 #[track_caller]
 pub fn make_task<C: ChainState + TxHandler>(

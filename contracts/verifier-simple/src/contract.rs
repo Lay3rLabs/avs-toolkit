@@ -87,6 +87,7 @@ mod execute {
     use cw_utils::nonpayable;
     use lavs_apis::id::TaskId;
     use lavs_apis::interfaces::tasks::{ResponseType, TaskExecuteMsg, TaskStatus};
+    use lavs_helpers::events::TaskExecutedEvent;
     use lavs_helpers::verifier::ensure_valid_vote;
 
     use crate::state::{record_vote, TASKS, VOTES};
@@ -141,11 +142,14 @@ mod execute {
         )?;
 
         // Create the result with standard attributes
-        let mut res = Response::new()
-            .add_attribute("action", "execute")
-            .add_attribute("task_id", task_id.to_string())
-            .add_attribute("task_queue", &task_queue_contract)
-            .add_attribute("operator", operator);
+        let mut task_event = TaskExecutedEvent {
+            task_id,
+            task_queue: task_queue_contract.clone(),
+            operator: operator.to_string(),
+            completed: false,
+        };
+
+        let mut res = Response::new();
 
         // If there is enough power, let's submit it as completed
         // We add completed attribute to mark if this was the last one or not
@@ -156,16 +160,15 @@ mod execute {
 
             // And submit the result to the task queue (after parsing it into relevant type)
             let response: ResponseType = from_json(&result)?;
-            res = res
-                .add_message(WasmMsg::Execute {
-                    contract_addr: task_queue_contract,
-                    msg: to_json_binary(&TaskExecuteMsg::Complete { task_id, response })?,
-                    funds: vec![],
-                })
-                .add_attribute("completed", "true");
-        } else {
-            res = res.add_attribute("completed", "false");
+            res = res.add_message(WasmMsg::Execute {
+                contract_addr: task_queue_contract,
+                msg: to_json_binary(&TaskExecuteMsg::Complete { task_id, response })?,
+                funds: vec![],
+            });
+            task_event.completed = true;
         }
+
+        res = res.add_event(task_event);
 
         Ok(res)
     }
