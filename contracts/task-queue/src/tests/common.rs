@@ -3,7 +3,7 @@ use cw_orch::environment::{ChainState, CwEnv, Environment, IndexResponse, QueryH
 use cw_orch::prelude::*;
 use lavs_apis::id::TaskId;
 use lavs_apis::tasks::TaskStatus;
-use lavs_apis::time::{Duration, NANOS_PER_SECONDS};
+use lavs_apis::time::{Duration, NANOS_PER_SECOND};
 use serde_json::json;
 
 use crate::error::ContractError;
@@ -216,7 +216,7 @@ where
     let calculate_expiration =
         |start: Timestamp, n_blocks: u64, timeout_seconds: u64| -> Timestamp {
             let duration = Duration::new_nanos(
-                (n_blocks * block_time + offset + timeout_seconds) * NANOS_PER_SECONDS,
+                (n_blocks * block_time + offset + timeout_seconds) * NANOS_PER_SECOND,
             );
             Timestamp::from_nanos(start.nanos() + duration.as_nanos())
         };

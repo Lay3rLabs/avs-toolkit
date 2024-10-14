@@ -1,7 +1,7 @@
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::Uint64;
 
-pub const NANOS_PER_SECONDS: u64 = 1_000_000_000;
+pub const NANOS_PER_SECOND: u64 = 1_000_000_000;
 
 /// A wrapper around u64, that represents duration between two points in time.
 #[cw_serde]
@@ -14,7 +14,7 @@ impl Duration {
     }
 
     pub fn new_seconds(seconds: u64) -> Duration {
-        Duration((seconds * NANOS_PER_SECONDS).into())
+        Duration((seconds * NANOS_PER_SECOND).into())
     }
 
     pub fn as_nanos(&self) -> u64 {
@@ -22,7 +22,7 @@ impl Duration {
     }
 
     pub fn as_seconds(&self) -> u64 {
-        self.0.u64() / NANOS_PER_SECONDS
+        self.0.u64() / NANOS_PER_SECOND
     }
 }
 
@@ -76,7 +76,7 @@ mod tests {
 
         let deserialized_max: Duration = serde_json::from_str(&serialized_max).unwrap();
         assert_eq!(deserialized_max.as_nanos(), u64::MAX);
-        assert_eq!(deserialized_max.as_seconds(), u64::MAX / NANOS_PER_SECONDS);
+        assert_eq!(deserialized_max.as_seconds(), u64::MAX / NANOS_PER_SECOND);
     }
 
     #[test]
