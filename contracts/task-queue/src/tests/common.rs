@@ -517,7 +517,7 @@ where
     let verifier = chain.alt_signer(VERIFIER_INDEX);
     let msg = InstantiateMsg {
         requestor: Requestor::OpenPayment(coin.clone()),
-        timeout: mock_timeout(200),
+        timeout: mock_timeout(Duration::new_seconds(200)),
         verifier: verifier.addr().into(),
     };
     let task_contract = setup(chain.clone(), msg);
@@ -530,7 +530,13 @@ where
 
     // Create a task
     let payload = json!({"test": "data"});
-    let task_id = make_task_with_funds(&task_contract, "Refund Test", Some(100), &payload, &funds);
+    let task_id = make_task_with_funds(
+        &task_contract,
+        "Refund Test",
+        Some(Duration::new_seconds(100)),
+        &payload,
+        &funds,
+    );
 
     // Check balance after task creation
     let binding = chain
@@ -590,7 +596,7 @@ pub fn make_task<C: ChainState + TxHandler>(
 pub fn make_task_with_funds<C: ChainState + TxHandler>(
     contract: &TaskContract<C>,
     name: &str,
-    timeout: impl Into<Option<u64>>,
+    timeout: impl Into<Option<Duration>>,
     payload: &serde_json::Value,
     funds: &[Coin],
 ) -> TaskId {
