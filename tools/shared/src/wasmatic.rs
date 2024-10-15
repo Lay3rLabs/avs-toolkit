@@ -24,7 +24,7 @@ pub enum Trigger {
 #[allow(clippy::too_many_arguments)]
 pub async fn deploy(
     http_client: reqwest::Client,
-    query_client: &QueryClient,
+    query_client: QueryClient,
     endpoints: Vec<String>,
     name: String,
     digest: Option<String>,
@@ -358,4 +358,35 @@ pub async fn test(
     .collect::<Result<Vec<TestResult>>>()?;
 
     Ok(results)
+}
+
+pub async fn load_wasmatic_addresses(
+    client: reqwest::Client,
+    endpoints: &[String],
+) -> Result<Vec<String>> {
+    #[derive(Serialize, Deserialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct GetInfo {
+        pub operators: Vec<String>,
+    }
+
+    futures::future::join_all(endpoints.iter().map(|endpoint| {
+        let client = client.clone();
+        async move {
+            // Load from info endpoint
+            let response = client
+                .get(format!("{}/info", endpoint))
+                .header("Content-Type", "application/json")
+                .send()
+                .await?;
+            let info: GetInfo = response.json().await?;
+            info.operators
+                .first()
+                .context("No operators found")
+                .map(|v| v.to_string())
+        }
+    }))
+    .await
+    .into_iter()
+    .collect::<Result<Vec<String>, _>>()
 }

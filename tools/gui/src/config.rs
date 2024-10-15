@@ -24,19 +24,43 @@ pub fn get_target_environment() -> Result<TargetEnvironment> {
         .context("target environment not set")
 }
 
-pub fn get_default_task_queue_addr() -> Option<Address> {
-    let env_str = match get_target_environment().ok()? {
-        TargetEnvironment::Local => option_env!("LOCAL_TASK_QUEUE_ADDRESS"),
-        TargetEnvironment::Testnet => option_env!("TEST_TASK_QUEUE_ADDRESS"),
-    }?;
+pub struct DefaultCodeIds {
+    pub task_queue: Option<u64>,
+    pub mock_operators: Option<u64>,
+    pub verifier_simple: Option<u64>,
+    pub verifier_oracle: Option<u64>,
+}
 
-    CONFIG
-        .chain_info()
-        .ok()?
-        .chain
-        .address_kind
-        .parse_address(env_str)
-        .ok()
+impl DefaultCodeIds {
+    pub fn new() -> Result<Self> {
+        let (
+            task_queue_env_str,
+            mock_operators_env_str,
+            verifier_simple_env_str,
+            verifier_oracle_env_str,
+        ) = match get_target_environment()? {
+            TargetEnvironment::Local => (
+                option_env!("LOCAL_CODE_ID_TASK_QUEUE"),
+                option_env!("LOCAL_CODE_ID_MOCK_OPERATORS"),
+                option_env!("LOCAL_CODE_ID_VERIFIER_SIMPLE"),
+                option_env!("LOCAL_CODE_ID_VERIFIER_ORACLE"),
+            ),
+
+            TargetEnvironment::Testnet => (
+                option_env!("TEST_CODE_ID_TASK_QUEUE"),
+                option_env!("TEST_CODE_ID_MOCK_OPERATORS"),
+                option_env!("TEST_CODE_ID_VERIFIER_SIMPLE"),
+                option_env!("TEST_CODE_ID_VERIFIER_ORACLE"),
+            ),
+        };
+
+        Ok(Self {
+            task_queue: task_queue_env_str.map(|s| s.parse()).transpose()?,
+            mock_operators: mock_operators_env_str.map(|s| s.parse()).transpose()?,
+            verifier_simple: verifier_simple_env_str.map(|s| s.parse()).transpose()?,
+            verifier_oracle: verifier_oracle_env_str.map(|s| s.parse()).transpose()?,
+        })
+    }
 }
 
 cfg_if::cfg_if! {

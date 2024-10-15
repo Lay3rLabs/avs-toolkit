@@ -1,3 +1,4 @@
+pub mod deploy;
 pub mod faucet;
 pub mod file;
 pub mod operator;

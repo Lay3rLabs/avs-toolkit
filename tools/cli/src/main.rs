@@ -5,13 +5,18 @@ mod context;
 
 use anyhow::{Context, Result};
 use args::{
-    CliArgs, Command, DeployCommand, FaucetCommand, TargetEnvironment, TaskQueueCommand,
-    WasmaticCommand,
+    CliArgs, Command, DeployCommand, DeployMode, FaucetCommand, TargetEnvironment,
+    TaskQueueCommand, UploadCommand, WasmaticCommand,
 };
-use avs_toolkit_shared::{faucet::tap_faucet, task_queue::TaskQueue, wasmatic};
+use avs_toolkit_shared::{
+    deploy::{DeployContractAddrs, DeployContractArgs, DeployContractArgsVerifierMode},
+    faucet::tap_faucet,
+    task_queue::TaskQueue,
+    wasmatic,
+};
 use clap::Parser;
 use commands::{
-    deploy::{deploy_contracts, DeployContractArgs},
+    upload::{upload_contracts, WasmFiles},
     wasmatic::wasm_arg_to_file,
 };
 use context::AppContext;
@@ -52,9 +57,14 @@ async fn main() -> Result<()> {
                 allowed_spread,
                 slashable_spread,
             } => {
+                let wasm_files = WasmFiles::read(artifacts_path).await?;
+                let code_ids = upload_contracts(&ctx, wasm_files).await?;
+
                 let args = DeployContractArgs::parse(
-                    &ctx,
-                    artifacts_path,
+                    reqwest::Client::new(),
+                    ctx.signing_client().await?,
+                    ctx.chain_info()?.wasmatic.endpoints.clone(),
+                    code_ids,
                     Duration::new_seconds(task_timeout_seconds),
                     required_voting_percentage,
                     threshold_percentage,
@@ -62,17 +72,30 @@ async fn main() -> Result<()> {
                     slashable_spread,
                     operators,
                     requestor,
+                    match deploy_args.mode {
+                        DeployMode::VerifierSimple => DeployContractArgsVerifierMode::Simple,
+                        DeployMode::OracleVerifier => DeployContractArgsVerifierMode::Oracle,
+                    },
                 )
                 .await?;
 
-                let addrs = deploy_contracts(ctx, deploy_args.mode, args).await?;
+                let addrs = DeployContractAddrs::run(ctx.signing_client().await?, args).await?;
                 tracing::info!("---- All contracts instantiated successfully ----");
-                tracing::info!("Mock Operators: {}", addrs.operators);
-                tracing::info!("Verifier Simple: {}", addrs.verifier_simple);
+                tracing::info!("Operator: {}", addrs.operator);
+                tracing::info!("Verifier: {}", addrs.verifier);
                 tracing::info!("Task Queue: {}", addrs.task_queue);
-                // TODO: make a flag to select one of these
-                tracing::info!("export LOCAL_TASK_QUEUE_ADDRESS={}", addrs.task_queue);
-                tracing::info!("export TEST_TASK_QUEUE_ADDRESS={}", addrs.task_queue);
+            }
+        },
+        Command::Upload(upload_args) => match upload_args.command {
+            UploadCommand::Contracts { artifacts_path } => {
+                let wasm_files = WasmFiles::read(artifacts_path).await?;
+                let code_ids = upload_contracts(&ctx, wasm_files).await?;
+
+                tracing::info!("---- All contracts uploaded successfully ----");
+                tracing::info!("Mock Operators: {}", code_ids.mock_operators);
+                tracing::info!("Verifier Simple: {}", code_ids.verifier_simple);
+                tracing::info!("Verifier Oracle: {}", code_ids.verifier_oracle);
+                tracing::info!("Task Queue: {}", code_ids.task_queue);
             }
         },
         Command::TaskQueue(task_queue_args) => {
@@ -225,7 +248,7 @@ async fn main() -> Result<()> {
 
                 wasmatic::deploy(
                     reqwest::Client::new(),
-                    &ctx.query_client().await?,
+                    ctx.query_client().await?,
                     ctx.chain_info()?.wasmatic.endpoints.clone(),
                     name,
                     digest,

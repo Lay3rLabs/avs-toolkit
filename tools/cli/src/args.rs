@@ -1,11 +1,10 @@
-use anyhow::{anyhow, Result};
+use avs_toolkit_shared::deploy::DeployContractArgsRequestor;
 use clap::Parser;
 use clap::{Args, Subcommand, ValueEnum};
 use cosmwasm_std::Decimal;
 use lavs_apis::id::TaskId;
 use layer_climb_cli::command::{ContractCommand, WalletCommand};
 use std::path::PathBuf;
-use std::str::FromStr;
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -43,6 +42,8 @@ pub struct CliArgs {
 
 #[derive(Clone, Subcommand)]
 pub enum Command {
+    /// Upload subcommands
+    Upload(UploadArgs),
     /// Deploy subcommands
     Deploy(DeployArgs),
     /// Task queue subcommands
@@ -56,6 +57,22 @@ pub enum Command {
 
     /// Commands for working with wasmatic
     Wasmatic(WasmaticArgs),
+}
+
+#[derive(Clone, Args)]
+pub struct UploadArgs {
+    #[command(subcommand)]
+    pub command: UploadCommand,
+}
+
+#[derive(Clone, Subcommand)]
+pub enum UploadCommand {
+    /// Upload, but do not instantiate, all the core contracts
+    Contracts {
+        /// Artifacts path
+        #[clap(short, long, default_value = "../../artifacts")]
+        artifacts_path: PathBuf,
+    },
 }
 
 #[derive(Clone, Args)]
@@ -115,26 +132,9 @@ pub enum DeployCommand {
         /// "fixed(slayaddresshere)" - will require the caller be this specific address
         ///
         /// "deployer" - will require the caller be the same as the deployer
-        #[clap(short, long, default_value_t = DeployTaskRequestor::default())]
-        requestor: DeployTaskRequestor,
+        #[clap(short, long, default_value_t = DeployContractArgsRequestor::default())]
+        requestor: DeployContractArgsRequestor,
     },
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub enum DeployTaskRequestor {
-    Deployer,
-    Fixed(String),
-    Payment { amount: u128, denom: Option<String> },
-}
-
-impl Default for DeployTaskRequestor {
-    fn default() -> Self {
-        DeployTaskRequestor::Payment {
-            amount: 5_000,
-            // implementation fills out chain_config.gas_denom in case of None
-            denom: None,
-        }
-    }
 }
 
 #[derive(Clone, Args)]
@@ -340,191 +340,4 @@ impl From<LogLevel> for tracing::Level {
 pub enum TargetEnvironment {
     Local,
     Testnet,
-}
-
-/// Supporting impls needed for custom types
-impl FromStr for DeployTaskRequestor {
-    type Err = anyhow::Error;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let s = s.trim();
-
-        if s == "deployer" {
-            Ok(DeployTaskRequestor::Deployer)
-        } else if s.starts_with("payment(") && s.ends_with(')') {
-            let inner = &s[8..s.len() - 1]; // Extract content inside parentheses
-            let parts: Vec<&str> = inner.split(',').map(|s| s.trim()).collect();
-
-            match parts.len() {
-                1 => {
-                    let amount = parts[0]
-                        .parse::<u128>()
-                        .map_err(|_| anyhow!("invalid amount"))?;
-                    Ok(DeployTaskRequestor::Payment {
-                        amount,
-                        denom: None,
-                    })
-                }
-                2 => {
-                    let amount = parts[0]
-                        .parse::<u128>()
-                        .map_err(|_| anyhow!("invalid amount"))?;
-                    let denom = Some(parts[1].to_string());
-                    Ok(DeployTaskRequestor::Payment { amount, denom })
-                }
-                _ => Err(anyhow!("invalid format")),
-            }
-        } else if s.starts_with("fixed(") && s.ends_with(')') {
-            let inner = &s[6..s.len() - 1]; // Extract content inside parentheses
-            Ok(DeployTaskRequestor::Fixed(inner.trim().to_string()))
-        } else {
-            Err(anyhow!("unknown variant"))
-        }
-    }
-}
-
-impl std::fmt::Display for DeployTaskRequestor {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            DeployTaskRequestor::Payment { amount, denom } => match denom {
-                Some(denom) => write!(f, "payment({}, {})", amount, denom),
-                None => write!(f, "payment({})", amount),
-            },
-            DeployTaskRequestor::Fixed(identifier) => {
-                write!(f, "fixed({})", identifier)
-            }
-            DeployTaskRequestor::Deployer => {
-                write!(f, "deployer")
-            }
-        }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_parse_deployer() {
-        let input = "deployer";
-        let result = DeployTaskRequestor::from_str(input).unwrap();
-        assert_eq!(result, DeployTaskRequestor::Deployer);
-    }
-
-    #[test]
-    fn test_parse_payment_amount_only() {
-        let input = "payment(200)";
-        let result = DeployTaskRequestor::from_str(input).unwrap();
-        assert_eq!(
-            result,
-            DeployTaskRequestor::Payment {
-                amount: 200,
-                denom: None,
-            }
-        );
-    }
-
-    #[test]
-    fn test_parse_payment_amount_and_denom() {
-        let input = "payment(300, USD)";
-        let result = DeployTaskRequestor::from_str(input).unwrap();
-        assert_eq!(
-            result,
-            DeployTaskRequestor::Payment {
-                amount: 300,
-                denom: Some("USD".to_string()),
-            }
-        );
-    }
-
-    #[test]
-    fn test_parse_payment_with_whitespace() {
-        let input = " payment( 400 ,  EUR ) ";
-        let result = DeployTaskRequestor::from_str(input).unwrap();
-        assert_eq!(
-            result,
-            DeployTaskRequestor::Payment {
-                amount: 400,
-                denom: Some("EUR".to_string()),
-            }
-        );
-    }
-
-    #[test]
-    fn test_parse_fixed() {
-        let input = "fixed(my_identifier)";
-        let result = DeployTaskRequestor::from_str(input).unwrap();
-        assert_eq!(
-            result,
-            DeployTaskRequestor::Fixed("my_identifier".to_string())
-        );
-    }
-
-    #[test]
-    fn test_parse_fixed_with_whitespace() {
-        let input = " fixed( my_identifier ) ";
-        let result = DeployTaskRequestor::from_str(input).unwrap();
-        assert_eq!(
-            result,
-            DeployTaskRequestor::Fixed("my_identifier".to_string())
-        );
-    }
-
-    #[test]
-    fn test_parse_invalid_variant() {
-        let input = "unknown(123)";
-        let result = DeployTaskRequestor::from_str(input);
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_parse_invalid_amount() {
-        let input = "payment(not_a_number)";
-        let result = DeployTaskRequestor::from_str(input);
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_parse_invalid_format_extra_fields() {
-        let input = "payment(100, USD, extra)";
-        let result = DeployTaskRequestor::from_str(input);
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_parse_invalid_format_no_parentheses() {
-        let input = "payment100, USD";
-        let result = DeployTaskRequestor::from_str(input);
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_display_payment_without_denom() {
-        let requestor = DeployTaskRequestor::Payment {
-            amount: 100,
-            denom: None,
-        };
-        assert_eq!(format!("{}", requestor), "payment(100)");
-    }
-
-    #[test]
-    fn test_display_payment_with_denom() {
-        let requestor = DeployTaskRequestor::Payment {
-            amount: 200,
-            denom: Some("EUR".to_string()),
-        };
-        assert_eq!(format!("{}", requestor), "payment(200, EUR)");
-    }
-
-    #[test]
-    fn test_display_fixed() {
-        let requestor = DeployTaskRequestor::Fixed("identifier".to_string());
-        assert_eq!(format!("{}", requestor), "fixed(identifier)");
-    }
-
-    #[test]
-    fn test_display_deployer() {
-        let requestor = DeployTaskRequestor::Deployer;
-        assert_eq!(format!("{}", requestor), "deployer");
-    }
 }

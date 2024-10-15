@@ -5,6 +5,7 @@ mod wasm_source;
 
 use crate::prelude::*;
 use avs_toolkit_shared::{
+    deploy::DeployContractAddrs,
     file::WasmFile,
     wasmatic::{self, Trigger},
 };
@@ -12,7 +13,7 @@ use dominator_helpers::futures::AsyncLoader;
 use envs::EnvsUi;
 use layer_climb::proto::abci::TxResponse;
 use permissions::PermissionsUi;
-use trigger::TriggerUi;
+use trigger::{TriggerData, TriggerUi};
 use wasm_bindgen_futures::JsFuture;
 use wasm_source::WasmSourceUi;
 use web_sys::{js_sys, File};
@@ -118,9 +119,29 @@ impl WasmaticAddAppUi {
                             state.success.set(None);
                             match state.extract_form_data().await {
                                 Ok(FormData { file, digest, trigger, name, permissions, envs, testable }) => {
+
+                                    let trigger = match trigger {
+                                        TriggerData::Cron { schedule } => Trigger::Cron { schedule },
+                                        TriggerData::Queue { contract_args, hd_index, poll_interval } => {
+                                            match DeployContractAddrs::run(signing_client(), contract_args).await {
+                                                Ok(addrs) => {
+                                                    Trigger::Queue {
+                                                        task_queue_addr: addrs.task_queue.to_string(),
+                                                        hd_index,
+                                                        poll_interval,
+                                                    }
+                                                },
+                                                Err(err) => {
+                                                    state.error.set(Some(format!("Error deploying contract: {:?}", err)));
+                                                    return;
+                                                }
+                                            }
+                                        }
+                                    };
+
                                     match wasmatic::deploy(
                                         http_client(),
-                                        &query_client(),
+                                        query_client(),
                                         CONFIG.chain_info().unwrap_ext().wasmatic.endpoints.clone(),
                                         name,
                                         digest,
@@ -261,7 +282,7 @@ impl WasmaticAddAppUi {
 struct FormData {
     file: WasmFile,
     digest: Option<String>,
-    trigger: Trigger,
+    trigger: TriggerData,
     name: String,
     permissions: serde_json::Value,
     testable: bool,

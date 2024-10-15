@@ -1,18 +1,28 @@
-use crate::{config::get_default_task_queue_addr, prelude::*};
-use avs_toolkit_shared::task_queue::{TaskQueue, TaskQueueView, TaskView};
+use crate::{
+    page::main::wasmatic::{get_apps, AppEntry},
+    prelude::*,
+};
+use avs_toolkit_shared::{
+    task_queue::{TaskQueue, TaskQueueView, TaskView},
+    wasmatic::Trigger,
+};
 use dominator_helpers::futures::AsyncLoader;
+use lavs_apis::tasks::TaskResponse;
+use lavs_mock_operators::contract::query;
 
 pub struct TaskQueueViewQueueUi {
-    task_queue_addr: Mutable<Option<Address>>,
+    wasmatic_app_index: Mutable<Option<usize>>,
+    wasmatic_apps: Mutable<Option<Vec<Arc<AppEntry>>>>,
     view_task_loader: AsyncLoader,
     error: Mutable<Option<String>>,
-    result: Mutable<Option<TaskQueueView>>,
+    result: Mutable<Option<(Address, TaskQueueView)>>,
 }
 
 impl TaskQueueViewQueueUi {
     pub fn new() -> Arc<Self> {
         Arc::new(Self {
-            task_queue_addr: Mutable::new(get_default_task_queue_addr()),
+            wasmatic_app_index: Mutable::new(None),
+            wasmatic_apps: Mutable::new(None),
             view_task_loader: AsyncLoader::new(),
             error: Mutable::new(None),
             result: Mutable::new(None),
@@ -20,6 +30,41 @@ impl TaskQueueViewQueueUi {
     }
 
     pub fn render(self: &Arc<Self>) -> Dom {
+        let state = self;
+
+        static CONTAINER: LazyLock<String> = LazyLock::new(|| {
+            class! {
+                .style("display", "flex")
+                .style("flex-direction", "column")
+                .style("gap", "1rem")
+            }
+        });
+
+        html!("div", {
+            .class(&*CONTAINER)
+            .future(clone!(state => async move {
+                match get_apps().await {
+                    Ok(apps) => {
+                        state.wasmatic_apps.set(Some(apps));
+                    },
+                    Err(err) => {
+                        state.error.set(Some(err.to_string()));
+                    }
+                }
+            }))
+            .child_signal(state.wasmatic_apps.signal_cloned().map(clone!(state => move |apps| {
+                Some(match apps {
+                    None => html!("div", {
+                        .class(&*TEXT_SIZE_LG)
+                        .text("Loading...")
+                    }),
+                    Some(apps) => state.render_apps(apps)
+                })
+            })))
+        })
+    }
+
+    fn render_apps(self: &Arc<Self>, apps: Vec<Arc<AppEntry>>) -> Dom {
         let state = self;
 
         static CONTAINER: LazyLock<String> = LazyLock::new(|| {
@@ -54,51 +99,12 @@ impl TaskQueueViewQueueUi {
             }
         });
 
-        static TASK: LazyLock<String> = LazyLock::new(|| {
-            class! {
-                .style("display", "flex")
-                .style("flex-direction", "column")
-                .style("gap", "1rem")
-            }
-        });
-
         html!("div", {
             .class(&*CONTAINER)
             .child(html!("div", {
                 .class(&*TEXT_SIZE_LG)
                 .text("Add Task")
             }))
-            .child(Label::new()
-                .with_text("Task Queue contract address")
-                .with_direction(LabelDirection::Column)
-                .render(TextInput::new()
-                    .with_placeholder("e.g. slayaddr...")
-                    .with_intial_value(state.task_queue_addr.lock_ref().as_ref().map(|addr| addr.to_string()).unwrap_or_default())
-                    .with_mixin(|dom| {
-                        dom
-                            .style("width", "30rem")
-                    })
-                    .with_on_input(clone!(state => move |address| {
-                        state.error.set_neq(None);
-                        match address {
-                            None => {
-                                state.task_queue_addr.set_neq(None);
-                            },
-                            Some(address) => {
-                                match query_client().chain_config.parse_address(&address) {
-                                    Err(err) => {
-                                        state.error.set(Some(err.to_string()));
-                                    },
-                                    Ok(address) => {
-                                        state.task_queue_addr.set_neq(Some(address));
-                                    }
-                                }
-                            }
-                        }
-                    }))
-                    .render()
-                )
-            )
             .child_signal(state.error.signal_cloned().map(clone!(state => move |error| {
                 match error {
                     None => None,
@@ -108,16 +114,51 @@ impl TaskQueueViewQueueUi {
                     }))
                 }
             })))
+            .child(Label::new()
+                .with_text("Wasmatic App")
+                .with_direction(LabelDirection::Column)
+                .render(
+                    html!("div", {
+                        .style("display", "inline-block")
+                        .child(Dropdown::new()
+                            .with_intial_selected(None)
+                            .with_options(apps.iter().enumerate().map(|(index, entry)| {
+                                (entry.app.name.clone(), index)
+                            }))
+                            .with_on_change(clone!(state => move |index| {
+                                state.wasmatic_app_index.set(Some(*index));
+                            }))
+                            .render()
+                        )
+                    })
+                )
+            )
             .child(Button::new()
                 .with_disabled_signal(state.disabled_signal())
                 .with_text("View Queue")
                 .with_on_click(clone!(state => move || {
-                    if let Some(contract_addr) = state.task_queue_addr.get_cloned() {
+                    if let Some(wasmatic_app_index) = state.wasmatic_app_index.get_cloned() {
+                        let app = &apps[wasmatic_app_index];
+                        let task_queue_addr = match &app.app.trigger {
+                            Trigger::Queue { task_queue_addr, ..} => {
+                                match query_client().chain_config.parse_address(&task_queue_addr) {
+                                    Ok(addr) => addr,
+                                    Err(err) => {
+                                        state.error.set(Some(err.to_string()));
+                                        return;
+                                    }
+                                }
+                            },
+                            _ => {
+                                state.error.set(Some("Error: You need to provide a task trigger".to_string()));
+                                return;
+                            }
+                        };
                         state.view_task_loader.load(clone!(state => async move {
                             state.error.set_neq(None);
                             state.result.set(None);
 
-                            let task_queue = TaskQueue::new(signing_client(), contract_addr).await;
+                            let task_queue = TaskQueue::new(signing_client(), task_queue_addr.clone()).await;
 
                             let res = task_queue
                                 .querier
@@ -127,7 +168,7 @@ impl TaskQueueViewQueueUi {
                             match res {
                                 Ok(result) => {
                                     state.error.set_neq(None);
-                                    state.result.set(Some(result));
+                                    state.result.set(Some((task_queue_addr, result)));
                                 },
                                 Err(err) => {
                                     state.error.set(Some(err.to_string()));
@@ -151,7 +192,7 @@ impl TaskQueueViewQueueUi {
             .child_signal(state.result.signal_cloned().map(|result| {
                 match result {
                     None => None,
-                    Some(result) => Some(html!("div", {
+                    Some((task_queue_addr, result)) => Some(html!("div", {
                         .class([&*TEXT_SIZE_LG, &*CONTENT])
                         .children([
                             html!("div", {
@@ -196,16 +237,7 @@ impl TaskQueueViewQueueUi {
                                     .child(html!("ul", {
                                         .children(result.tasks.iter().map(|task| {
                                             html!("li", {
-                                                .class(&*TASK)
-                                                .child(html!("div", {
-                                                    .text(&format!("Task Status: {}", match task {
-                                                        TaskView::Open(task) => "Open",
-                                                        TaskView::Completed(task) => "Completed",
-                                                    }))
-                                                }))
-                                                .child(html!("div", {
-                                                    .text(&format!("Task Data: {}", task.data_json_string().unwrap_or_default()))
-                                                }))
+                                                .child(render_task(&task_queue_addr, task))
                                             })
                                         }))
                                     }))
@@ -221,11 +253,80 @@ impl TaskQueueViewQueueUi {
     fn disabled_signal(self: &Arc<Self>) -> impl Signal<Item = bool> {
         let state = self;
         map_ref! {
-            let has_task_queue_addr = state.task_queue_addr.signal_ref(|x| x.is_some()),
+            let has_wasmatic_index = state.wasmatic_app_index.signal_ref(|x| x.is_some()),
             let has_error = state.error.signal_ref(|x| x.is_some()),
             => {
-                !has_task_queue_addr || *has_error
+                !has_wasmatic_index || *has_error
             }
         }
     }
+}
+
+fn render_task(task_queue_addr: &Address, task: &TaskView) -> Dom {
+    static TASK: LazyLock<String> = LazyLock::new(|| {
+        class! {
+            .style("display", "flex")
+            .style("flex-direction", "column")
+            .style("gap", "1rem")
+        }
+    });
+
+    let task_details: Mutable<Option<std::result::Result<TaskResponse, String>>> =
+        Mutable::new(None);
+
+    let task_id = task.id();
+
+    html!("div", {
+        .future(clone!(task_details, task_id, task_queue_addr => async move {
+            let res = query_client().contract_smart::<TaskResponse>(&task_queue_addr, &lavs_task_queue::msg::QueryMsg::Custom(lavs_task_queue::msg::CustomQueryMsg::Task {
+                id: task_id.clone(),
+            })).await;
+
+            match res {
+                Ok(result) => {
+                    task_details.set(Some(Ok(result)));
+                },
+                Err(err) => {
+                    task_details.set(Some(Err(err.to_string())));
+                }
+            }
+        }))
+        .child_signal(task_details.signal_cloned().map(clone!(task => move |details| {
+            let description = match &details {
+                None => None,
+                Some(Ok(details)) => Some(details.description.to_string()),
+                Some(Err(err)) => Some(err.to_string())
+            };
+
+            let payload = match &details {
+                None => None,
+                Some(Ok(details)) => match serde_json::to_string_pretty(&details.payload) {
+                    Ok(payload) => Some(payload),
+                    Err(err) => Some(err.to_string())
+                },
+                Some(Err(err)) => Some(err.to_string())
+            };
+            Some(html!("div", {
+                .class(&*TASK)
+                .child(html!("div", {
+                    .text(&format!("Id: {}", task.id()))
+                }))
+                .apply_if(description.is_some(), |dom| dom.child(html!("div", {
+                    .text(&format!("Description: {}", description.unwrap_or_default()))
+                })))
+                .apply_if(payload.is_some(), |dom| dom.child(html!("div", {
+                    .text(&format!("Payload: {}", payload.unwrap_or_default()))
+                })))
+                .child(html!("div", {
+                    .text(&format!("Result: {}", task.data_json_string().unwrap_or_default()))
+                }))
+                .child(html!("div", {
+                    .text(&format!("Status: {}", match &task {
+                        TaskView::Open(task) => "Open",
+                        TaskView::Completed(task) => "Completed",
+                    }))
+                }))
+            }))
+        })))
+    })
 }

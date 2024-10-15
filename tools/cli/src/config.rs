@@ -53,33 +53,3 @@ pub struct WasmaticConfig {
 pub struct FaucetConfig {
     pub mnemonic: String,
 }
-
-#[derive(Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct GetInfo {
-    pub operators: Vec<String>,
-}
-
-pub(crate) async fn load_wasmatic_addresses(endpoints: &[String]) -> Result<Vec<String>> {
-    let client = reqwest::Client::new();
-
-    futures::future::join_all(endpoints.iter().map(|endpoint| {
-        let client = client.clone();
-        async move {
-            // Load from info endpoint
-            let response = client
-                .get(format!("{}/info", endpoint))
-                .header("Content-Type", "application/json")
-                .send()
-                .await?;
-            let info: GetInfo = response.json().await?;
-            info.operators
-                .first()
-                .context("No operators found")
-                .map(|v| v.to_string())
-        }
-    }))
-    .await
-    .into_iter()
-    .collect::<Result<Vec<String>, _>>()
-}
