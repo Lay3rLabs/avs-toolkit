@@ -79,7 +79,7 @@ mod execute {
     use cw_utils::nonpayable;
     use lavs_apis::{events::task_queue_event::TaskQueueEvent, id::TaskId};
     use lavs_apis::{
-        events::task_queue_event::{TaskCompletedEvent, TaskCreatedEvent, TaskExpiredEvent},
+        events::task_queue_events::{TaskCompletedEvent, TaskCreatedEvent, TaskExpiredEvent},
         id::TaskId,
     };
     use lavs_apis::{id::TaskId, time::Duration};
