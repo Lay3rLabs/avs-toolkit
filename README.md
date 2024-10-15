@@ -32,7 +32,7 @@ Let's break this down:
 
 ## AVS Node
 
-A serverside platform powered by [Wasmatic](https://github.com/Lay3rLabs/wasmatic) to run "Actively Validated Services". These services can be non-deterministic, interact with filesystem or network, and do many things not possible on the blockchain. It's all powered by the WebAssembly ecosystem.
+A serverside platform powered by [Wasmatic](https://github.com/Lay3rLabs/wasmatic) to run "Actively Validated Services". These services can be non-deterministic, interact with filesystem or network, and do many things not possible on the blockchain. It's all powered by the WebAssembly System Interface.
 
 These services do not run in a vacuum. They need to know about the rest of the Layer ecosystem in order to get triggered and validated, and they also need to know where to store their output or persist any required state.
 
