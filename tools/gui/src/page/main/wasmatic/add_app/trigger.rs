@@ -1,15 +1,62 @@
-use avs_toolkit_shared::{file::WasmFile, wasmatic::Trigger};
+use std::str::FromStr;
+
+use avs_toolkit_shared::{
+    deploy::{
+        CodeIds, DeployContractArgs, DeployContractArgsRequestor, DeployContractArgsVerifierMode,
+    },
+    file::WasmFile,
+    wasmatic::Trigger,
+};
+use cosmwasm_std::Decimal;
+use lavs_apis::time::Duration;
+use lavs_mock_operators::state;
 use web_sys::File;
 
-use crate::{config::get_default_task_queue_addr, prelude::*};
+use crate::{config::DefaultCodeIds, prelude::*};
 
 pub struct TriggerUi {
     selected: Mutable<TriggerChoice>,
     cron_job: Mutable<Option<String>>,
-    task_address: Mutable<Option<Address>>,
-    task_hd_index: Mutable<u32>,
-    task_poll_interval_seconds: Mutable<u32>,
+    task_queue: TaskQueueArgs,
     error: Mutable<Option<String>>,
+}
+
+pub struct TaskQueueArgs {
+    pub code_ids: Mutable<CodeIds>,
+    pub task_hd_index: Mutable<u32>,
+    pub task_poll_interval_seconds: Mutable<u32>,
+    pub task_timeout: Mutable<Duration>,
+    pub required_voting_percentage: Mutable<u32>,
+    pub threshold_percentage: Mutable<Option<Decimal>>,
+    pub allowed_spread: Mutable<Option<Decimal>>,
+    pub slashable_spread: Mutable<Option<Decimal>>,
+    pub operators: Mutable<Vec<String>>,
+    pub requestor: Mutable<DeployContractArgsRequestor>,
+    pub mode: Mutable<DeployContractArgsVerifierMode>,
+}
+
+impl TaskQueueArgs {
+    pub fn new() -> Self {
+        let code_ids = DefaultCodeIds::new().unwrap();
+        Self {
+            code_ids: Mutable::new(CodeIds {
+                mock_operators: code_ids.mock_operators.unwrap_or_default(),
+                task_queue: code_ids.task_queue.unwrap_or_default(),
+                verifier_simple: code_ids.verifier_simple.unwrap_or_default(),
+                verifier_oracle: code_ids.verifier_oracle.unwrap_or_default(),
+            }),
+            task_hd_index: Mutable::new(0),
+            task_poll_interval_seconds: Mutable::new(3),
+            task_timeout: Mutable::new(Duration::new_seconds(300)),
+            required_voting_percentage: Mutable::new(66),
+            threshold_percentage: Mutable::new(None),
+            allowed_spread: Mutable::new(None),
+            slashable_spread: Mutable::new(None),
+            operators: Mutable::new(vec!["wasmatic".to_string()]),
+            requestor: Mutable::new(DeployContractArgsRequestor::default()),
+            mode: Mutable::new(DeployContractArgsVerifierMode::Simple),
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -18,32 +65,58 @@ enum TriggerChoice {
     Task,
 }
 
+#[derive(Debug, Clone)]
+pub enum TriggerData {
+    Cron {
+        schedule: String,
+    },
+    Queue {
+        contract_args: DeployContractArgs,
+        hd_index: u32,
+        poll_interval: u32,
+    },
+}
+
 impl TriggerUi {
     pub fn new() -> Arc<Self> {
+        let code_ids = DefaultCodeIds::new().unwrap();
+
         Arc::new(Self {
             selected: Mutable::new(TriggerChoice::Task),
             cron_job: Mutable::new(None),
-            task_address: Mutable::new(get_default_task_queue_addr()),
-            task_hd_index: Mutable::new(0),
-            task_poll_interval_seconds: Mutable::new(3),
+            task_queue: TaskQueueArgs::new(),
             error: Mutable::new(None),
         })
     }
 
-    pub async fn extract(self: &Arc<Self>) -> Result<Trigger> {
+    pub async fn extract(self: &Arc<Self>) -> Result<TriggerData> {
         let state = self;
 
         match state.selected.get() {
             TriggerChoice::Task => {
-                let address = state
-                    .task_address
-                    .get_cloned()
-                    .ok_or_else(|| anyhow!("Task Queue contract address is required"))?;
-                let hd_index = state.task_hd_index.get();
-                let poll_interval = state.task_poll_interval_seconds.get();
+                let code_ids = state.task_queue.code_ids.get_cloned();
 
-                Ok(Trigger::Queue {
-                    task_queue_addr: address.to_string(),
+                let contract_args = DeployContractArgs::parse(
+                    http_client(),
+                    signing_client(),
+                    CONFIG.chain_info().unwrap_ext().wasmatic.endpoints.clone(),
+                    code_ids,
+                    state.task_queue.task_timeout.get_cloned(),
+                    state.task_queue.required_voting_percentage.get_cloned(),
+                    state.task_queue.threshold_percentage.get_cloned(),
+                    state.task_queue.allowed_spread.get_cloned(),
+                    state.task_queue.slashable_spread.get_cloned(),
+                    state.task_queue.operators.get_cloned(),
+                    state.task_queue.requestor.get_cloned(),
+                    state.task_queue.mode.get_cloned(),
+                )
+                .await?;
+
+                let hd_index = state.task_queue.task_hd_index.get();
+                let poll_interval = state.task_queue.task_poll_interval_seconds.get();
+
+                Ok(TriggerData::Queue {
+                    contract_args,
                     hd_index,
                     poll_interval,
                 })
@@ -53,7 +126,7 @@ impl TriggerUi {
                     .cron_job
                     .get_cloned()
                     .ok_or_else(|| anyhow!("Cron job name is required"))?;
-                Ok(Trigger::Cron { schedule: cron_job })
+                Ok(TriggerData::Cron { schedule: cron_job })
             }
         }
     }
@@ -66,7 +139,7 @@ impl TriggerUi {
             .map(clone!(state => move |choice| {
                 match choice {
                     TriggerChoice::Task => {
-                        state.task_address.signal_ref(|address| address.is_some()).boxed()
+                        state.valid_task_queue_signal().boxed()
                     },
                     TriggerChoice::Cron => {
                         state.cron_job.signal_ref(|address| address.is_some()).boxed()
@@ -74,6 +147,24 @@ impl TriggerUi {
                 }
             }))
             .flatten()
+    }
+
+    fn valid_task_queue_signal(self: &Arc<Self>) -> impl Signal<Item = bool> {
+        let state = self;
+
+        map_ref! {
+            let code_ids = state.task_queue.code_ids.signal_cloned(),
+            let operators = state.task_queue.operators.signal_cloned(),
+            => {
+                if code_ids.mock_operators == 0 || code_ids.task_queue == 0 || code_ids.verifier_simple == 0|| code_ids.verifier_oracle == 0 {
+                    false
+                } else if operators.is_empty() {
+                    false
+                } else {
+                    true
+                }
+            }
+        }
     }
 
     pub fn render(self: &Arc<Self>) -> Dom {
@@ -147,97 +238,98 @@ impl TriggerUi {
                 .style("gap", "1rem")
             }
         });
+        static ROW: LazyLock<String> = LazyLock::new(|| {
+            class! {
+                .style("display", "flex")
+                .style("flex-direction", "row")
+                .style("gap", "1rem")
+            }
+        });
+
+        let code_ids = state.task_queue.code_ids.get_cloned();
+
         html!("div", {
             .class(&*CONTAINER)
+            .child(html!("div", {
+                .class(&*ROW)
+                .child(state.render_from_str("Task queue code id", TextInputKind::Number, code_ids.task_queue, 0, clone!(state => move |code_id| {
+                    state.task_queue.code_ids.lock_mut().task_queue = code_id;
+                })))
+                .child(state.render_from_str("Mock operators code id", TextInputKind::Number, code_ids.mock_operators, 0, clone!(state => move |code_id| {
+                    state.task_queue.code_ids.lock_mut().mock_operators = code_id;
+                })))
+                .child(state.render_from_str("Verifier simple code id", TextInputKind::Number, code_ids.verifier_simple, 0, clone!(state => move |code_id| {
+                    state.task_queue.code_ids.lock_mut().verifier_simple= code_id;
+                })))
+                .child(state.render_from_str("Verifier oracle code id", TextInputKind::Number, code_ids.verifier_oracle, 0, clone!(state => move |code_id| {
+                    state.task_queue.code_ids.lock_mut().verifier_oracle = code_id;
+                })))
+            }))
+            .child(html!("div", {
+                .class(&*ROW)
+                .child(state.render_from_str("HD index", TextInputKind::Number, state.task_queue.task_hd_index.get(), 0, clone!(state => move |value| {
+                    state.task_queue.task_hd_index.set(value);
+                })))
+                .child(state.render_from_str("Poll interval", TextInputKind::Number, state.task_queue.task_poll_interval_seconds.get(), 0, clone!(state => move |value| {
+                    state.task_queue.task_poll_interval_seconds.set(value);
+                })))
+            }))
+            .child(html!("div", {
+                .class(&*ROW)
+                .child(state.render_from_str("Required voting percentage", TextInputKind::Number, state.task_queue.required_voting_percentage.get(), 0, clone!(state => move |value| {
+                    state.task_queue.required_voting_percentage.set(value);
+                })))
+                .child(state.render_option_from_str("Threshhold percentage (oracle only)", TextInputKind::Number, state.task_queue.threshold_percentage.get(), clone!(state => move |value| {
+                    state.task_queue.threshold_percentage.set(value);
+                })))
+                .child(state.render_option_from_str("Allowed spread (oracle only)", TextInputKind::Number, state.task_queue.allowed_spread.get(), clone!(state => move |value| {
+                    state.task_queue.allowed_spread.set(value);
+                })))
+                .child(state.render_option_from_str("Slashable spread (oracle only)", TextInputKind::Number, state.task_queue.slashable_spread.get(), clone!(state => move |value| {
+                    state.task_queue.slashable_spread.set(value);
+                })))
+            }))
+            .child(state.render_from_str("Requestor (see CLI for examples)", TextInputKind::Text, state.task_queue.requestor.get_cloned(), DeployContractArgsRequestor::default(), clone!(state => move |value| {
+                state.task_queue.requestor.set(value);
+            })))
             .child(Label::new()
-                .with_text("Task Queue contract address")
+                .with_text("Verifier mode")
                 .with_direction(LabelDirection::Column)
-                .render(TextInput::new()
-                    .with_placeholder("e.g. slayaddr...")
-                    .with_intial_value(state.task_address.get_cloned().map(|addr| addr.to_string()).unwrap_or_default())
+                .render(html!("div", {
+                    .style("display", "inline-block")
+                    .child(Dropdown::new()
+                        .with_intial_selected(Some(state.task_queue.mode.get_cloned()))
+                        .with_options([
+                            ("Simple".to_string(), DeployContractArgsVerifierMode::Simple),
+                            ("Oracle".to_string(), DeployContractArgsVerifierMode::Oracle),
+                        ])
+                        .with_on_change(clone!(state => move |mode| {
+                            state.task_queue.mode.set(*mode);
+                        }))
+                        .render()
+                    )
+                }))
+            )
+            .child(Label::new()
+                .with_text("Operators (see CLI for examples)")
+                .with_direction(LabelDirection::Column)
+                .render(TextArea::new()
                     .with_mixin(|dom| {
                         dom
                             .style("width", "30rem")
+                            .style("height", "5rem")
                     })
-                    .with_on_input(clone!(state => move |address| {
-                        state.error.set_neq(None);
-                        match address {
+                    .with_intial_value(state.task_queue.operators.get_cloned().join(", "))
+                    .with_on_input(clone!(state => move |input| {
+                        match input {
                             None => {
-                                state.task_address.set(None)
+                                state.task_queue.operators.set(Vec::new());
+                                state.error.set_neq(None);
                             },
-                            Some(address) => {
-                                match query_client().chain_config.parse_address(&address) {
-                                    Err(err) => {
-                                        state.error.set(Some(err.to_string()));
-                                    },
-                                    Ok(address) => {
-                                        state.task_address.set(Some(address));
-                                    }
-                                }
-                            }
-                        }
-                    }))
-                    .render()
-                )
-            )
-            .child(Label::new()
-                .with_text("HD index")
-                .with_direction(LabelDirection::Column)
-                .render(TextInput::new()
-                    .with_kind(TextInputKind::Number)
-                    .with_intial_value(state.task_hd_index.get())
-                    .with_mixin(|dom| {
-                        dom
-                            .style("width", "5rem")
-                            .style("padding", "0.5rem")
-                    })
-                    .with_on_input(clone!(state => move |hd_index| {
-                        state.error.set_neq(None);
-                        match hd_index {
-                            None => {
-                                state.task_hd_index.set(0)
-                            },
-                            Some(hd_index) => {
-                                match hd_index.parse::<u32>() {
-                                    Err(err) => {
-                                        state.error.set(Some(err.to_string()));
-                                    },
-                                    Ok(hd_index) => {
-                                        state.task_hd_index.set(hd_index);
-                                    }
-                                }
-                            }
-                        }
-                    }))
-                    .render()
-                )
-            )
-            .child(Label::new()
-                .with_text("Poll interval (seconds)")
-                .with_direction(LabelDirection::Column)
-                .render(TextInput::new()
-                    .with_kind(TextInputKind::Number)
-                    .with_intial_value(state.task_poll_interval_seconds.get())
-                    .with_mixin(|dom| {
-                        dom
-                            .style("width", "5rem")
-                            .style("padding", "0.5rem")
-                    })
-                    .with_on_input(clone!(state => move |seconds| {
-                        state.error.set_neq(None);
-                        match seconds {
-                            None => {
-                                state.task_poll_interval_seconds.set(0)
-                            },
-                            Some(seconds) => {
-                                match seconds.parse::<u32>() {
-                                    Err(err) => {
-                                        state.error.set(Some(err.to_string()));
-                                    },
-                                    Ok(seconds) => {
-                                        state.task_poll_interval_seconds.set(seconds);
-                                    }
-                                }
+                            Some(value) => {
+                                let operators = value.split(',').map(|s| s.trim().to_string()).collect();
+                                state.error.set_neq(None);
+                                state.task_queue.operators.set(operators);
                             }
                         }
                     }))
@@ -262,5 +354,83 @@ impl TriggerUi {
                     }))
                     .render(),
             )
+    }
+
+    fn render_from_str<T: FromStr + ToString + Clone + 'static>(
+        self: &Arc<Self>,
+        label: &str,
+        kind: TextInputKind,
+        initial: T,
+        zero_value: T,
+        on_input: impl Fn(T) + Clone + 'static,
+    ) -> Dom {
+        let state = self;
+        Label::new()
+            .with_text(label)
+            .with_direction(LabelDirection::Column)
+            .render(
+                TextInput::new()
+                    .with_kind(kind)
+                    .with_intial_value(initial)
+                    .with_on_input(clone!(state, on_input => move |code_id| {
+                        state.error.set_neq(None);
+                        match code_id {
+                            None => {
+                                on_input(zero_value.clone());
+                            },
+                            Some(value) => {
+                                match value.parse::<T>() {
+                                    Err(err) => {
+                                        state.error.set(Some(format!("could not parse {value}")));
+                                    },
+                                    Ok(value) => {
+                                        on_input(value);
+                                    }
+                                }
+                            }
+                        }
+                    }))
+                    .render(),
+            )
+    }
+
+    fn render_option_from_str<T: FromStr + ToString + Clone + 'static>(
+        self: &Arc<Self>,
+        label: &str,
+        kind: TextInputKind,
+        initial: Option<T>,
+        on_input: impl Fn(Option<T>) + Clone + 'static,
+    ) -> Dom {
+        let state = self;
+
+        let mut input = TextInput::new().with_kind(kind).with_on_input(
+            clone!(state, on_input => move |code_id| {
+                state.error.set_neq(None);
+                match code_id {
+                    None => {
+                        on_input(None);
+                    },
+                    Some(value) => {
+                        match value.parse::<T>() {
+                            Err(err) => {
+                                state.error.set(Some(format!("could not parse {value}")));
+                            },
+                            Ok(value) => {
+                                on_input(Some(value));
+                            }
+                        }
+                    }
+                }
+            }),
+        );
+
+        if let Some(initial) = initial {
+            input = input.with_intial_value(initial);
+        }
+
+        Label::new()
+            .with_text(label)
+            .with_direction(LabelDirection::Column)
+            .render(input.render())
     }
 }

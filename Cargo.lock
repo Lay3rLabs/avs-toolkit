@@ -449,9 +449,16 @@ dependencies = [
  "anyhow",
  "cosmwasm-std 2.1.4",
  "futures",
+<<<<<<< HEAD
  "lavs-apis",
  "lavs-mock-operators",
  "lavs-task-queue",
+=======
+ "lavs-apis 0.1.0",
+ "lavs-mock-operators 0.1.0",
+ "lavs-oracle-verifier",
+ "lavs-task-queue 0.1.0",
+>>>>>>> 86fa148 (refactor)
  "lavs-verifier-simple",
  "layer-climb",
  "reqwest 0.12.8",
