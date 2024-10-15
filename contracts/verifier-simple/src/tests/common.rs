@@ -91,10 +91,10 @@ where
         .find_map(|event| TaskExecutedEvent::try_from(event).ok())
         .unwrap();
 
-    assert!(event.completed);
+    assert!(event.completed.unwrap());
     assert_eq!(event.task_id, task_id);
     assert_eq!(event.task_queue, tasker.addr_str().unwrap());
-    assert_eq!(event.operator, op_node.addr().to_string());
+    assert_eq!(event.operator, Some(op_node.addr().to_string()));
 
     let completed = chain.block_info().unwrap().time.seconds();
 

@@ -39,6 +39,7 @@ pub struct TaskExecutedEvent {
     pub new_price: Option<Decimal>,
     pub action: Option<String>,
 }
+
 #[derive(Default)]
 pub struct TaskExecutedEventBuilder {
     // Fields corresponding to TaskExecutedEvent
@@ -131,49 +132,45 @@ impl TryFrom<&Event> for TaskExecutedEvent {
             )));
         }
 
-        let mut task_id: Option<TaskId> = None;
-        let mut task_queue: Option<String> = None;
-        let mut operator: Option<String> = None;
-        let mut completed: Option<bool> = None;
+        let mut builder = TaskExecutedEventBuilder::new();
 
         for Attribute { key, value } in event.attributes.iter() {
             match key.as_str() {
                 "task-id" => {
-                    if let Ok(value) = value.parse() {
-                        task_id = Some(value);
-                    }
+                    builder = builder.task_id(value.parse().map_err(|_| {
+                        StdError::generic_err(format!("Invalid value for task-id: {}", value))
+                    })?);
                 }
                 "task-queue" => {
-                    if let Ok(value) = value.parse() {
-                        task_queue = Some(value);
-                    }
+                    builder = builder.task_queue(value.clone());
                 }
                 "operator" => {
-                    if let Ok(value) = value.parse() {
-                        operator = Some(value);
-                    }
+                    builder = builder.operator(value.clone());
                 }
                 "completed" => {
-                    if let Ok(value) = value.parse() {
-                        completed = Some(value)
-                    }
+                    builder = builder.completed(value.parse().map_err(|_| {
+                        StdError::generic_err(format!("Invalid value for completed: {}", value))
+                    })?);
+                }
+                "method" => {
+                    builder = builder.method(value.clone());
+                }
+                "status" => {
+                    builder = builder.status(value.clone());
+                }
+                "new_price" => {
+                    builder = builder.new_price(value.parse().map_err(|_| {
+                        StdError::generic_err(format!("Invalid value for new_price: {}", value))
+                    })?);
+                }
+                "action" => {
+                    builder = builder.action(value.clone());
                 }
                 _ => {}
             }
         }
 
-        match (task_id, task_queue, operator, completed) {
-            (Some(task_id), Some(task_queue), Some(operator), Some(completed)) => Ok(Self {
-                task_id,
-                task_queue,
-                operator,
-                completed,
-            }),
-            _ => Err(StdError::generic_err(format!(
-                "Could not parse fields for {}",
-                Self::NAME,
-            ))),
-        }
+        builder.build()
     }
 }
 
@@ -187,11 +184,38 @@ impl TryFrom<Event> for TaskExecutedEvent {
 
 impl From<TaskExecutedEvent> for Event {
     fn from(value: TaskExecutedEvent) -> Self {
-        Self::new(TaskExecutedEvent::NAME).add_attributes([
-            ("task-id", value.task_id.to_string()),
-            ("task-queue", value.task_queue.to_string()),
-            ("operator", value.operator.to_string()),
-            ("completed", value.completed.to_string()),
-        ])
+        let mut event = Event::new(TaskExecutedEvent::NAME);
+
+        event = event.add_attributes(vec![
+            Attribute {
+                key: "task-id".to_string(),
+                value: value.task_id.to_string(),
+            },
+            Attribute {
+                key: "task-queue".to_string(),
+                value: value.task_queue,
+            },
+        ]);
+
+        if let Some(operator) = value.operator {
+            event = event.add_attribute("operator", operator);
+        }
+        if let Some(completed) = value.completed {
+            event = event.add_attribute("completed", completed.to_string());
+        }
+        if let Some(method) = value.method {
+            event = event.add_attribute("method", method);
+        }
+        if let Some(status) = value.status {
+            event = event.add_attribute("status", status);
+        }
+        if let Some(new_price) = value.new_price {
+            event = event.add_attribute("new_price", new_price.to_string());
+        }
+        if let Some(action) = value.action {
+            event = event.add_attribute("action", action);
+        }
+
+        event
     }
 }

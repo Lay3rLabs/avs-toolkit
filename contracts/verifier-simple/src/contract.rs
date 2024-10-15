@@ -87,7 +87,7 @@ mod execute {
     use cw_utils::nonpayable;
     use lavs_apis::id::TaskId;
     use lavs_apis::interfaces::tasks::{ResponseType, TaskExecuteMsg, TaskStatus};
-    use lavs_helpers::events::TaskExecutedEvent;
+    use lavs_helpers::events::{TaskExecutedEvent, TaskExecutedEventBuilder};
     use lavs_helpers::verifier::ensure_valid_vote;
 
     use crate::state::{record_vote, TASKS, VOTES};
@@ -141,13 +141,11 @@ mod execute {
             power,
         )?;
 
-        // Create the result with standard attributes
-        let mut task_event = TaskExecutedEvent {
-            task_id,
-            task_queue: task_queue_contract.clone(),
-            operator: operator.to_string(),
-            completed: false,
-        };
+        let mut task_event_builder = TaskExecutedEventBuilder::new()
+            .task_id(task_id)
+            .task_queue(task_queue_contract.clone())
+            .operator(operator.to_string())
+            .completed(false);
 
         let mut res = Response::new();
 
@@ -165,9 +163,10 @@ mod execute {
                 msg: to_json_binary(&TaskExecuteMsg::Complete { task_id, response })?,
                 funds: vec![],
             });
-            task_event.completed = true;
+            task_event_builder = task_event_builder.completed(true);
         }
 
+        let task_event = task_event_builder.build()?;
         res = res.add_event(task_event);
 
         Ok(res)
