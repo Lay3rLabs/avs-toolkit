@@ -1,4 +1,4 @@
-use anyhow::{bail, Context, Result};
+use anyhow::{bail, Result};
 use cosmwasm_std::Order;
 use lavs_apis::{
     events::{task_queue_events::TaskCreatedEvent, traits::TypedEvent as _},
@@ -37,12 +37,10 @@ impl TaskQueue {
 
     pub async fn add_task(
         &self,
-        body: String,
+        payload: serde_json::Value,
         description: String,
         timeout: Option<Duration>,
     ) -> Result<(TaskId, TxResponse)> {
-        let payload = serde_json::from_str(&body).context("Failed to parse body into JSON")?;
-
         let contract_config = self.querier.config().await?;
 
         let payment = match contract_config.requestor {
