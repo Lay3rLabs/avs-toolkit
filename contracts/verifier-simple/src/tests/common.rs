@@ -1,6 +1,7 @@
 use cosmwasm_std::Timestamp;
 use cw_orch::environment::{ChainState, CwEnv};
 use cw_orch::prelude::*;
+use lavs_apis::events::task_executed_event::TaskExecutedEvent;
 use lavs_apis::id::TaskId;
 use lavs_apis::time::Duration;
 use lavs_helpers::events::TaskExecutedEvent;

@@ -1,13 +1,7 @@
-use cosmwasm_std::StdError;
-use cosmwasm_std::{Attribute, Event};
-use lavs_apis::id::TaskId;
+use crate::id::TaskId;
+use cosmwasm_std::{Attribute, Event, StdError};
 
-pub trait TypedEvent: TryFrom<Event> + Into<Event> {
-    const NAME: &'static str;
-    fn is_type(ty: &str) -> bool {
-        Self::NAME == ty || Self::NAME == format!("wasm-{ty}")
-    }
-}
+use super::traits::TypedEvent;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct TaskExecutedEvent {

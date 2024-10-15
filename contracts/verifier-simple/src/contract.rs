@@ -85,9 +85,9 @@ mod execute {
     use cosmwasm_std::{from_json, WasmMsg};
 
     use cw_utils::nonpayable;
+    use lavs_apis::events::task_executed_event::TaskExecutedEvent;
     use lavs_apis::id::TaskId;
     use lavs_apis::interfaces::tasks::{ResponseType, TaskExecuteMsg, TaskStatus};
-    use lavs_helpers::events::TaskExecutedEvent;
     use lavs_helpers::verifier::ensure_valid_vote;
 
     use crate::state::{record_vote, TASKS, VOTES};
