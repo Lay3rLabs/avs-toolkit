@@ -235,7 +235,7 @@ pub fn make_task<C: ChainState + TxHandler>(
 // Note: both implement cw_orch::environment::IndexResponse
 #[track_caller]
 pub fn get_task_id(res: &impl IndexResponse) -> TaskId {
-    res.event_attr_value("wasm", "task_id")
+    res.event_attr_value("wasm-task_created_event", "task-id")
         .unwrap()
         .parse()
         .unwrap()

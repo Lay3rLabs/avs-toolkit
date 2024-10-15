@@ -180,7 +180,7 @@ pub fn make_task<C: ChainState + TxHandler>(
 #[track_caller]
 pub fn get_task_id(res: &impl IndexResponse) -> TaskId {
     let id = res
-        .event_attr_value("wasm", "task_id")
+        .event_attr_value("wasm-task_created_event", "task-id")
         .unwrap()
         .parse()
         .unwrap();

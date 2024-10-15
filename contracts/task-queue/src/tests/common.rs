@@ -166,7 +166,9 @@ where
     let one = contract
         .create("One".to_string(), None, payload.clone(), &[])
         .unwrap();
-    let task_one = one.event_attr_value("wasm", "task_id").unwrap();
+    let task_one = one
+        .event_attr_value("wasm-task_created_event", "task-id")
+        .unwrap();
     assert_eq!(task_one, "1");
     let task_one: u64 = task_one.parse().unwrap();
     assert_eq!(task_one, 1u64);
@@ -517,7 +519,6 @@ pub fn make_task<C: ChainState + TxHandler>(
     let res = contract
         .create(name.to_string(), timeout.into(), payload.clone(), &[])
         .unwrap();
-    dbg!(&res);
     get_task_id(&res)
 }
 
@@ -529,7 +530,7 @@ pub fn make_task<C: ChainState + TxHandler>(
 // Note: both implement cw_orch::environment::IndexResponse
 #[track_caller]
 pub fn get_task_id(res: &impl IndexResponse) -> TaskId {
-    res.event_attr_value("wasm", "task_id")
+    res.event_attr_value("wasm-task_created_event", "task-id")
         .unwrap()
         .parse()
         .unwrap()
