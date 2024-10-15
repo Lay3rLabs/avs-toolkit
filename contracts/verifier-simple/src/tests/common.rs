@@ -4,7 +4,6 @@ use cw_orch::prelude::*;
 use lavs_apis::events::task_executed_event::TaskExecutedEvent;
 use lavs_apis::id::TaskId;
 use lavs_apis::time::Duration;
-use lavs_helpers::events::TaskExecutedEvent;
 use serde_json::json;
 
 use lavs_apis::tasks::{Requestor, Status, TaskStatus, TimeoutInfo};
@@ -97,7 +96,7 @@ where
     assert_eq!(event.task_queue, tasker.addr_str().unwrap());
     assert_eq!(event.operator, op_node.addr().to_string());
 
-    let completed = chain.block_info().unwrap().time.seconds();
+    let completed = chain.block_info().unwrap().time;
 
     // Check it is marked as completed (both in verifier and task queue)
     let status = tasker.task(task_id).unwrap();

@@ -77,12 +77,11 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<Binary, ContractErro
 
 mod execute {
     use cw_utils::nonpayable;
-    use lavs_apis::{events::task_queue_event::TaskQueueEvent, id::TaskId};
-    use lavs_apis::{
-        events::task_queue_events::{TaskCompletedEvent, TaskCreatedEvent, TaskExpiredEvent},
-        id::TaskId,
+    use lavs_apis::events::task_queue_events::{
+        TaskCompletedEvent, TaskCreatedEvent, TaskExpiredEvent,
     };
-    use lavs_apis::{id::TaskId, time::Duration};
+    use lavs_apis::id::TaskId;
+    use lavs_apis::time::Duration;
 
     use crate::state::{check_timeout, Timing};
 
