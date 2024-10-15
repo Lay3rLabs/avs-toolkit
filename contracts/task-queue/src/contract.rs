@@ -77,6 +77,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<Binary, ContractErro
 
 mod execute {
     use cw_utils::nonpayable;
+    use lavs_apis::{events::task_queue_event::TaskQueueEvent, id::TaskId};
     use lavs_apis::{id::TaskId, time::Duration};
 
     use crate::state::{check_timeout, Timing};
@@ -109,9 +110,13 @@ mod execute {
         config.next_id = TaskId::new(task_id.u64() + 1);
         CONFIG.save(deps.storage, &config)?;
 
-        let res = Response::new()
-            .add_attribute("action", "create")
-            .add_attribute("task_id", task_id.to_string());
+        let task_queue_event = TaskQueueEvent {
+            task_id,
+            action: "create".to_string(),
+        };
+
+        let res = Response::new().add_event(task_queue_event);
+
         Ok(res)
     }
 
@@ -134,9 +139,13 @@ mod execute {
         task.complete(&env, response)?;
         TASKS.save(deps.storage, task_id, &task)?;
 
-        let res = Response::new()
-            .add_attribute("action", "completed")
-            .add_attribute("task_id", task_id.to_string());
+        let task_queue_event = TaskQueueEvent {
+            task_id,
+            action: "completed".to_string(),
+        };
+
+        let res = Response::new().add_event(task_queue_event);
+
         Ok(res)
     }
 
@@ -153,9 +162,13 @@ mod execute {
         task.expire(&env)?;
         TASKS.save(deps.storage, task_id, &task)?;
 
-        let res = Response::new()
-            .add_attribute("action", "expired")
-            .add_attribute("task_id", task_id.to_string());
+        let task_queue_event = TaskQueueEvent {
+            task_id,
+            action: "expired".to_string(),
+        };
+
+        let res = Response::new().add_event(task_queue_event);
+
         Ok(res)
     }
 }

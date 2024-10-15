@@ -517,6 +517,7 @@ pub fn make_task<C: ChainState + TxHandler>(
     let res = contract
         .create(name.to_string(), timeout.into(), payload.clone(), &[])
         .unwrap();
+    dbg!(&res);
     get_task_id(&res)
 }
 
