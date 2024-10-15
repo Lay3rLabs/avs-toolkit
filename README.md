@@ -44,7 +44,7 @@ _TODO_
 
 ## Verifier
 
-When the AVS has been triggered and completes its work, it submits this work to the blockchain. However, the results need to go through a security vetting process they can be trusted. The first step in this process is the Verifier.
+When the AVS has been triggered and completes its work, it submits this work to the blockchain. However, the results need to go through a security vetting process before they can be trusted. The first step in this process is the Verifier.
 
 In theory, the verifying logic can be anything that fulfills the requirements for a given product. In practice, this logic almost always follows some common scheme:
 
