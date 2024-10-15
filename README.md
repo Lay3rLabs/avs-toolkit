@@ -81,7 +81,7 @@ In other words, the `Task Queue` is the glue and the lifecycle of a particular t
 3. AVS notices that a task is on the queue and ready for processing
 4. AVS tries to run the task
 5. AVS writes the results to the task queue (by way of the verifier, not directly)
-6. Task is now completed and taken off the pending queue.
+6. Task is now completed and taken off the pending queue (also by way of verifier, not directly).
 7. Client can watch out for events all along the lifecycle, or query for a given TaskId state
 
 Each AVS deployment using a Task Queue trigger has a uniquely instantiated contract associated with that deployment. **_For now, this is not enforced by the system - so be very careful to never have different AVS deployments using the same task queue address!_**
