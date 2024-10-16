@@ -38,6 +38,14 @@ impl LandingUi {
     pub fn render(self: &Arc<Self>) -> Dom {
         let state = self;
 
+        static CONTAINER: LazyLock<String> = LazyLock::new(|| {
+            class! {
+                .style("width", "100%")
+                .style("height", "100%")
+                .style_signal("background-color", ColorBackground::Base.signal())
+                .style_signal("color", ColorText::Body.signal())
+            }
+        });
         static CONTENT: LazyLock<String> = LazyLock::new(|| {
             class! {
                 .style("display", "flex")
@@ -50,35 +58,39 @@ impl LandingUi {
         });
 
         html!("div", {
-            .future(state.wallet_connected.signal().for_each(|connected| {
-                async move {
-                    // for debugging, we want to jump to an initial page, but:
-                    // 1. only consider it after connection status has settled
-                    // 2. only one time (not if we intentionally come back to landing)
-                    if connected {
-                        let start_route = CONFIG.debug.start_route.lock().unwrap_ext().take();
-                        log::info!("Starting at route: {:?}", start_route);
-                        if let Some(start_route) = start_route {
-                            start_route.go_to_url();
+            .class(&*CONTAINER)
+            .child(html!("div", {
+                .future(state.wallet_connected.signal().for_each(|connected| {
+                    async move {
+                        // for debugging, we want to jump to an initial page, but:
+                        // 1. only consider it after connection status has settled
+                        // 2. only one time (not if we intentionally come back to landing)
+                        if connected {
+                            let start_route = CONFIG.debug.start_route.lock().unwrap_ext().take();
+                            log::info!("Starting at route: {:?}", start_route);
+                            if let Some(start_route) = start_route {
+                                start_route.go_to_url();
+                            }
                         }
                     }
-                }
-            }))
-            .child(html!("div", {
-                .class(&*CONTENT)
-                .child(html!("div", {
-                    .class([FontSize::Hero.class(), FontWeight::Bold.class(), &*TEXT_ALIGN_CENTER])
-                    .text("Lay3r Demo")
                 }))
                 .child(html!("div", {
-                    .child_signal(state.wallet_connected.signal().map(clone!(state => move |connected| {
-                        if !connected {
-                            Some(state.render_connect())
-                        } else {
-                            // this will only be shown temporarily
-                            None
-                        }
-                    })))
+                    //.class(&*CONTENT)
+                    .child(html!("div", {
+                        .style("padding-top", "5rem")
+                        .class([FontSize::Hero.class(), FontWeight::Bold.class(), &*TEXT_ALIGN_CENTER])
+                        .text("Lay3r Demo")
+                    }))
+                    .child(html!("div", {
+                        .child_signal(state.wallet_connected.signal().map(clone!(state => move |connected| {
+                            if !connected {
+                                Some(state.render_connect())
+                            } else {
+                                // this will only be shown temporarily
+                                None
+                            }
+                        })))
+                    }))
                 }))
             }))
         })
@@ -118,8 +130,8 @@ impl LandingUi {
                                             state.error.set(Some("Unable to connect".to_string()));
                                         },
                                         ClientKeyKind::Keplr => {
-                                            if let Some(e) = e.downcast_ref::<KeplrError>() {
-                                                match e {
+                                            if let Some(keplr_err) = e.downcast_ref::<KeplrError>() {
+                                                match keplr_err {
                                                     KeplrError::MissingChain => {
                                                         state.phase.set(Phase::MissingKeplrChain);
                                                     },
@@ -127,7 +139,9 @@ impl LandingUi {
                                                         state.phase.set(Phase::KeplrError("Couldn't find Keplr, have you installed the extension?".to_string()));
                                                     },
                                                     KeplrError::FailedEnable => {
-                                                        state.phase.set(Phase::KeplrError("Failed to enable Keplr, if you cancelled - just try again".to_string()));
+                                                        // not really right... maybe keplr updated their error strings?
+                                                        state.phase.set(Phase::MissingKeplrChain);
+                                                        //state.phase.set(Phase::KeplrError("Failed to enable Keplr, if you cancelled - just try again".to_string()));
                                                     },
                                                     _ => {
                                                         state.phase.set(Phase::KeplrError(e.to_string()));

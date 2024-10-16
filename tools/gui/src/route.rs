@@ -168,9 +168,14 @@ impl std::fmt::Display for TaskQueueRoute {
 }
 
 pub fn render() -> Dom {
+    static CONTAINER: LazyLock<String> = LazyLock::new(|| {
+        class! {
+            .style("width", "100%")
+            .style("height", "100%")
+        }
+    });
     html!("div", {
-        .style("width", "100%")
-        .style("height", "100%")
+        .class(&*CONTAINER)
         .child_signal(Route::signal().map(|route| {
             match route {
                 Route::Landing => Some(LandingUi::new().render()),
