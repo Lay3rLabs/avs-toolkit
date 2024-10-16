@@ -449,16 +449,10 @@ dependencies = [
  "anyhow",
  "cosmwasm-std 2.1.4",
  "futures",
-<<<<<<< HEAD
  "lavs-apis",
  "lavs-mock-operators",
- "lavs-task-queue",
-=======
- "lavs-apis 0.1.0",
- "lavs-mock-operators 0.1.0",
  "lavs-oracle-verifier",
- "lavs-task-queue 0.1.0",
->>>>>>> 86fa148 (refactor)
+ "lavs-task-queue",
  "lavs-verifier-simple",
  "layer-climb",
  "reqwest 0.12.8",
@@ -3662,9 +3656,15 @@ checksum = "c08d65885ee38876c4f86fa503fb49d7b507c2b62552df7c70b2fce627e06381"
 
 [[package]]
 name = "openssl"
+<<<<<<< HEAD
 version = "0.10.68"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6174bc48f102d208783c2c84bf931bb75927a617866870de8a4ea85597f871f5"
+=======
+version = "0.10.67"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7b8cefcf97f41316955f9294cd61f639bdcfa9f2f230faac6cb896aa8ab64704"
+>>>>>>> d686603 (regenerate lockfile)
 dependencies = [
  "bitflags 2.6.0",
  "cfg-if",
