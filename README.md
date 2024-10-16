@@ -38,9 +38,9 @@ These services do not run in a vacuum. They need to know about the rest of the L
 
 In the diagram here, the `Task Queue` is used for both the trigger and the output, and there is a security layer preventing the AVS from writing to the Task Queue directly.
 
-## Aggregator
+## Aggregator (Optional)
 
-_TODO_
+An aggregator, may collect, verify, and submit results from many operators. Alternatively, operators may submit results directly to a verifier contract though there is some overhead to this. Aggregators have been used frequently with AVSs in the Eigenlayer ecosystem to get around high Ethereum gas prices.
 
 ## Verifier
 
