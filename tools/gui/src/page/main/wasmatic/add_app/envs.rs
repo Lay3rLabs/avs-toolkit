@@ -85,7 +85,6 @@ impl EnvsUi {
                 .class(&*SECTIONS)
                 .child(Button::new()
                     .with_text("Add")
-                    .with_size(ButtonSize::Md)
                     .with_on_click(clone!(state => move || {
                         let data = EnvData {
                             key: Mutable::new(None),
@@ -103,7 +102,7 @@ impl EnvsUi {
                         .children(&mut [
                             Button::new()
                                 .with_size(ButtonSize::Sm)
-                                .with_color(ButtonColor::Red)
+                                .with_color(ButtonColor::Branded)
                                 .with_text("Delete")
                                 .with_on_click(clone!(state => move || {
                                     state.envs.lock_mut().remove(index);
@@ -127,7 +126,7 @@ impl EnvsUi {
                         .child_signal(data.error.signal_cloned().map(|error| {
                             match error {
                                 Some(error) => Some(html!("div", {
-                                    .class([&*TEXT_SIZE_SM, Color::Red.class()])
+                                    .class([FontSize::Body.class(), &*COLOR_TEXT_INTERACTIVE_ERROR])
                                     .text(&error)
                                 })),
                                 None => None

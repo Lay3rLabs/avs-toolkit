@@ -53,7 +53,7 @@ impl WasmaticListAppsUi {
 
         html!("div", {
             .child(html!("div", {
-                .class(&*TEXT_SIZE_LG)
+                .class(FontSize::Header.class())
                 .style("margin-bottom", "1rem")
                 .text("Current Wasmatic Apps")
             }))
@@ -71,7 +71,7 @@ impl WasmaticListAppsUi {
                 match error {
                     None => None,
                     Some(error) => Some(html!("div", {
-                        .class([&*TEXT_SIZE_LG, &*Color::Red.class()])
+                        .class([FontSize::Header.class(), &COLOR_TEXT_INTERACTIVE_ERROR])
                         .text(&error)
                     }))
                 }
@@ -79,7 +79,7 @@ impl WasmaticListAppsUi {
             .child_signal(state.apps.signal_cloned().map(clone!(state => move |apps| {
                 match apps {
                     None => Some(html!("div", {
-                        .class([&*TEXT_SIZE_LG])
+                        .class([FontSize::Header.class()])
                         .text("Loading...")
                     })),
                     Some(apps) => Some(html!("div", {
@@ -91,11 +91,11 @@ impl WasmaticListAppsUi {
                                     html!("div", {
                                         .class(&*ROW)
                                         .child(html!("div", {
-                                            .class([&*TEXT_SIZE_LG, &*TEXT_WEIGHT_BOLD, &*Color::Accent.class()])
+                                            .class([FontSize::Header.class(), FontWeight::Bold.class(), &*ColorText::Brand.color_class()])
                                             .text(&app.app.name)
                                         }))
                                         .child(Button::new()
-                                            .with_color(ButtonColor::Red)
+                                            .with_color(ButtonColor::Branded)
                                             .with_size(ButtonSize::Sm)
                                             .with_text("Remove")
                                             .with_on_click(clone!(state, app => move || {
@@ -125,7 +125,7 @@ impl WasmaticListAppsUi {
                                         let app = &app.app;
 
                                         html!("ul", {
-                                            .class(&*TEXT_SIZE_LG)
+                                            .class(FontSize::Header.class())
                                             .children([
                                                 html!("li", {
                                                     .text(&format!("digest: {:?}", app.digest))

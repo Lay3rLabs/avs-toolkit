@@ -78,7 +78,7 @@ impl WasmaticAddAppUi {
         html!("div", {
             .class(&*CONTAINER)
             .child(html!("div", {
-                .class(&*TEXT_SIZE_LG)
+                .class(FontSize::Header.class())
                 .text("Add Wasmatic App")
             }))
             .child(Label::new()
@@ -176,7 +176,7 @@ impl WasmaticAddAppUi {
                         true => None,
                         false => {
                             Some(html!("div", {
-                                .class([&*TEXT_SIZE_SM, &*Color::Red.class()])
+                                .class([FontSize::Body.class(), &*&*COLOR_TEXT_INTERACTIVE_ERROR])
                                 .children(missing.iter().map(|missing| {
                                     html!("div", {
                                         .text(&format!("Missing: {}", missing))
@@ -191,7 +191,7 @@ impl WasmaticAddAppUi {
             .child_signal(state.loader.is_loading().map(|is_loading| {
                 match is_loading {
                     true => Some(html!("div", {
-                        .class(&*TEXT_SIZE_MD)
+                        .class(FontSize::Body.class())
                         .text("Uploading...")
                     })),
                     false => None
@@ -201,7 +201,7 @@ impl WasmaticAddAppUi {
                 match success {
                     Some(msg) => Some(html!("div", {
                         .child(html!("div", {
-                            .class([&*TEXT_SIZE_MD, Color::Accent.class()])
+                            .class([FontSize::Body.class(), ColorText::Brand.color_class()])
                             .text(&msg)
                         }))
                     })),
@@ -211,7 +211,7 @@ impl WasmaticAddAppUi {
             .child_signal(state.error.signal_cloned().map(|error| {
                 match error {
                     Some(error) => Some(html!("div", {
-                        .class([&*TEXT_SIZE_SM, Color::Red.class()])
+                        .class([FontSize::Body.class(), &*COLOR_TEXT_INTERACTIVE_ERROR])
                         .text(&error)
                     })),
                     None => None

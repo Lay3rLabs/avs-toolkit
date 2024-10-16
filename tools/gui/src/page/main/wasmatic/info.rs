@@ -58,11 +58,11 @@ impl WasmaticInfoUi {
                     }
                 }
             }))
-            .class([&*CONTAINER, &*TEXT_SIZE_LG])
+            .class([&*CONTAINER, FontSize::Header.class()])
             .child_signal(state.error.signal_cloned().map(|error| {
                 error.map(|error| {
                     html!("div", {
-                        .class(Color::Red.class())
+                        .class(&*COLOR_TEXT_INTERACTIVE_ERROR)
                         .text(&error)
                     })
                 })

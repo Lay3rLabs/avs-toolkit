@@ -3,7 +3,7 @@ pub use crate::{
     client::{client_event_receiver, http_client, query_client, signing_client, ClientEvent},
     config::CONFIG,
     route::{ContractRoute, Route, WalletRoute, WasmaticRoute},
-    theme::{color::*, misc::*, typography::*},
+    theme::{color::*, filters::*, misc::*, typography::*},
     util::mixins::*,
 };
 pub use anyhow::{anyhow, bail, Context as AnyhowContext, Result};

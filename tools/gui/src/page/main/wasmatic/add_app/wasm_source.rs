@@ -167,7 +167,7 @@ impl WasmSourceUi {
             .child_signal(file_loader.is_loading().map(|is_loading| {
                 match is_loading {
                     true => Some(html!("div", {
-                        .class(&*TEXT_SIZE_MD)
+                        .class(FontSize::Body.class())
                         .text("Loading...")
                     })),
                     false => None

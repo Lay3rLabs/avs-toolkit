@@ -69,7 +69,7 @@ impl PermissionsUi {
                 match error {
                     Some(error) => {
                         Some(html!("div", {
-                            .class([&*TEXT_SIZE_MD, Color::Red.class()])
+                            .class([FontSize::Body.class(), &*COLOR_TEXT_INTERACTIVE_ERROR])
                             .text(&error)
                         }))
                     },

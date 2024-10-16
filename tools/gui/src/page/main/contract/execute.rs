@@ -112,7 +112,7 @@ impl ContractExecuteUi {
             .child_signal(state.loader.is_loading().map(|is_loading| {
                 match is_loading {
                     true => Some(html!("div", {
-                        .class(&*TEXT_SIZE_MD)
+                        .class(FontSize::Body.class())
                         .text("Uploading...")
                     })),
                     false => None
@@ -122,7 +122,7 @@ impl ContractExecuteUi {
                 match success {
                     Some(tx_resp) => Some(html!("div", {
                         .child(html!("div", {
-                            .class([&*TEXT_SIZE_MD, Color::Darkish.class()])
+                            .class([FontSize::Body.class(), ColorText::Brand.color_class()])
                             .text(&format!("Contract executed! tx hash: {}", tx_resp.txhash))
                         }))
                     })),
@@ -132,7 +132,7 @@ impl ContractExecuteUi {
             .child_signal(state.error.signal_cloned().map(|error| {
                 match error {
                     Some(error) => Some(html!("div", {
-                        .class([&*TEXT_SIZE_SM, Color::Red.class()])
+                        .class([FontSize::Body.class(), &*COLOR_TEXT_INTERACTIVE_ERROR])
                         .text(&error)
                     })),
                     None => None

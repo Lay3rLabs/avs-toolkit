@@ -25,6 +25,8 @@ impl MainUi {
         static CONTAINER: LazyLock<String> = LazyLock::new(|| {
             class! {
                 .style("display", "flex")
+                .style_signal("background-color", ColorBackground::Base.signal())
+                .style_signal("color", ColorText::Body.signal())
             }
         });
 
@@ -32,7 +34,7 @@ impl MainUi {
             class! {
                 .style("flex-shrink", "0")
                 .style("min-height", "100vh")
-                .style("background-color", Color::GreyAlt2.hex_str())
+                .style_signal("border-right", ColorBorder::Base.signal())
             }
         });
 
