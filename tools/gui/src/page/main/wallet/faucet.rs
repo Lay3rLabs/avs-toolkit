@@ -48,7 +48,7 @@ impl WalletFaucetUi {
                 }))).await;
             }))
             .child(html!("div", {
-                .class(&*TEXT_SIZE_XLG)
+                .class(FontSize::Hero.class())
                 .text_signal(state.balance.signal().map(clone!(state => move |balance| {
                     format!("Balance: {:.2}{}", balance, query_client().chain_config.gas_denom)
                 })))
@@ -71,7 +71,7 @@ impl WalletFaucetUi {
             .child_signal(state.loader.is_loading().map(|is_loading| {
                 match is_loading {
                     true => Some(html!("div", {
-                        .class(&*TEXT_SIZE_MD)
+                        .class(FontSize::Body.class())
                         .text("Getting tokens...")
                     })),
                     false => None

@@ -62,6 +62,9 @@ features = [
     "File",
     "Window",
     "Url",
+    "MediaQueryList",
+    "MediaQueryListEvent",
+    "Storage"
 ]
 
 [lib]

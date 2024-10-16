@@ -9,17 +9,13 @@ use crate::prelude::*;
 pub enum ButtonSize {
     Sm,
     Lg,
-    Md,
-    Xlg,
 }
 
 impl ButtonSize {
     pub fn text_size_class(self) -> &'static str {
         match self {
-            Self::Sm => &*TEXT_SIZE_SM,
-            Self::Lg => &*TEXT_SIZE_LG,
-            Self::Md => &*TEXT_SIZE_MD,
-            Self::Xlg => &*TEXT_SIZE_XLG,
+            Self::Sm => FontSize::ButtonSmall.class(),
+            Self::Lg => FontSize::Button.class(),
         }
     }
 
@@ -45,49 +41,111 @@ impl ButtonSize {
 
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum ButtonColor {
-    Accent,
-    Orange,
-    Red,
-    Green,
+    Regular,
+    Branded,
 }
+
+static BG_COLOR_REGULAR: LazyLock<String> = LazyLock::new(|| {
+    class! {
+        .style_signal("background-color", ColorBackground::Button.signal())
+    }
+});
+
+static BG_COLOR_REGULAR_HOVER: LazyLock<String> = LazyLock::new(|| {
+    class! {
+        .style_signal("background-color", ColorBackgroundButton::Hover.signal())
+    }
+});
+
+static BG_COLOR_REGULAR_DISABLED: LazyLock<String> = LazyLock::new(|| {
+    class! {
+        .style_signal("background-color", ColorBackgroundButton::Disabled.signal())
+    }
+});
+
+static BG_COLOR_BRANDED_PRIMARY: LazyLock<String> = LazyLock::new(|| {
+    class! {
+        .style_signal("background-color", ColorBranded::Primary.signal())
+    }
+});
+
+static BG_COLOR_BRANDED_PRIMARY_HOVER: LazyLock<String> = LazyLock::new(|| {
+    class! {
+        .style_signal("background-color", ColorBrandedPrimary::Hover.signal())
+    }
+});
+
+static BG_COLOR_BRANDED_PRIMARY_DISABLED: LazyLock<String> = LazyLock::new(|| {
+    class! {
+        .style_signal("background-color", ColorBrandedPrimary::Disabled.signal())
+    }
+});
+
+static COLOR_REGULAR: LazyLock<String> = LazyLock::new(|| {
+    class! {
+        .style_signal("color", ColorTextInteractiveButton::Primary.signal())
+    }
+});
+
+static COLOR_REGULAR_DISABLED: LazyLock<String> = LazyLock::new(|| {
+    class! {
+        .style_signal("color", ColorTextInteractiveButton::Disabled.signal())
+    }
+});
+
+static COLOR_BRANDED_PRIMARY: LazyLock<String> = LazyLock::new(|| {
+    class! {
+        .style_signal("color", ColorBrandedPrimary::Text.signal())
+    }
+});
+
+static COLOR_BRANDED_PRIMARY_DISABLED: LazyLock<String> = LazyLock::new(|| {
+    class! {
+        .style_signal("color", ColorBrandedPrimary::TextDisabled.signal())
+    }
+});
 
 impl ButtonColor {
     pub fn bg_class(&self) -> &'static str {
         match self {
-            Self::Accent => Color::Accent.class_bg(),
-            Self::Orange => Color::Orange.class_bg(),
-            Self::Red => Color::Red.class_bg(),
-            Self::Green => Color::Green.class_bg(),
+            Self::Regular => &BG_COLOR_REGULAR,
+            Self::Branded => &BG_COLOR_BRANDED_PRIMARY,
         }
     }
 
     pub fn bg_hover_class(&self) -> &'static str {
         match self {
-            Self::Accent => Color::AccentDarker.class_bg(),
-            Self::Orange => Color::OrangeDarker.class_bg(),
-            Self::Red => Color::RedDarker.class_bg(),
-            Self::Green => Color::GreenDarker.class_bg(),
+            Self::Regular => &BG_COLOR_REGULAR_HOVER,
+            Self::Branded => &BG_COLOR_BRANDED_PRIMARY_HOVER,
         }
     }
 
     pub fn color_class(&self) -> &'static str {
-        Color::Whiteish.class()
+        match self {
+            Self::Regular => &COLOR_REGULAR,
+            Self::Branded => &COLOR_BRANDED_PRIMARY,
+        }
     }
 
     pub fn color_hover_class(&self) -> &'static str {
-        Color::Whiteish.class()
+        match self {
+            Self::Regular => &COLOR_REGULAR,
+            Self::Branded => &COLOR_BRANDED_PRIMARY,
+        }
     }
 
     pub fn bg_disabled_class(self) -> &'static str {
-        Color::Grey.class_bg()
-    }
-
-    pub fn border_disabled_class(self) -> &'static str {
-        Color::Grey.class_border()
+        match self {
+            Self::Regular => &BG_COLOR_REGULAR_DISABLED,
+            Self::Branded => &BG_COLOR_BRANDED_PRIMARY_DISABLED,
+        }
     }
 
     pub fn color_disabled_class(self) -> &'static str {
-        Color::Whiteish.class()
+        match self {
+            Self::Regular => &COLOR_REGULAR_DISABLED,
+            Self::Branded => &COLOR_BRANDED_PRIMARY_DISABLED,
+        }
     }
 }
 
@@ -111,7 +169,7 @@ impl Button {
         Self {
             size: ButtonSize::Lg,
             style: ButtonStyle::Solid,
-            color: ButtonColor::Accent,
+            color: ButtonColor::Branded,
             text: "".to_string(),
             disabled_signal: None,
             on_click: None,

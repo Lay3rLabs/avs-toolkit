@@ -19,7 +19,7 @@ impl WasmaticRunUi {
         });
 
         html!("div", {
-            .class([&*CONTAINER, &*TEXT_SIZE_LG])
+            .class([&*CONTAINER, FontSize::Header.class()])
             .children(&mut [
                 html!("div", {
                     .text("TODO: Wasmatic Run")

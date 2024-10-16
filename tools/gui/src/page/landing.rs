@@ -67,7 +67,7 @@ impl LandingUi {
             .child(html!("div", {
                 .class(&*CONTENT)
                 .child(html!("div", {
-                    .class([&*TEXT_SIZE_H2, &*TEXT_WEIGHT_BOLD, &*TEXT_ALIGN_CENTER])
+                    .class([FontSize::Hero.class(), FontWeight::Bold.class(), &*TEXT_ALIGN_CENTER])
                     .text("Lay3r Demo")
                 }))
                 .child(html!("div", {
@@ -172,7 +172,7 @@ impl LandingUi {
                     },
                     Phase::Connecting => {
                         html!("div", {
-                            .class(&*TEXT_SIZE_LG)
+                            .class(FontSize::Header.class())
                             .text("Connecting...")
                         })
                     },
@@ -184,7 +184,7 @@ impl LandingUi {
                     },
                     Phase::InstallingKeplr => {
                         html!("div", {
-                            .class(&*TEXT_SIZE_LG)
+                            .class(FontSize::Header.class())
                             .text("Installing Keplr...")
                         })
                     },
@@ -282,7 +282,7 @@ impl LandingUi {
                             }))
                             .with_mixin(|dom| {
                                 dom
-                                    .class(&*TEXT_SIZE_MD)
+                                    .class(FontSize::Body.class())
                                     .style("max-width", "90%")
                                     .style("width", "40rem")
                                     .style("height", "10rem")
@@ -304,7 +304,7 @@ impl LandingUi {
             .apply_if(error.is_some(), |dom| {
                 dom.child(html!("div", {
                     .style("margin-top", "1rem")
-                    .class([&*TEXT_SIZE_MD, Color::Red.class()])
+                    .class([FontSize::Body.class(), &*COLOR_TEXT_INTERACTIVE_ERROR])
                     .text(error.as_ref().unwrap_ext())
                 }))
             })

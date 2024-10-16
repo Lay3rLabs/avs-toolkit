@@ -132,7 +132,7 @@ impl TextInput {
                 dom.child(html!("div", {
                     .style("margin-top", "0.625rem")
                     .style("cursor", "pointer")
-                    .class(&*TEXT_SIZE_MD)
+                    .class(FontSize::Body.class())
                     .class(&*USER_SELECT_NONE)
                     .text_signal(show_password.signal().map(|show_password| {
                         if show_password {

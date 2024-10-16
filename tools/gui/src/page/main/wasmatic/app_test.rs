@@ -41,7 +41,7 @@ impl WasmaticTestAppUi {
         html!("div", {
             .class(&*CONTAINER)
             .child(html!("div", {
-                .class(&*TEXT_SIZE_LG)
+                .class(FontSize::Header.class())
                 .style("margin-bottom", "1rem")
                 .text("Current Wasmatic Apps")
             }))
@@ -96,7 +96,7 @@ impl WasmaticTestAppUi {
                 match error {
                     None => None,
                     Some(error) => Some(html!("div", {
-                        .class([&*TEXT_SIZE_LG, &*Color::Red.class()])
+                        .class([FontSize::Header.class(), &*&*COLOR_TEXT_INTERACTIVE_ERROR])
                         .text(&error)
                     }))
                 }
@@ -138,7 +138,7 @@ impl WasmaticTestAppUi {
             .child_signal(state.test_loader.is_loading().map(|loading| {
                 if loading {
                     Some(html!("div", {
-                        .class(&*TEXT_SIZE_LG)
+                        .class(FontSize::Header.class())
                         .text("Testing...")
                     }))
                 } else {

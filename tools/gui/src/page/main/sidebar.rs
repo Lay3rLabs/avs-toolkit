@@ -1,8 +1,12 @@
 use std::sync::LazyLock;
 
+use dominator::ColorScheme;
+use scheme::{color_scheme_signal, set_color_scheme};
 use wasm_bindgen_futures::spawn_local;
 
-use crate::{prelude::*, route::TaskQueueRoute, util::mixins::handle_on_click};
+use crate::{
+    page::logo::LogoSvg, prelude::*, route::TaskQueueRoute, util::mixins::handle_on_click,
+};
 
 pub struct Sidebar {}
 
@@ -17,6 +21,22 @@ impl Sidebar {
                 .style("margin-top", "1rem")
                 .style("display", "flex")
                 .style("flex-direction", "column")
+            }
+        });
+        static LOGO: LazyLock<String> = LazyLock::new(|| {
+            class! {
+                .style("display", "flex")
+                .style("align-items", "center")
+                .style("margin-left", "1rem")
+                .style("margin-bottom", "2.75rem")
+                .style("gap", ".75rem")
+            }
+        });
+
+        static MENU: LazyLock<String> = LazyLock::new(|| {
+            class! {
+                .style("display", "flex")
+                .style("flex-direction", "column")
                 .style("gap", "1.3125rem")
                 .style("align-items", "flex-start")
             }
@@ -24,30 +44,42 @@ impl Sidebar {
 
         html!("div", {
             .class(&*CONTAINER)
-            .children([
-                self.render_section("Task Queue", vec![
-                    Route::TaskQueue(TaskQueueRoute::AddTask),
-                    Route::TaskQueue(TaskQueueRoute::ViewQueue),
-                ]),
-                self.render_section("Wasmatic", vec![
-                    Route::Wasmatic(WasmaticRoute::AddApp),
-                    Route::Wasmatic(WasmaticRoute::ListApps),
-                    Route::Wasmatic(WasmaticRoute::TestApp),
-                    Route::Wasmatic(WasmaticRoute::Info),
-                ]),
-                self.render_section("Wallet", vec![
-                    Route::Wallet(WalletRoute::Faucet),
-                ]),
-                self.render_section("Contract", vec![
-                    Route::Contract(ContractRoute::Upload),
-                    Route::Contract(ContractRoute::Instantiate),
-                    Route::Contract(ContractRoute::Execute),
-                    Route::Contract(ContractRoute::Query),
-                ]),
-                self.render_section("Block", vec![
-                    Route::BlockEvents,
-                ]),
-            ])
+            .child(html!("div", {
+                .class(&*MENU)
+                .child(html!("div", {
+                    .class(&*LOGO)
+                    .child(LogoSvg::render())
+                    .child(html!("div", {
+                        .class(FontSize::Header.class())
+                        .text("Layer AVS Toolkit")
+                    }))
+                }))
+                .children([
+                    self.render_section("Task Queue", vec![
+                        Route::TaskQueue(TaskQueueRoute::AddTask),
+                        Route::TaskQueue(TaskQueueRoute::ViewQueue),
+                    ]),
+                    self.render_section("Wasmatic", vec![
+                        Route::Wasmatic(WasmaticRoute::AddApp),
+                        Route::Wasmatic(WasmaticRoute::ListApps),
+                        Route::Wasmatic(WasmaticRoute::TestApp),
+                        Route::Wasmatic(WasmaticRoute::Info),
+                    ]),
+                    self.render_section("Wallet", vec![
+                        Route::Wallet(WalletRoute::Faucet),
+                    ]),
+                    self.render_section("Contract", vec![
+                        Route::Contract(ContractRoute::Upload),
+                        Route::Contract(ContractRoute::Instantiate),
+                        Route::Contract(ContractRoute::Execute),
+                        Route::Contract(ContractRoute::Query),
+                    ]),
+                    self.render_section("Block", vec![
+                        Route::BlockEvents,
+                    ]),
+                ])
+            }))
+            .child(render_color_scheme_toggle())
         })
     }
 
@@ -62,6 +94,7 @@ impl Sidebar {
         static TITLE: LazyLock<String> = LazyLock::new(|| {
             class! {
                 .style("margin-left", "1rem")
+                .style_signal("color", ColorText::Secondary.signal())
             }
         });
 
@@ -73,7 +106,7 @@ impl Sidebar {
             .class(&*CONTAINER)
             .children([
                 html!("div", {
-                    .class([&*TEXT_SIZE_LG, &*TITLE, Color::Grey.class()])
+                    .class([FontSize::Caption.class(), &*TITLE])
                     .text(title)
                 }),
                 html!("div", {
@@ -82,6 +115,7 @@ impl Sidebar {
                         self.render_button(route)
                     }).collect::<Vec<Dom>>())
                 })
+
             ])
         })
     }
@@ -101,8 +135,7 @@ impl Sidebar {
 
         static SELECTED: LazyLock<String> = LazyLock::new(|| {
             class! {
-                    .style("background-color", Color::GreyAlt1.hex_str())
-                    .style("color", Color::Accent.hex_str())
+                .style_signal("background-color", ColorBackgroundInteractive::Selected.signal())
             }
         });
 
@@ -111,8 +144,8 @@ impl Sidebar {
         }));
 
         html!("div", {
-            .class([&*BUTTON_BG_CLASS, &*TEXT_SIZE_LG, &*USER_SELECT_NONE])
-            .class_signal([&*SELECTED, &*TEXT_WEIGHT_BOLD] , selected_sig)
+            .class([&*BUTTON_BG_CLASS, &*ColorText::Body.color_class(), FontSize::Primary.class(), &*USER_SELECT_NONE])
+            .class_signal([&*SELECTED, FontWeight::Bold.class()] , selected_sig)
 
             .text(match &route {
                 Route::Wallet(wallet_route) => match wallet_route {
@@ -142,4 +175,34 @@ impl Sidebar {
             }))
         })
     }
+}
+
+fn render_color_scheme_toggle() -> Dom {
+    let current = Arc::new(Mutex::new(None));
+
+    static CONTAINER: LazyLock<String> = LazyLock::new(|| {
+        class! {
+            .style("padding", "1rem")
+        }
+    });
+    html!("div", {
+        .future(color_scheme_signal().for_each(clone!(current => move |scheme| {
+            clone!(current => async move {
+                *current.lock().unwrap_ext() = Some(scheme);
+            })
+        })))
+        .class(&*CONTAINER)
+        .child(Button::new()
+            .with_text("Toggle Color Scheme")
+            .with_on_click(clone!(current => move || {
+                let new_scheme = match *current.lock().unwrap_ext() {
+                    Some(ColorScheme::Light) => ColorScheme::Dark,
+                    _ => ColorScheme::Light,
+                };
+
+                set_color_scheme(new_scheme);
+            }))
+            .render()
+        )
+    })
 }

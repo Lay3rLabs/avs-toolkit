@@ -34,7 +34,7 @@ impl ContractUploadUi {
         html!("div", {
             .class(&*CONTAINER)
             .child(html!("label", {
-                .class(&*TEXT_SIZE_MD)
+                .class(FontSize::Header.class())
                 .attr("for", "contract-upload")
                 .text("Choose a .wasm file")
             }))
@@ -90,7 +90,7 @@ impl ContractUploadUi {
             .child_signal(state.loader.is_loading().map(|is_loading| {
                 match is_loading {
                     true => Some(html!("div", {
-                        .class(&*TEXT_SIZE_MD)
+                        .class(FontSize::Body.class())
                         .text("Uploading...")
                     })),
                     false => None
@@ -100,11 +100,11 @@ impl ContractUploadUi {
                 match success {
                     Some((code_id, tx_resp)) => Some(html!("div", {
                         .child(html!("div", {
-                            .class([&*TEXT_SIZE_MD, Color::Darkish.class()])
+                            .class([FontSize::Body.class(), ColorText::Body.color_class()])
                             .text(&format!("Contract uploaded! Code ID: {}", code_id))
                         }))
                         .child(html!("div", {
-                            .class([&*TEXT_SIZE_SM, Color::Accent.class()])
+                            .class([FontSize::Body.class(), ColorText::Brand.color_class()])
                             .text(&format!("Tx Hash: {}", tx_resp.txhash))
                         }))
                     })),
@@ -114,7 +114,7 @@ impl ContractUploadUi {
             .child_signal(state.error.signal_cloned().map(|error| {
                 match error {
                     Some(error) => Some(html!("div", {
-                        .class([&*TEXT_SIZE_SM, Color::Red.class()])
+                        .class([FontSize::Body.class(), &*COLOR_TEXT_INTERACTIVE_ERROR])
                         .text(&error)
                     })),
                     None => None

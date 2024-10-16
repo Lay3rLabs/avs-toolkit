@@ -55,7 +55,7 @@ impl TaskQueueViewQueueUi {
             .child_signal(state.wasmatic_apps.signal_cloned().map(clone!(state => move |apps| {
                 Some(match apps {
                     None => html!("div", {
-                        .class(&*TEXT_SIZE_LG)
+                        .class(FontSize::Header.class())
                         .text("Loading...")
                     }),
                     Some(apps) => state.render_apps(apps)
@@ -102,14 +102,14 @@ impl TaskQueueViewQueueUi {
         html!("div", {
             .class(&*CONTAINER)
             .child(html!("div", {
-                .class(&*TEXT_SIZE_LG)
+                .class(FontSize::Header.class())
                 .text("Add Task")
             }))
             .child_signal(state.error.signal_cloned().map(clone!(state => move |error| {
                 match error {
                     None => None,
                     Some(error) => Some(html!("div", {
-                        .class([&*TEXT_SIZE_LG, &*Color::Red.class()])
+                        .class([FontSize::Header.class(), &*&*COLOR_TEXT_INTERACTIVE_ERROR])
                         .text(&error)
                     }))
                 }
@@ -182,7 +182,7 @@ impl TaskQueueViewQueueUi {
             .child_signal(state.view_task_loader.is_loading().map(|loading| {
                 if loading {
                     Some(html!("div", {
-                        .class(&*TEXT_SIZE_LG)
+                        .class(FontSize::Header.class())
                         .text("Loading...")
                     }))
                 } else {
@@ -193,7 +193,7 @@ impl TaskQueueViewQueueUi {
                 match result {
                     None => None,
                     Some((task_queue_addr, result)) => Some(html!("div", {
-                        .class([&*TEXT_SIZE_LG, &*CONTENT])
+                        .class([FontSize::Header.class(), &*CONTENT])
                         .children([
                             html!("div", {
                                 .class(&*RESULTS)
@@ -201,7 +201,7 @@ impl TaskQueueViewQueueUi {
                                     .text("Verifier Contract: ")
                                 }))
                                 .child(html!("div", {
-                                    .class(&*TEXT_WEIGHT_BOLD)
+                                    .class(FontWeight::Bold.class())
                                     .text(&result.verifier_addr.to_string())
                                 }))
                             }),
@@ -211,7 +211,7 @@ impl TaskQueueViewQueueUi {
                                     .text("Operator Contract: ")
                                 }))
                                 .child(html!("div", {
-                                    .class(&*TEXT_WEIGHT_BOLD)
+                                    .class(FontWeight::Bold.class())
                                     .text(&result.operator_addr.to_string())
                                 }))
                             }),
@@ -222,7 +222,7 @@ impl TaskQueueViewQueueUi {
                                     .child(html!("ul", {
                                         .children(result.operators.iter().map(|operator| {
                                             html!("li", {
-                                                .class(&*TEXT_WEIGHT_BOLD)
+                                                .class(FontWeight::Bold.class())
                                                 .text(&operator.address.to_string())
                                             })
                                         }))

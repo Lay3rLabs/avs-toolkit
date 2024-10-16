@@ -62,7 +62,7 @@ impl TaskQueueAddTaskUi {
             .child_signal(state.wasmatic_apps.signal_cloned().map(clone!(state => move |apps| {
                 Some(match apps {
                     None => html!("div", {
-                        .class(&*TEXT_SIZE_LG)
+                        .class(FontSize::Header.class())
                         .text("Loading...")
                     }),
                     Some(apps) => state.render_apps(apps)
@@ -85,7 +85,7 @@ impl TaskQueueAddTaskUi {
         html!("div", {
             .class(&*CONTAINER)
             .child(html!("div", {
-                .class(&*TEXT_SIZE_LG)
+                .class(FontSize::Header.class())
                 .text("Add Task")
             }))
             .child(Label::new()
@@ -154,7 +154,7 @@ impl TaskQueueAddTaskUi {
                 match error {
                     None => None,
                     Some(error) => Some(html!("div", {
-                        .class([&*TEXT_SIZE_LG, &*Color::Red.class()])
+                        .class([FontSize::Header.class(), &*&*COLOR_TEXT_INTERACTIVE_ERROR])
                         .text(&error)
                     }))
                 }
@@ -163,7 +163,7 @@ impl TaskQueueAddTaskUi {
                 match error {
                     None => None,
                     Some(error) => Some(html!("div", {
-                        .class([&*TEXT_SIZE_LG, &*Color::Red.class()])
+                        .class([FontSize::Header.class(), &*&*COLOR_TEXT_INTERACTIVE_ERROR])
                         .text(&error)
                     }))
                 }
@@ -172,7 +172,7 @@ impl TaskQueueAddTaskUi {
                 match error {
                     None => None,
                     Some(error) => Some(html!("div", {
-                        .class([&*TEXT_SIZE_LG, &*Color::Red.class()])
+                        .class([FontSize::Header.class(), &*&*COLOR_TEXT_INTERACTIVE_ERROR])
                         .text(&error)
                     }))
                 }
@@ -228,7 +228,7 @@ impl TaskQueueAddTaskUi {
             .child_signal(state.add_task_loader.is_loading().map(|loading| {
                 if loading {
                     Some(html!("div", {
-                        .class(&*TEXT_SIZE_LG)
+                        .class(FontSize::Header.class())
                         .text("Loading...")
                     }))
                 } else {

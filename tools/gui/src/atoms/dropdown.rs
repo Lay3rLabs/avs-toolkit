@@ -21,8 +21,8 @@ pub enum DropdownSize {
 impl DropdownSize {
     pub fn text_size_class(&self) -> &'static str {
         match self {
-            Self::Sm => &*TEXT_SIZE_SM,
-            Self::Md => &*TEXT_SIZE_MD,
+            Self::Sm => FontSize::ButtonSmall.class(),
+            Self::Md => FontSize::Body.class(),
         }
     }
 
@@ -124,6 +124,7 @@ where
                 .style("gap", "1rem")
                 .style("justify-content", "space-between")
                 .style("padding", "1rem")
+                .style_signal("background-color", ColorBackground::Base.signal())
             }
         });
 
@@ -141,7 +142,7 @@ where
             class! {
                 .style("border", "1px solid black")
                 .style("border-radius", "4px")
-                .style("background-color", "white")
+                .style_signal("background-color", ColorBackground::Base.signal())
                 .style("display", "flex")
                 .style("flex-direction", "column")
                 .style("gap", "1rem")
@@ -211,14 +212,15 @@ where
                                     let hovering = Mutable::new(false);
                                     html!("div", {
                                         .class(size.text_size_class())
+
                                         .text(&option.label)
                                         .style_signal("color", hovering.signal().map(|hovering| {
                                             if hovering {
-                                                Color::Accent.hex_str()
+                                                ColorBranded::Primary.signal().boxed()
                                             } else {
-                                                Color::Darkish.hex_str()
+                                                ColorText::Body.signal().boxed()
                                             }
-                                        }))
+                                        }).flatten())
                                         .event({
                                             clone!(selected, option, showing, on_change => move |_: events::Click| {
                                                 selected.set(Some(option.clone()));

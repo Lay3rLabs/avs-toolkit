@@ -220,7 +220,7 @@ impl TriggerUi {
             .child_signal(state.error.signal_cloned().map(|error| {
                 error.map(|error| {
                     html!("div", {
-                        .class([&*TEXT_SIZE_MD, Color::Red.class()])
+                        .class([FontSize::Body.class(), &*COLOR_TEXT_INTERACTIVE_ERROR])
                         .text(&error)
                     })
                 })

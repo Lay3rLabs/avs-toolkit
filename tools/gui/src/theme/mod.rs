@@ -1,4 +1,5 @@
 pub mod color;
+pub mod filters;
 pub mod misc;
 pub mod responsive;
 pub mod stylesheet;

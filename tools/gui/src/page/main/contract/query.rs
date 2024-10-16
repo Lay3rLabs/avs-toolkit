@@ -117,7 +117,7 @@ impl ContractQueryUi {
             .child_signal(state.loader.is_loading().map(|is_loading| {
                 match is_loading {
                     true => Some(html!("div", {
-                        .class(&*TEXT_SIZE_MD)
+                        .class(FontSize::Body.class())
                         .text("Uploading...")
                     })),
                     false => None
@@ -127,11 +127,11 @@ impl ContractQueryUi {
                 match success {
                     Some(resp) => Some(html!("div", {
                         .child(html!("div", {
-                            .class([&*TEXT_SIZE_MD, Color::Darkish.class()])
+                            .class([FontSize::Body.class(), ColorText::Body.color_class()])
                             .text(&format!("Contract queried! Response:"))
                         }))
                         .child(html!("div", {
-                            .class(&*TEXT_SIZE_MD)
+                            .class(FontSize::Body.class())
                             .text(&resp)
                         }))
                     })),
@@ -141,7 +141,7 @@ impl ContractQueryUi {
             .child_signal(state.error.signal_cloned().map(|error| {
                 match error {
                     Some(error) => Some(html!("div", {
-                        .class([&*TEXT_SIZE_SM, Color::Red.class()])
+                        .class([FontSize::Body.class(), &*COLOR_TEXT_INTERACTIVE_ERROR])
                         .text(&error)
                     })),
                     None => None
