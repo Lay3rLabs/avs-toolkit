@@ -19,7 +19,7 @@ impl TryFrom<&Event> for TaskExecutedEvent {
     type Error = StdError;
 
     fn try_from(event: &Event) -> Result<Self, Self::Error> {
-        if Self::is_type(&event.ty) {
+        if !Self::is_type(&event.ty) {
             return Err(StdError::generic_err(format!(
                 "expected type was {}, but got {}",
                 Self::NAME,
@@ -89,5 +89,57 @@ impl From<TaskExecutedEvent> for Event {
             ("operator", value.operator.to_string()),
             ("completed", value.completed.to_string()),
         ])
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use cosmwasm_std::Event;
+    use std::convert::TryFrom;
+
+    #[test]
+    fn task_executed_event_simple_parsing() {
+        let og_event = TaskExecutedEvent {
+            task_id: TaskId::new(7),
+            task_queue: "queue_address".to_string(),
+            operator: "operator_address".to_string(),
+            completed: true,
+        };
+
+        let cosm_event: Event = og_event.clone().into();
+
+        let parsed_event = TaskExecutedEvent::try_from(&cosm_event).expect("failed to parse event");
+
+        assert_eq!(og_event, parsed_event);
+    }
+
+    #[test]
+    fn task_executed_event_with_missing_attribute() {
+        let cosm_event = Event::new(TaskExecutedEvent::NAME).add_attributes([
+            ("task_id", "7"),
+            ("task_queue", "queue_address"),
+            // we skip the operator attribute
+            ("completed", "true"),
+        ]);
+
+        let result = TaskExecutedEvent::try_from(&cosm_event);
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn task_executed_event_with_incorrect_attribute_key() {
+        let cosm_event = Event::new(TaskExecutedEvent::NAME).add_attributes([
+            // the typo
+            ("task_idd", "7"),
+            ("task_queue", "queue_address"),
+            ("operator", "operator_address"),
+            ("completed", "true"),
+        ]);
+
+        let result = TaskExecutedEvent::try_from(&cosm_event);
+
+        assert!(result.is_err());
     }
 }

@@ -51,8 +51,8 @@ impl TypedEvent for OracleExecutedEvent {
 impl TryFrom<&Event> for OracleExecutedEvent {
     type Error = StdError;
 
-    fn try_from(event: &Event) -> Result<Self, Self::Error> {
-        if Self::is_type(&event.ty) {
+    fn try_from(event: &Event) -> StdResult<Self> {
+        if !Self::is_type(&event.ty) {
             return Err(StdError::generic_err(format!(
                 "expected type was {}, but got {}",
                 Self::NAME,
@@ -89,11 +89,11 @@ impl TryFrom<&Event> for OracleExecutedEvent {
             }
         }
 
-        match (task_id, status, new_price, task_queue_contract) {
-            (Some(task_id), Some(status), Some(new_price), Some(task_queue_contract)) => Ok(Self {
+        match (task_id, status, task_queue_contract) {
+            (Some(task_id), Some(status), Some(task_queue_contract)) => Ok(Self {
                 task_id,
                 status,
-                new_price: Some(new_price),
+                new_price,
                 task_queue_contract,
             }),
             _ => Err(StdError::generic_err(format!(
@@ -141,5 +141,144 @@ impl From<OracleExecutedEvent> for Event {
         event = event.add_attributes(attributes);
 
         event
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use cosmwasm_std::{Decimal, Event};
+    use std::convert::TryFrom;
+
+    #[test]
+    fn oracle_executed_event_with_new_price() {
+        let original_event = OracleExecutedEvent {
+            task_id: TaskId::new(1),
+            status: OracleExecutionStatus::ThresholdMet,
+            // 1.5
+            new_price: Some(Decimal::percent(150)),
+            task_queue_contract: "task_queue_contract_addr".to_string(),
+        };
+
+        let cosm_event: Event = original_event.clone().into();
+
+        let parsed_event =
+            OracleExecutedEvent::try_from(&cosm_event).expect("failed to parse event");
+
+        assert_eq!(original_event, parsed_event);
+    }
+
+    #[test]
+    fn oracle_executed_event_without_new_price() {
+        let original_event = OracleExecutedEvent {
+            task_id: TaskId::new(2),
+            status: OracleExecutionStatus::VoteStored,
+            new_price: None,
+            task_queue_contract: "task_queue_contract_addr".to_string(),
+        };
+
+        let cosm_event: Event = original_event.clone().into();
+
+        let parsed_event =
+            OracleExecutedEvent::try_from(&cosm_event).expect("failed to parse event");
+
+        assert_eq!(original_event, parsed_event);
+    }
+
+    #[test]
+    fn oracle_executed_event_missing_required_fields() {
+        let cosm_event = Event::new(OracleExecutedEvent::NAME).add_attributes(vec![
+            Attribute {
+                key: "task_id".to_string(),
+                value: "3".to_string(),
+            },
+            // no `status` and `price`
+            Attribute {
+                key: "task_queue_contract".to_string(),
+                value: "task_queue_contract_addr".to_string(),
+            },
+        ]);
+
+        let result = OracleExecutedEvent::try_from(&cosm_event);
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn oracle_executed_event_incorrect_attribute_key() {
+        let cosm_event = Event::new(OracleExecutedEvent::NAME).add_attributes(vec![
+            Attribute {
+                // incorrect key
+                key: "task_idd".to_string(),
+                value: "4".to_string(),
+            },
+            Attribute {
+                key: "status".to_string(),
+                value: "threshold_met".to_string(),
+            },
+            Attribute {
+                key: "task_queue_contract".to_string(),
+                value: "task_queue_contract_addr".to_string(),
+            },
+            Attribute {
+                key: "new_price".to_string(),
+                value: "1.5".to_string(),
+            },
+        ]);
+
+        let result = OracleExecutedEvent::try_from(&cosm_event);
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn oracle_executed_event_invalid_status() {
+        let cosm_event = Event::new(OracleExecutedEvent::NAME).add_attributes(vec![
+            Attribute {
+                key: "task_id".to_string(),
+                value: "5".to_string(),
+            },
+            Attribute {
+                key: "status".to_string(),
+                // no such status
+                value: "invalid_status".to_string(),
+            },
+            Attribute {
+                key: "task_queue_contract".to_string(),
+                value: "task_queue_contract_addr".to_string(),
+            },
+        ]);
+
+        let result = OracleExecutedEvent::try_from(&cosm_event);
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn oracle_executed_event_invalid_new_price() {
+        let cosm_event = Event::new(OracleExecutedEvent::NAME).add_attributes(vec![
+            Attribute {
+                key: "task_id".to_string(),
+                value: "6".to_string(),
+            },
+            Attribute {
+                key: "status".to_string(),
+                value: "threshold_met".to_string(),
+            },
+            Attribute {
+                key: "task_queue_contract".to_string(),
+                value: "task_queue_contract_addr".to_string(),
+            },
+            Attribute {
+                key: "new_price".to_string(),
+                value: "invalid_decimal".to_string(),
+            },
+        ]);
+
+        // Attempt to parse the event
+        let result = OracleExecutedEvent::try_from(&cosm_event);
+
+        // Assert that parsing fails
+        assert!(result.is_err());
     }
 }
