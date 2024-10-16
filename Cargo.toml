@@ -1,5 +1,5 @@
 [workspace]
-members = ["packages/*", "contracts/*", "wasi/square", "wasi/oracle-example", "tools/cli", "tools/gui"]
+members = ["packages/*", "contracts/*","wasi/square", "wasi/oracle-example", "tools/cli", "tools/gui", "tools/shared"]
 resolver = "2"
 
 [workspace.package]
@@ -10,10 +10,11 @@ repository    = "https://github.com/Lay3rLabs/avs-toolkit"
 rust-version = "1.80.0"
 
 [workspace.dependencies]
-lavs-mock-operators = { path = "contracts/mock-operators" }
-lavs-task-queue = { path = "contracts/task-queue" }
-lavs-verifier-simple = { path = "contracts/verifier-simple" }
-lavs-oracle-verifier = { path = "contracts/oracle-verifier" }
+lavs-mock-operators = { path = "contracts/mock-operators", features = ["library"]}
+lavs-task-queue = { path = "contracts/task-queue", features = ["library"] }
+lavs-verifier-simple = { path = "contracts/verifier-simple", features = ["library"] }
+lavs-oracle-verifier = { path = "contracts/oracle-verifier", features = ["library"] }
+avs-toolkit-shared = { path = "tools/shared" }
 
 lavs-apis = { path = "packages/apis" }
 lavs-orch = { path = "packages/orch" }
@@ -56,9 +57,9 @@ dotenvy = {version = "0.15.7", features = ["cli"]}
 tracing-subscriber = "0.3.18"
 bip39 = "2.0.0"
 rand = "0.8"
-layer-climb = { git = "https://github.com/Lay3rLabs/climb.git", rev = "6771bf76f2ba76683082caa87e0bf10a98eb6436" }
-layer-climb-cli = { git = "https://github.com/Lay3rLabs/climb.git", rev = "6771bf76f2ba76683082caa87e0bf10a98eb6436" }
-reqwest = { version = "0.11", features = ["json", "rustls-tls", "stream", "blocking", "multipart"] }
+layer-climb = { git = "https://github.com/Lay3rLabs/climb.git", rev = "6e8fa0b15ae736ef82e8dcd8d72715b4d7010444" }
+layer-climb-cli = { git = "https://github.com/Lay3rLabs/climb.git", rev = "6e8fa0b15ae736ef82e8dcd8d72715b4d7010444" }
+reqwest = {version = "0.12.5", features=["json"]} 
 sha2 = "0.10"
 # purposefully left in for now to make debugging easier, will remove eventually:
 # layer-climb = { path = "../climb/packages/layer-climb" }
@@ -75,6 +76,8 @@ dominator_helpers = "0.8.0"
 futures-signals = "0.3.34"
 gloo-events = "0.2.0"
 gloo-timers = {version = "0.3.0", features = ["futures"]}
+# TODO: waiting for https://github.com/smol-rs/async-broadcast/pull/61 to land
+async-broadcast = { git = "https://github.com/smol-rs/async-broadcast.git", rev="de420a3b6e72939d96250573c7c242d0ff195424"}
 
 # wasi stuff
 wit-bindgen-rt = { version = "0.32.0", features = ["bitflags"] }

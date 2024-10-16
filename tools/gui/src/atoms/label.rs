@@ -4,7 +4,7 @@ pub struct Label {
     pub text: String,
     pub direction: LabelDirection,
     pub size: LabelSize,
-    pub color: Color,
+    pub color: ColorText,
 }
 
 pub enum LabelDirection {
@@ -19,7 +19,7 @@ pub enum LabelSize {
 impl LabelSize {
     pub fn class(&self) -> &'static str {
         match self {
-            LabelSize::Md => &*TEXT_SIZE_MD,
+            LabelSize::Md => FontSize::Body.class(),
         }
     }
 }
@@ -30,7 +30,7 @@ impl Label {
             text: "".to_string(),
             direction: LabelDirection::Row,
             size: LabelSize::Md,
-            color: Color::Darkish,
+            color: ColorText::Body,
         }
     }
 
@@ -49,7 +49,7 @@ impl Label {
         self
     }
 
-    pub fn with_color(mut self, color: Color) -> Self {
+    pub fn with_color(mut self, color: ColorText) -> Self {
         self.color = color;
         self
     }
@@ -86,7 +86,7 @@ impl Label {
                 LabelDirection::Column => &*COLUMN
             })
             .child(html!("label", {
-                .class([color.class(), size.class()])
+                .class([color.color_class(), size.class()])
                 .text(&text)
             }))
             .child(child)

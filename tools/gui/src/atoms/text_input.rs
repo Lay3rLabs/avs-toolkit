@@ -39,12 +39,22 @@ impl TextInput {
     }
 
     pub fn with_placeholder(mut self, placeholder: impl ToString) -> Self {
-        self.placeholder = Some(placeholder.to_string());
+        let placeholder = placeholder.to_string();
+        self.placeholder = if placeholder.is_empty() {
+            None
+        } else {
+            Some(placeholder)
+        };
         self
     }
 
     pub fn with_intial_value(mut self, value: impl ToString) -> Self {
-        self.initial_value = Some(value.to_string());
+        let initial_value = value.to_string();
+        self.initial_value = if initial_value.is_empty() {
+            None
+        } else {
+            Some(initial_value)
+        };
         self
     }
 
@@ -122,7 +132,7 @@ impl TextInput {
                 dom.child(html!("div", {
                     .style("margin-top", "0.625rem")
                     .style("cursor", "pointer")
-                    .class(&*TEXT_SIZE_MD)
+                    .class(FontSize::Body.class())
                     .class(&*USER_SELECT_NONE)
                     .text_signal(show_password.signal().map(|show_password| {
                         if show_password {

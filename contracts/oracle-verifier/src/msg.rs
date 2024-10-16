@@ -1,12 +1,7 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Addr, Decimal};
+use cosmwasm_std::Decimal;
 use cw_orch::ExecuteFns;
-use lavs_apis::{
-    id::TaskId,
-    verifier_simple::{OperatorVoteInfoResponse, TaskInfoResponse},
-};
-
-use crate::state::Config;
+use lavs_apis::id::TaskId;
 
 #[cw_serde]
 pub struct InstantiateMsg {
@@ -42,17 +37,17 @@ pub enum ExecuteMsg {
 #[cw_orch(disable_fields_sorting)]
 #[derive(QueryResponses)]
 pub enum QueryMsg {
-    #[returns(Config)]
+    #[returns(crate::state::Config)]
     Config {},
     /// Ordered by completion time descending (last completed first)
-    #[returns(Option<TaskInfoResponse>)]
+    #[returns(Option<lavs_apis::verifier_simple::TaskInfoResponse>)]
     TaskInfo {
         /// The task contract we are interested in
         task_contract: String,
         /// The ID of the task we are interested in
         task_id: TaskId,
     },
-    #[returns(Option<OperatorVoteInfoResponse>)]
+    #[returns(Option<lavs_apis::verifier_simple::OperatorVoteInfoResponse>)]
     OperatorVote {
         /// The task contract we are interested in
         task_contract: String,
@@ -61,6 +56,6 @@ pub enum QueryMsg {
         /// The operator whose vote we are interested in
         operator: String,
     },
-    #[returns(Vec<Addr>)]
+    #[returns(Vec<cosmwasm_std::Addr>)]
     SlashableOperators {},
 }

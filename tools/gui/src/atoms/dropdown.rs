@@ -1,8 +1,6 @@
 use crate::{prelude::*, theme::z_index::Zindex, util::mixins::set_on_hover};
 
 pub struct Dropdown<T> {
-    pub label: Option<String>,
-    pub label_color: Color,
     pub options: Vec<Arc<DropdownOption<T>>>,
     pub initial_selected: Option<T>,
     pub size: DropdownSize,
@@ -23,8 +21,8 @@ pub enum DropdownSize {
 impl DropdownSize {
     pub fn text_size_class(&self) -> &'static str {
         match self {
-            Self::Sm => &*TEXT_SIZE_SM,
-            Self::Md => &*TEXT_SIZE_MD,
+            Self::Sm => FontSize::ButtonSmall.class(),
+            Self::Md => FontSize::Body.class(),
         }
     }
 
@@ -71,23 +69,11 @@ where
 {
     pub fn new() -> Self {
         Self {
-            label: None,
-            label_color: Color::Darkish,
             options: Vec::new(),
             initial_selected: None,
             size: DropdownSize::Md,
             on_change: None,
         }
-    }
-
-    pub fn with_label(mut self, label: impl Into<String>) -> Self {
-        self.label = Some(label.into());
-        self
-    }
-
-    pub fn with_label_color(mut self, label_color: Color) -> Self {
-        self.label_color = label_color;
-        self
     }
 
     pub fn with_options(mut self, options: impl IntoIterator<Item = (String, T)>) -> Self {
@@ -138,6 +124,7 @@ where
                 .style("gap", "1rem")
                 .style("justify-content", "space-between")
                 .style("padding", "1rem")
+                .style_signal("background-color", ColorBackground::Base.signal())
             }
         });
 
@@ -155,7 +142,7 @@ where
             class! {
                 .style("border", "1px solid black")
                 .style("border-radius", "4px")
-                .style("background-color", "white")
+                .style_signal("background-color", ColorBackground::Base.signal())
                 .style("display", "flex")
                 .style("flex-direction", "column")
                 .style("gap", "1rem")
@@ -165,8 +152,6 @@ where
         });
 
         let Self {
-            label,
-            label_color,
             options,
             initial_selected,
             size,
@@ -195,15 +180,6 @@ where
         html!("div", {
             .class(&*CONTAINER)
             .class(&*USER_SELECT_NONE)
-            .apply_if(label.is_some(), |dom| {
-                dom.child(
-                    html!("div", {
-                        .style("color", label_color.hex_str())
-                        .class(size.text_size_class())
-                        .text(&label.unwrap_ext())
-                    })
-                )
-            })
             .child(html!("div", {
                 .class(&*CONTENT)
                 .child(html!("div", {
@@ -236,14 +212,15 @@ where
                                     let hovering = Mutable::new(false);
                                     html!("div", {
                                         .class(size.text_size_class())
+
                                         .text(&option.label)
                                         .style_signal("color", hovering.signal().map(|hovering| {
                                             if hovering {
-                                                Color::Accent.hex_str()
+                                                ColorBranded::Primary.signal().boxed()
                                             } else {
-                                                Color::Darkish.hex_str()
+                                                ColorText::Body.signal().boxed()
                                             }
-                                        }))
+                                        }).flatten())
                                         .event({
                                             clone!(selected, option, showing, on_change => move |_: events::Click| {
                                                 selected.set(Some(option.clone()));

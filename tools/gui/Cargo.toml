@@ -19,6 +19,7 @@ lavs-mock-operators = {workspace = true}
 lavs-verifier-simple = {workspace = true}
 lavs-task-queue = {workspace = true}
 lavs-apis = { workspace = true }
+avs-toolkit-shared = {workspace = true}
 
 ######## General workspace dependencies ########
 serde = {workspace = true} 
@@ -35,13 +36,15 @@ log = {workspace = true}
 dominator_helpers = {workspace = true}
 gloo-events = {workspace = true}
 gloo-timers = {workspace = true}
+async-broadcast = {workspace = true}
+reqwest = {workspace = true}
 wasm-logger = {workspace = true, optional = true}
 console_error_panic_hook = {workspace = true, optional = true}
 
 ######## Proprietary dependencies ########
 futures-timer = {version = "3.0.3", features=["wasm-bindgen"], default-features = false}
 awsm_web = { version = "0.45.0", default-features = false }
-layer-climb = { git = "https://github.com/Lay3rLabs/climb.git", rev = "6771bf76f2ba76683082caa87e0bf10a98eb6436", features = ["web"] }
+layer-climb = { git = "https://github.com/Lay3rLabs/climb.git", rev = "6e8fa0b15ae736ef82e8dcd8d72715b4d7010444", features = ["web"] }
 # purposefully left here to make debugging easier
 # layer-climb = { path = "../../../climb/packages/layer-climb", features = ["web"] }
 
@@ -59,6 +62,9 @@ features = [
     "File",
     "Window",
     "Url",
+    "MediaQueryList",
+    "MediaQueryListEvent",
+    "Storage"
 ]
 
 [lib]

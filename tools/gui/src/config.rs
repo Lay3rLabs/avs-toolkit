@@ -1,13 +1,67 @@
 use core::panic;
-
-use awsm_web::env::{self, env_var};
 use cosmwasm_std::Addr;
+use std::sync::OnceLock;
 
 use crate::{
     client::{ClientKeyKind, TargetEnvironment},
     prelude::*,
-    route::Route,
+    route::{Route, TaskQueueRoute},
 };
+
+static TARGET_ENVIRONMENT: LazyLock<Mutex<Option<TargetEnvironment>>> =
+    LazyLock::new(|| Mutex::new(None));
+
+pub fn set_target_environment(target_env: TargetEnvironment) {
+    TARGET_ENVIRONMENT.lock().unwrap().replace(target_env);
+}
+
+pub fn get_target_environment() -> Result<TargetEnvironment> {
+    TARGET_ENVIRONMENT
+        .lock()
+        .unwrap()
+        .as_ref()
+        .cloned()
+        .context("target environment not set")
+}
+
+pub struct DefaultCodeIds {
+    pub task_queue: Option<u64>,
+    pub mock_operators: Option<u64>,
+    pub verifier_simple: Option<u64>,
+    pub verifier_oracle: Option<u64>,
+}
+
+impl DefaultCodeIds {
+    pub fn new() -> Result<Self> {
+        let (
+            task_queue_env_str,
+            mock_operators_env_str,
+            verifier_simple_env_str,
+            verifier_oracle_env_str,
+        ) = match get_target_environment()? {
+            TargetEnvironment::Local => (
+                option_env!("LOCAL_CODE_ID_TASK_QUEUE"),
+                option_env!("LOCAL_CODE_ID_MOCK_OPERATORS"),
+                option_env!("LOCAL_CODE_ID_VERIFIER_SIMPLE"),
+                option_env!("LOCAL_CODE_ID_VERIFIER_ORACLE"),
+            ),
+
+            TargetEnvironment::Testnet => (
+                option_env!("TEST_CODE_ID_TASK_QUEUE"),
+                option_env!("TEST_CODE_ID_MOCK_OPERATORS"),
+                option_env!("TEST_CODE_ID_VERIFIER_SIMPLE"),
+                option_env!("TEST_CODE_ID_VERIFIER_ORACLE"),
+            ),
+        };
+
+        Ok(Self {
+            task_queue: task_queue_env_str.map(|s| s.parse()).transpose()?,
+            mock_operators: mock_operators_env_str.map(|s| s.parse()).transpose()?,
+            verifier_simple: verifier_simple_env_str.map(|s| s.parse()).transpose()?,
+            verifier_oracle: verifier_oracle_env_str.map(|s| s.parse()).transpose()?,
+        })
+    }
+}
 
 cfg_if::cfg_if! {
     if #[cfg(feature = "debug")] {
@@ -48,6 +102,14 @@ impl Config {
     pub fn app_image_url(&self, path: &str) -> String {
         format!("{}/{}", self.media_root, path)
     }
+
+    pub fn chain_info(&self) -> Result<&ChainInfo> {
+        match get_target_environment()? {
+            TargetEnvironment::Local => self.data.local.as_ref(),
+            TargetEnvironment::Testnet => self.data.testnet.as_ref(),
+        }
+        .context("chain info not found")
+    }
 }
 
 #[derive(Debug)]
@@ -60,7 +122,7 @@ impl Default for ConfigDebug {
     fn default() -> Self {
         Self {
             auto_connect: None,
-            start_route: Mutex::new(Some(Route::WalletFaucet)),
+            start_route: Mutex::new(Some(Route::TaskQueue(TaskQueueRoute::AddTask))),
         }
     }
 }
@@ -75,7 +137,7 @@ cfg_if::cfg_if! {
                         //key_kind: ClientKeyKind::Keplr,
                         target_env: TargetEnvironment::Local
                     }),
-                    start_route: Mutex::new(Some(Route::BlockEvents))
+                    start_route: Mutex::new(Some(Route::TaskQueue(TaskQueueRoute::AddTask)))
                 }
             }
         }
@@ -118,14 +180,4 @@ pub struct WasmaticConfig {
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct FaucetConfig {
     pub mnemonic: String,
-}
-
-#[derive(Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct GetInfo {
-    pub operators: Vec<String>,
-}
-
-pub(crate) async fn load_wasmatic_addresses(endpoints: &[String]) -> Result<Vec<String>> {
-    bail!("TODO")
 }

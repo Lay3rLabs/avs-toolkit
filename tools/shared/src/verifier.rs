@@ -1,33 +1,30 @@
-use crate::context::AppContext;
 use anyhow::Result;
 use lavs_verifier_simple::msg::{ConfigResponse, QueryMsg};
 use layer_climb::prelude::*;
 
 pub struct SimpleVerifierQuerier {
-    pub ctx: AppContext,
     pub contract_addr: Address,
-    pub querier: QueryClient,
+    pub query_client: QueryClient,
 }
 
 impl SimpleVerifierQuerier {
-    pub async fn new(ctx: AppContext, contract_addr: Address) -> Result<Self> {
+    pub async fn new(query_client: QueryClient, contract_addr: Address) -> Result<Self> {
         Ok(Self {
-            querier: ctx.query_client().await?,
-            ctx,
+            query_client,
             contract_addr,
         })
     }
 
     pub async fn config(&self) -> Result<ConfigResponse> {
-        self.querier
+        self.query_client
             .contract_smart(&self.contract_addr, &QueryMsg::Config {})
             .await
     }
 
     pub async fn operator_addr(&self) -> Result<Address> {
         let config = self.config().await?;
-        self.ctx
-            .chain_config()?
+        self.query_client
+            .chain_config
             .parse_address(&config.operator_contract)
     }
 }
