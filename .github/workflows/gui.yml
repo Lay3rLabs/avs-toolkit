@@ -6,8 +6,7 @@ on:
       - '**'
   push:
     branches:
-      - avs-toolkit-gui
-      #- main
+      - main
 
 jobs:
   pages_build:
@@ -46,7 +45,7 @@ jobs:
   
   pages_deploy:
     name: Deploy Pages
-    # if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     needs: pages_build
     permissions:
