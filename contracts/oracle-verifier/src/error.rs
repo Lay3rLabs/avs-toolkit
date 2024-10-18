@@ -1,6 +1,6 @@
 use cosmwasm_std::{Decimal, StdError};
 use cw_utils::PaymentError;
-use lavs_helpers::verifier::VerifierError;
+use lavs_apis::verifier_simple::VerifierError;
 use thiserror::Error;
 #[derive(Error, Debug)]
 pub enum ContractError {
