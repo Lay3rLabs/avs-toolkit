@@ -4,6 +4,9 @@ use cw_orch::{ExecuteFns, QueryFns};
 
 use crate::id::TaskId;
 pub use crate::interfaces::tasks::TaskStatus;
+use cosmwasm_std::StdError;
+use cw_utils::PaymentError;
+use thiserror::Error;
 
 // FIXME: make these generic
 pub type RequestType = serde_json::Value;
@@ -15,6 +18,31 @@ pub struct InstantiateMsg {
     pub operator_contract: String,
     /// The percentage of voting power needed to agree in order to complete a task
     pub required_percentage: u32,
+}
+
+#[derive(Error, Debug)]
+pub enum VerifierError {
+    #[error("{0}")]
+    Std(#[from] StdError),
+
+    #[error("{0}")]
+    Payment(#[from] PaymentError),
+    #[error("Invalid percentage, must be between 1 and 100")]
+    InvalidPercentage,
+
+    #[error("Operator tried to vote twice: {0}")]
+    OperatorAlreadyVoted(String),
+
+    #[error("Task expired. Cannot vote on it")]
+    TaskExpired,
+
+    #[error("Task already completed. Cannot vote on it")]
+    TaskAlreadyCompleted,
+
+    #[error("Unauthorized")]
+    Unauthorized,
+    // Add any other custom errors you like here.
+    // Look at https://docs.rs/thiserror/1.0.21/thiserror/ for details.
 }
 
 #[cw_serde]
@@ -142,36 +170,5 @@ mod deployment {
         fn wrapper() -> Box<dyn MockContract<Empty>> {
             panic!("This is a deployment stub, for multi-test use the real implementation in the contract itself");
         }
-    }
-}
-
-pub mod helper {
-    use cosmwasm_std::StdError;
-    use cw_utils::PaymentError;
-    use thiserror::Error;
-
-    #[derive(Error, Debug)]
-    pub enum VerifierError {
-        #[error("{0}")]
-        Std(#[from] StdError),
-
-        #[error("{0}")]
-        Payment(#[from] PaymentError),
-        #[error("Invalid percentage, must be between 1 and 100")]
-        InvalidPercentage,
-
-        #[error("Operator tried to vote twice: {0}")]
-        OperatorAlreadyVoted(String),
-
-        #[error("Task expired. Cannot vote on it")]
-        TaskExpired,
-
-        #[error("Task already completed. Cannot vote on it")]
-        TaskAlreadyCompleted,
-
-        #[error("Unauthorized")]
-        Unauthorized,
-        // Add any other custom errors you like here.
-        // Look at https://docs.rs/thiserror/1.0.21/thiserror/ for details.
     }
 }

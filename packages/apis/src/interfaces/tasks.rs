@@ -9,7 +9,7 @@ use cw_storage_plus::Map;
 use crate::{
     id::TaskId,
     tasks::Status,
-    verifier_simple::{helper::VerifierError, TaskMetadata},
+    verifier_simple::{TaskMetadata, VerifierError},
 };
 
 use crate::interfaces::voting::QueryMsg as OperatorQueryMsg;

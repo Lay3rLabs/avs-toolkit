@@ -2,7 +2,7 @@ use cosmwasm_std::{Addr, DepsMut, Env, Uint128};
 use lavs_apis::{
     id::TaskId,
     interfaces::{tasks::TasksStorage, voting::VotingPowerResponse},
-    verifier_simple::{helper::VerifierError, TaskMetadata},
+    verifier_simple::{TaskMetadata, VerifierError},
 };
 
 use lavs_apis::interfaces::voting::QueryMsg as OperatorQueryMsg;
