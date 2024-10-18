@@ -144,3 +144,34 @@ mod deployment {
         }
     }
 }
+
+pub mod helper {
+    use cosmwasm_std::StdError;
+    use cw_utils::PaymentError;
+    use thiserror::Error;
+
+    #[derive(Error, Debug)]
+    pub enum VerifierError {
+        #[error("{0}")]
+        Std(#[from] StdError),
+
+        #[error("{0}")]
+        Payment(#[from] PaymentError),
+        #[error("Invalid percentage, must be between 1 and 100")]
+        InvalidPercentage,
+
+        #[error("Operator tried to vote twice: {0}")]
+        OperatorAlreadyVoted(String),
+
+        #[error("Task expired. Cannot vote on it")]
+        TaskExpired,
+
+        #[error("Task already completed. Cannot vote on it")]
+        TaskAlreadyCompleted,
+
+        #[error("Unauthorized")]
+        Unauthorized,
+        // Add any other custom errors you like here.
+        // Look at https://docs.rs/thiserror/1.0.21/thiserror/ for details.
+    }
+}
