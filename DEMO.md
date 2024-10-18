@@ -41,7 +41,7 @@ cargo run wallet show
 (cd ../.. && ./scripts/optimizer.sh)
 
 # deploy them
-cargo run deploy contracts --operators wasmatic
+cargo run deploy --mode verifier-simple contracts --operators wasmatic
 
 # Copy the line that says "export TEST_TASK_QUEUE_ADDRESS" and paste it in your shell
 
@@ -51,6 +51,9 @@ cargo run task-queue view-queue
 ### Deploy WASI component
 
 ```bash
+# setup wasi
+(cd ../.. && ./scripts/setup_wasi.sh)
+
 # rebuild the component
 (cd ../.. && ./scripts/build_wasi.sh)
 

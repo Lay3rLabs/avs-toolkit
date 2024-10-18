@@ -21,7 +21,9 @@ use layer_climb_cli::command::{ContractLog, WalletLog};
 async fn main() -> Result<()> {
     // Load the .env file before anything, in case it's used by args
     if dotenvy::dotenv().is_err() {
-        println!("Failed to load .env file");
+        println!(
+            "Failed to load .env file. Ensure values are surrounded by quotes in the .env file."
+        );
     }
 
     // load the args before setting up the logger, since it uses the log level

@@ -31,16 +31,17 @@ In this directory:
 Local
 
 ```bash
-cargo run -- --target=local deploy contracts --operators wasmatic
+cargo run -- --target=local deploy --mode verifier-simple contracts --operators wasmatic
 ```
 
 Testnet
 
 ```bash
-cargo run -- --target=testnet deploy contracts --operators wasmatic
+cargo run -- --target=testnet deploy --mode verifier-simple contracts --operators wasmatic
 ```
 
-Store the task queue for future use, based on the output:
+Based on the output, store the task queue for future use in the .env file so it
+is loaded automatically by the CLI:
 
 ```bash
 # for local testing
