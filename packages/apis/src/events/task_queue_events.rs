@@ -1,5 +1,6 @@
 use crate::{define_task_queue_event, id::TaskId};
 use cosmwasm_std::{Attribute, Event, StdError};
+use layer_climb::events::Event as LayerClimbEvent;
 
 use super::traits::TypedEvent;
 
@@ -64,6 +65,13 @@ macro_rules! define_task_queue_event {
                 let event = Event::new($struct_name::NAME)
                     .add_attribute("task-id", value.task_id.to_string());
                 event
+            }
+        }
+
+        impl From<LayerClimbEvent<'_>> for $struct_name {
+            fn from(value: LayerClimbEvent<'_>) -> Self {
+                let event: Event = value.into();
+                $struct_name::try_from(&event).unwrap()
             }
         }
     };

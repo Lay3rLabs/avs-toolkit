@@ -17,3 +17,4 @@ cw-orch = { workspace = true }
 cw-controllers = { workspace = true }
 cw-utils = { workspace = true }
 thiserror = { workspace = true }
+layer-climb = { workspace = true }
