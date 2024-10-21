@@ -18,22 +18,22 @@ library = []
 
 
 [dependencies]
-cosmwasm-schema  = "2.1.4"
-cosmwasm-std     = { version = "2.1.4", features = ["cosmwasm_1_4"] }
-cw-orch = { version = "0.25.0" }
-cw-storage-plus  = "2.0.0"
-cw-utils         = "2.0.0"
-cw2              = "2.0.0"
-lavs-apis = { git = "https://github.com/Lay3rLabs/avs-toolkit", tag = "v0.1.2"}
-lavs-helpers = { git = "https://github.com/Lay3rLabs/avs-toolkit", tag = "v0.1.2"}
-schemars         = "0.8.17"
+cosmwasm-schema  = { workspace = true }
+cosmwasm-std     = { workspace = true }
+cw-orch = { workspace = true }
+cw-storage-plus  = { workspace = true }
+cw-utils         = { workspace = true }
+cw2              = { workspace = true }
+lavs-apis = { workspace = true }
+lavs-helpers = { workspace = true }
+schemars         = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-thiserror        = "1.0.59"
+thiserror        = { workspace = true }
 
 [dev-dependencies]
-cw-multi-test = "0.20"
-lavs-orch = { git = "https://github.com/Lay3rLabs/avs-toolkit", tag = "v0.1.2"}
-cw-orch = "0.25.0"
-lavs-task-queue = { git = "https://github.com/Lay3rLabs/avs-toolkit", tag = "v0.1.2"}
-lavs-mock-operators = { git = "https://github.com/Lay3rLabs/avs-toolkit",  tag = "v0.1.2"}
+cw-multi-test = { workspace = true }
+lavs-orch = { workspace = true }
+cw-orch = { workspace = true }
+lavs-task-queue = { workspace = true }
+lavs-mock-operators = { workspace = true }

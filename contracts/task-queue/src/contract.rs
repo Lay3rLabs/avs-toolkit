@@ -78,7 +78,11 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<Binary, ContractErro
 mod execute {
     use cosmwasm_std::BankMsg;
     use cw_utils::nonpayable;
-    use lavs_apis::{id::TaskId, time::Duration};
+    use lavs_apis::events::task_queue_events::{
+        TaskCompletedEvent, TaskCreatedEvent, TaskExpiredEvent,
+    };
+    use lavs_apis::id::TaskId;
+    use lavs_apis::time::Duration;
 
     use crate::state::{check_timeout, RequestorConfig, TaskDeposit, Timing, TASK_DEPOSITS};
 
@@ -121,9 +125,10 @@ mod execute {
             )?;
         }
 
-        let res = Response::new()
-            .add_attribute("action", "create")
-            .add_attribute("task_id", task_id.to_string());
+        let task_queue_event = TaskCreatedEvent { task_id };
+
+        let res = Response::new().add_event(task_queue_event);
+
         Ok(res)
     }
 
@@ -150,9 +155,10 @@ mod execute {
             TASK_DEPOSITS.remove(deps.storage, task_id);
         }
 
-        let res = Response::new()
-            .add_attribute("action", "completed")
-            .add_attribute("task_id", task_id.to_string());
+        let task_queue_event = TaskCompletedEvent { task_id };
+
+        let res = Response::new().add_event(task_queue_event);
+
         Ok(res)
     }
 
@@ -169,9 +175,9 @@ mod execute {
         task.expire(&env)?;
         TASKS.save(deps.storage, task_id, &task)?;
 
-        let mut res = Response::new()
-            .add_attribute("action", "expired")
-            .add_attribute("task_id", task_id.to_string());
+        let task_queue_event = TaskExpiredEvent { task_id };
+
+        let mut res = Response::new().add_event(task_queue_event);
 
         if let Some(task_deposit) = TASK_DEPOSITS.may_load(deps.storage, task_id)? {
             res = res.add_message(BankMsg::Send {

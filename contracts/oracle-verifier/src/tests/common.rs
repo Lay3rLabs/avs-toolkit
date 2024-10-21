@@ -4,6 +4,7 @@ use cw_orch::prelude::*;
 
 use lavs_apis::id::TaskId;
 use lavs_apis::tasks::{Requestor, Status, TimeoutInfo};
+use lavs_apis::time::Duration;
 use lavs_orch::{Addressable, AltSigner};
 use serde_json::json;
 
@@ -96,7 +97,7 @@ where
     assert_eq!(
         status.status,
         Status::Completed {
-            completed: chain.block_info().unwrap().time.seconds()
+            completed: chain.block_info().unwrap().time
         }
     );
 
@@ -168,7 +169,7 @@ where
 pub fn make_task<C: ChainState + TxHandler>(
     contract: &TasksContract<C>,
     name: &str,
-    timeout: impl Into<Option<u64>>,
+    timeout: impl Into<Option<Duration>>,
     payload: &serde_json::Value,
 ) -> TaskId {
     let res = contract
@@ -180,7 +181,7 @@ pub fn make_task<C: ChainState + TxHandler>(
 #[track_caller]
 pub fn get_task_id(res: &impl IndexResponse) -> TaskId {
     let id = res
-        .event_attr_value("wasm", "task_id")
+        .event_attr_value("wasm-task_created_event", "task-id")
         .unwrap()
         .parse()
         .unwrap();
@@ -194,7 +195,7 @@ where
 {
     let msg = TasksInstantiateMsg {
         requestor: Requestor::Fixed(chain.sender_addr().into()),
-        timeout: TimeoutInfo::new(600),
+        timeout: TimeoutInfo::new(Duration::new_seconds(600)),
         verifier: verifier_addr.to_string(),
     };
     let tasker = TasksContract::new(chain);
