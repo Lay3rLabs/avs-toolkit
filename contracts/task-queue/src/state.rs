@@ -1,6 +1,6 @@
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, Coin, Deps, Env, MessageInfo, StdError, Timestamp};
-use cw_storage_plus::{Index, IndexList, IndexedMap, Item, MultiIndex};
+use cw_storage_plus::{Index, IndexList, IndexedMap, Item, Map, MultiIndex};
 use cw_utils::must_pay;
 
 use lavs_apis::id::TaskId;
@@ -17,6 +17,7 @@ pub const TASK_HOOKS: TaskHooks = TaskHooks::new(
     "task_timeout_hooks",
     "task_created_hooks",
 );
+pub const TASK_DEPOSITS: Map<TaskId, TaskDeposit> = Map::new("task_deposits");
 
 pub struct TaskIndexes<'a> {
     pub status: MultiIndex<'a, &'a str, Task, TaskId>,
@@ -41,6 +42,13 @@ pub struct Config {
     pub requestor: RequestorConfig,
     pub timeout: TimeoutConfig,
     pub verifier: Addr,
+}
+
+#[cw_serde]
+pub struct TaskDeposit {
+    pub addr: Addr,
+    /// We store a coin here in case we ever want to support updates to the RequestorConfig
+    pub coin: Coin,
 }
 
 impl Config {

@@ -116,6 +116,7 @@ mod execute {
     use cosmwasm_std::{to_json_binary, Decimal, Order, Uint128, WasmMsg};
     use cw_utils::nonpayable;
     use lavs_apis::{
+        events::oracle_executed_event::{OracleExecutedEvent, OracleExecutionStatus},
         id::TaskId,
         tasks::{TaskExecuteMsg, TaskStatus},
     };
@@ -172,9 +173,16 @@ mod execute {
 
         let total_power: Uint128 = all_votes.iter().map(|(_, vote)| vote.power).sum();
 
-        let mut resp = Response::new().add_attribute("method", "executed_task");
+        let mut resp = Response::new();
+
         if total_power < task_data.power_required {
-            return Ok(resp.add_attribute("status", "vote_stored"));
+            let event = OracleExecutedEvent {
+                task_id,
+                status: OracleExecutionStatus::VoteStored,
+                new_price: None,
+                task_queue_contract: task_queue_contract.clone(),
+            };
+            return Ok(resp.add_event(event));
         }
 
         let config = CONFIG.load(deps.storage)?;
@@ -200,16 +208,26 @@ mod execute {
                 funds: vec![],
             };
 
-            resp = resp
-                .add_message(msg)
-                .add_attribute("new_price", median.to_string());
-        } else {
-            resp = resp.add_attribute("status", "threshold_not_met");
-        }
+            resp = resp.add_message(msg);
 
-        resp = resp
-            .add_attribute("task_id", task_id.to_string())
-            .add_attribute("task_queue_contract", task_queue_contract);
+            let event = OracleExecutedEvent {
+                task_id,
+                status: OracleExecutionStatus::ThresholdMet,
+                new_price: Some(median),
+                task_queue_contract: task_queue_contract.clone(),
+            };
+
+            resp = resp.add_event(event);
+        } else {
+            // this event and the one above can be DRY'ed, will leave it for later
+            let event = OracleExecutedEvent {
+                task_id,
+                status: OracleExecutionStatus::ThresholdNotMet,
+                new_price: None,
+                task_queue_contract: task_queue_contract.clone(),
+            };
+            resp = resp.add_event(event);
+        }
 
         // NOTE: If we ever want to optimize the storage we can remove the votes for the completed
         // tasks.

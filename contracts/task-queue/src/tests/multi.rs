@@ -1,4 +1,4 @@
-use cosmwasm_std::coins;
+use cosmwasm_std::{coins, Uint128};
 use cw_orch::prelude::*;
 use lavs_apis::time::Duration;
 
@@ -68,6 +68,23 @@ fn task_hooks() {
         .unwrap();
 
     super::common::mock_hook_consumer_test(chain, mock_hook_consumer);
+}
+
+#[test]
+fn task_refunds() {
+    let chain = MockBech32::new(BECH_PREFIX);
+
+    chain
+        .add_balance(
+            &chain.sender_addr(),
+            vec![Coin {
+                denom: DENOM.to_string(),
+                amount: Uint128::new(10_000),
+            }],
+        )
+        .unwrap();
+
+    super::common::timeout_refund_test(chain, DENOM.to_string());
 }
 
 /// This is the simplest, most explicit test to bootstrap, before importing from common
