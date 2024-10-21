@@ -68,10 +68,12 @@ macro_rules! define_task_queue_event {
             }
         }
 
-        impl From<LayerClimbEvent<'_>> for $struct_name {
-            fn from(value: LayerClimbEvent<'_>) -> Self {
+        impl TryFrom<LayerClimbEvent<'_>> for $struct_name {
+            type Error = StdError;
+
+            fn try_from(value: LayerClimbEvent<'_>) -> Result<Self, Self::Error> {
                 let event: Event = value.into();
-                $struct_name::try_from(&event).unwrap()
+                $struct_name::try_from(&event)
             }
         }
     };
