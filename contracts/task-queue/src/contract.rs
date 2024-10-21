@@ -76,6 +76,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<Binary, ContractErro
 }
 
 mod execute {
+    use cosmwasm_std::BankMsg;
     use cw_utils::nonpayable;
     use lavs_apis::events::task_queue_events::{
         TaskCompletedEvent, TaskCreatedEvent, TaskExpiredEvent,
@@ -83,7 +84,7 @@ mod execute {
     use lavs_apis::id::TaskId;
     use lavs_apis::time::Duration;
 
-    use crate::state::{check_timeout, Timing};
+    use crate::state::{check_timeout, RequestorConfig, TaskDeposit, Timing, TASK_DEPOSITS};
 
     use super::*;
 
@@ -113,6 +114,17 @@ mod execute {
         config.next_id = TaskId::new(task_id.u64() + 1);
         CONFIG.save(deps.storage, &config)?;
 
+        if let RequestorConfig::OpenPayment(coin) = config.requestor {
+            TASK_DEPOSITS.save(
+                deps.storage,
+                task_id,
+                &TaskDeposit {
+                    addr: info.sender,
+                    coin,
+                },
+            )?;
+        }
+
         let task_queue_event = TaskCreatedEvent { task_id };
 
         let res = Response::new().add_event(task_queue_event);
@@ -139,6 +151,10 @@ mod execute {
         task.complete(&env, response)?;
         TASKS.save(deps.storage, task_id, &task)?;
 
+        if TASK_DEPOSITS.has(deps.storage, task_id) {
+            TASK_DEPOSITS.remove(deps.storage, task_id);
+        }
+
         let task_queue_event = TaskCompletedEvent { task_id };
 
         let res = Response::new().add_event(task_queue_event);
@@ -161,7 +177,16 @@ mod execute {
 
         let task_queue_event = TaskExpiredEvent { task_id };
 
-        let res = Response::new().add_event(task_queue_event);
+        let mut res = Response::new().add_event(task_queue_event);
+
+        if let Some(task_deposit) = TASK_DEPOSITS.may_load(deps.storage, task_id)? {
+            res = res.add_message(BankMsg::Send {
+                to_address: task_deposit.addr.to_string(),
+                amount: vec![task_deposit.coin],
+            });
+
+            TASK_DEPOSITS.remove(deps.storage, task_id);
+        }
 
         Ok(res)
     }
