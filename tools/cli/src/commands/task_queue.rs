@@ -89,7 +89,7 @@ impl TaskQueue {
             .await?;
 
         let task_id: TaskId = CosmosTxEvents::from(&tx_resp)
-            .attr_first("wasm", "task_id")?
+            .attr_first("wasm-task_created_event", "task-id")?
             .value()
             .parse()?;
 
