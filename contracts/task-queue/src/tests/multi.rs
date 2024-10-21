@@ -1,4 +1,4 @@
-use cosmwasm_std::Uint128;
+use cosmwasm_std::{coins, Uint128};
 use cw_orch::prelude::*;
 use lavs_apis::time::Duration;
 
@@ -47,6 +47,27 @@ fn task_status() {
 fn task_pagination() {
     let chain = MockBech32::new(BECH_PREFIX);
     super::common::task_pagination_works(chain);
+}
+
+#[test]
+fn task_hooks() {
+    let chain = MockBech32::new(BECH_PREFIX);
+
+    // Create consumer
+    let mock_hook_consumer = super::common::setup_mock_hooks_consumer(chain.clone());
+
+    // Fund accounts (open payment config)
+    chain
+        .add_balance(chain.sender(), coins(10_000_000, DENOM))
+        .unwrap();
+    chain
+        .add_balance(
+            &mock_hook_consumer.address().unwrap(),
+            coins(10_000_000, DENOM),
+        )
+        .unwrap();
+
+    super::common::mock_hook_consumer_test(chain, mock_hook_consumer);
 }
 
 #[test]

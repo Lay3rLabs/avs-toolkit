@@ -4,6 +4,7 @@ use cw_orch::prelude::*;
 use lavs_apis::id::TaskId;
 use lavs_apis::tasks::TaskStatus;
 use lavs_apis::time::Duration;
+use mock_hook_consumer::msg::{ExecuteMsgFns, QueryMsgFns};
 use serde_json::json;
 
 use crate::error::ContractError;
@@ -12,6 +13,8 @@ use crate::msg::{
     CompletedTaskOverview, InstantiateMsg, ListCompletedResponse, ListOpenResponse,
     OpenTaskOverview, Requestor, Status, TimeoutInfo,
 };
+use crate::tests::multi::DENOM;
+use mock_hook_consumer::interface::Contract as MockHookConsumerContract;
 
 // FIXME: any way to get these as one import, rather than import all sub traits?
 // Maybe combining them in a super-trait?
@@ -26,6 +29,13 @@ pub fn setup<Chain: CwEnv>(chain: Chain, msg: InstantiateMsg) -> TaskContract<Ch
     tasker.upload().unwrap();
     tasker.instantiate(&msg, None, &[]).unwrap();
     tasker
+}
+
+pub fn setup_mock_hooks_consumer<Chain: CwEnv>(chain: Chain) -> MockHookConsumerContract<Chain> {
+    let hook_consumer = MockHookConsumerContract::new(chain);
+    hook_consumer.upload().unwrap();
+    hook_consumer.instantiate(&Empty {}, None, &[]).unwrap();
+    hook_consumer
 }
 
 fn fixed_requestor<Chain>(chain: &Chain, timeout: Duration) -> (TaskContract<Chain>, Chain::Sender)
@@ -502,6 +512,74 @@ where
         total_open_tasks,
         "Should return all open tasks when no limit is specified"
     );
+}
+
+pub fn mock_hook_consumer_test<C>(chain: C, mock_consumer: MockHookConsumerContract<C>)
+where
+    C: CwEnv + AltSigner,
+    C::Sender: Addressable,
+{
+    let coin = Coin {
+        denom: DENOM.to_string(),
+        amount: Uint128::one(),
+    };
+    let funds = vec![coin.clone()];
+
+    // Setup the task contract
+    let verifier = chain.alt_signer(VERIFIER_INDEX);
+    let msg = InstantiateMsg {
+        requestor: Requestor::OpenPayment(coin),
+        timeout: mock_timeout(Duration::new_seconds(200)),
+        verifier: verifier.addr().into(),
+    };
+    let task_contract = setup(chain.clone(), msg);
+
+    // Establish hooks
+    mock_consumer
+        .add_hooks(task_contract.addr_str().unwrap())
+        .unwrap();
+
+    // Ensure created counter starts at 0
+    let counter = mock_consumer.created_count().unwrap();
+    assert!(counter == 0);
+
+    // Create a task
+    let payload = json!({"x": 5});
+    let task_id = make_task_with_funds(&task_contract, "Test Task", None, &payload, &funds);
+
+    // Verify task created hook
+    let counter = mock_consumer.created_count().unwrap();
+    assert_eq!(counter, 1);
+
+    // Complete the task
+    let result = json!({"y": 25});
+    task_contract
+        .call_as(&verifier)
+        .complete(task_id, result.clone())
+        .unwrap();
+
+    // Verify task completed hook and new task creation
+    let new_task_id = TaskId::new(task_id.u64() + 1);
+    let new_task = task_contract.task(new_task_id).unwrap();
+    assert_eq!(new_task.description, "Test Task");
+    assert_eq!(new_task.payload, json!({"x": 25}));
+
+    // Create a task that will timeout
+    let timeout_task_id = make_task_with_funds(
+        &task_contract,
+        "Timeout Task",
+        Some(Duration::new_seconds(100)),
+        &payload,
+        &funds,
+    );
+
+    // Wait for the task to expire
+    chain.wait_seconds(150).unwrap();
+
+    // Timeout the task
+    // The consumer should error out, but the function should not block
+    let result = task_contract.call_as(&verifier).timeout(timeout_task_id);
+    assert!(result.is_ok());
 }
 
 pub fn timeout_refund_test<C>(chain: C, denom: String)

@@ -4,6 +4,7 @@ use cw_storage_plus::{Index, IndexList, IndexedMap, Item, Map, MultiIndex};
 use cw_utils::must_pay;
 
 use lavs_apis::id::TaskId;
+use lavs_apis::interfaces::task_hooks::TaskHooks;
 use lavs_apis::tasks::{Requestor, Status, TimeoutConfig};
 use lavs_apis::time::Duration;
 
@@ -11,6 +12,11 @@ use crate::error::ContractError;
 use crate::msg::{self, InstantiateMsg, RequestType, ResponseType};
 
 pub const CONFIG: Item<Config> = Item::new("config");
+pub const TASK_HOOKS: TaskHooks = TaskHooks::new(
+    "task_completed_hooks",
+    "task_timeout_hooks",
+    "task_created_hooks",
+);
 pub const TASK_DEPOSITS: Map<TaskId, TaskDeposit> = Map::new("task_deposits");
 
 pub struct TaskIndexes<'a> {

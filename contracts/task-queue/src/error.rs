@@ -1,4 +1,5 @@
 use cosmwasm_std::StdError;
+use cw_controllers::HookError;
 use cw_utils::PaymentError;
 use lavs_apis::{id::TaskId, time::Duration};
 use thiserror::Error;
@@ -10,6 +11,9 @@ pub enum ContractError {
 
     #[error("{0}")]
     Payment(#[from] PaymentError),
+
+    #[error("{0}")]
+    Hook(#[from] HookError),
 
     #[error("Unauthorized")]
     Unauthorized,
@@ -37,4 +41,7 @@ pub enum ContractError {
 
     #[error("Missing result for completed task {id}")]
     MissingResultCompleted { id: TaskId },
+
+    #[error("Unknown reply id {id}")]
+    UnknownReplyId { id: u64 },
 }
