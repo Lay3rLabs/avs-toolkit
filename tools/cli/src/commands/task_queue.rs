@@ -6,6 +6,7 @@ use crate::{
 use anyhow::{bail, Context, Result};
 use cosmwasm_std::Order;
 use lavs_apis::{
+    events::{task_queue_events::TaskCreatedEvent, traits::TypedEvent as _},
     id::TaskId,
     tasks::{CompletedTaskOverview, ListCompletedResponse, ListOpenResponse, OpenTaskOverview},
     time::Duration,
@@ -88,15 +89,15 @@ impl TaskQueue {
             )
             .await?;
 
-        let task_id: TaskId = CosmosTxEvents::from(&tx_resp)
-            .attr_first("wasm", "task_id")?
-            .value()
-            .parse()?;
+        let event: cosmwasm_std::Event = CosmosTxEvents::from(&tx_resp)
+            .event_first_by_type(TaskCreatedEvent::NAME)?
+            .into();
+        let event: TaskCreatedEvent = event.try_into()?;
 
-        tracing::info!("Task added with id: {task_id}");
+        tracing::info!("Task added with id: {0}", event.task_id);
         tracing::debug!("Tx hash: {}", tx_resp.txhash);
 
-        Ok((task_id, tx_resp))
+        Ok((event.task_id, tx_resp))
     }
 }
 
