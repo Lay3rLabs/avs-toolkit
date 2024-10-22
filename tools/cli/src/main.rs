@@ -84,6 +84,14 @@ async fn main() -> Result<()> {
                 tracing::info!("Operator: {}", addrs.operator);
                 tracing::info!("Verifier: {}", addrs.verifier);
                 tracing::info!("Task Queue: {}", addrs.task_queue);
+                match ctx.args.target {
+                    TargetEnvironment::Local => {
+                        println!("export LOCAL_TASK_QUEUE_ADDRESS={}", addrs.task_queue)
+                    }
+                    TargetEnvironment::Testnet => {
+                        println!("export TEST_TASK_QUEUE_ADDRESS={}", addrs.task_queue)
+                    }
+                }
             }
         },
         Command::Upload(upload_args) => match upload_args.command {
