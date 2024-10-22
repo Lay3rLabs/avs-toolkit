@@ -89,9 +89,10 @@ impl TaskQueue {
             )
             .await?;
 
-        let event: TaskCreatedEvent = CosmosTxEvents::from(&tx_resp)
+        let event: cosmwasm_std::Event = CosmosTxEvents::from(&tx_resp)
             .event_first_by_type(TaskCreatedEvent::NAME)?
-            .try_into()?;
+            .into();
+        let event: TaskCreatedEvent = event.try_into()?;
 
         tracing::info!("Task added with id: {0}", event.task_id);
         tracing::debug!("Tx hash: {}", tx_resp.txhash);
