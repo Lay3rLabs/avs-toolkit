@@ -10,7 +10,7 @@ use serde_json::json;
 use crate::error::ContractError;
 use crate::interface::Contract as TaskContract;
 use crate::msg::{
-    CompletedTaskOverview, InstantiateMsg, ListCompletedResponse, ListOpenResponse,
+    CompletedTaskOverview, InstantiateMsg, ListCompletedResponse, ListOpenResponse, ListResponse,
     OpenTaskOverview, Requestor, Status, TimeoutInfo,
 };
 use crate::tests::multi::DENOM;
@@ -225,6 +225,9 @@ where
     let ListOpenResponse { tasks } = contract.list_open(None, None).unwrap();
     assert_eq!(tasks.len(), 3);
 
+    let ListResponse { tasks: all_tasks } = contract.list(None, None).unwrap();
+    assert_eq!(all_tasks.len(), 3);
+
     let calculate_expiration =
         |start: Timestamp, n_blocks: u64, timeout_seconds: u64| -> Timestamp {
             let duration = Duration::new_seconds(n_blocks * block_time + offset + timeout_seconds);
@@ -279,6 +282,9 @@ where
     chain.wait_seconds(100).unwrap();
     let ListOpenResponse { tasks } = contract.list_open(None, None).unwrap();
     assert_eq!(tasks.len(), 0);
+
+    let ListResponse { tasks: all_tasks } = contract.list(None, None).unwrap();
+    assert_eq!(all_tasks.len(), 3);
 }
 
 pub fn completion_works<C>(chain: C)
@@ -297,6 +303,10 @@ where
     // list completed empty
     let ListCompletedResponse { tasks } = contract.list_completed(None, None).unwrap();
     assert_eq!(tasks.len(), 0);
+
+    // two total tasks exist
+    let ListResponse { tasks: all_tasks } = contract.list(None, None).unwrap();
+    assert_eq!(all_tasks.len(), 2);
 
     // normal user cannot complete
     let err = contract.complete(one, result.clone()).unwrap_err();
@@ -361,6 +371,10 @@ where
             result,
         }
     );
+
+    // two total tasks still exist
+    let ListResponse { tasks: all_tasks } = contract.list(None, None).unwrap();
+    assert_eq!(all_tasks.len(), 2);
 }
 
 pub fn task_status_works<C>(chain: C)

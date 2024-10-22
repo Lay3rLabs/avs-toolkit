@@ -109,13 +109,19 @@ pub enum QueryMsg {
 #[cw_orch(disable_fields_sorting)]
 #[derive(QueryResponses)]
 pub enum CustomQueryMsg {
-    /// Ordered by expiration time ascending
+    /// List all tasks, ordered descending by task ID
+    #[returns(ListResponse)]
+    List {
+        start_after: Option<TaskId>,
+        limit: Option<u32>,
+    },
+    /// List open tasks, ordered descending by task ID
     #[returns(ListOpenResponse)]
     ListOpen {
         start_after: Option<TaskId>,
         limit: Option<u32>,
     },
-    /// Ordered by completion time descending (last completed first)
+    /// List completed tasks, ordered descending by task ID
     #[returns(ListCompletedResponse)]
     ListCompleted {
         start_after: Option<TaskId>,
@@ -142,6 +148,30 @@ impl From<CustomQueryMsg> for QueryMsg {
     fn from(value: CustomQueryMsg) -> Self {
         Self::Custom(value)
     }
+}
+
+/// This is detailed information about a task for listing, including the
+/// payload, result, and timing information.
+#[cw_serde]
+pub struct TaskInfoResponse {
+    pub id: TaskId,
+    pub description: String,
+    pub status: InfoStatus,
+    pub payload: RequestType,
+    pub result: Option<ResponseType>,
+    pub created_at: Timestamp,
+}
+
+#[cw_serde]
+pub enum InfoStatus {
+    Open { expires: Timestamp },
+    Completed { completed: Timestamp },
+    Expired {},
+}
+
+#[cw_serde]
+pub struct ListResponse {
+    pub tasks: Vec<TaskInfoResponse>,
 }
 
 #[cw_serde]
