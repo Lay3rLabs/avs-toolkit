@@ -1,6 +1,5 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Coin, Env, Timestamp};
-use cw_controllers::HooksResponse;
 use cw_orch::{ExecuteFns, QueryFns};
 
 pub use crate::interfaces::tasks::{
@@ -129,7 +128,7 @@ pub enum CustomQueryMsg {
     #[returns(ConfigResponse)]
     Config {},
     /// Gets the task hooks for the given task hook type
-    #[returns(HooksResponse)]
+    #[returns(cw_controllers::HooksResponse)]
     TaskHooks(TaskHookType),
 }
 
