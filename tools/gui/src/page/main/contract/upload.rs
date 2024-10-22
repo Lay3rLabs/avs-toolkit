@@ -9,7 +9,6 @@ pub struct ContractUploadUi {
     pub file: Mutable<Option<File>>,
     pub error: Mutable<Option<String>>,
     pub success: Mutable<Option<(u64, TxResponse)>>,
-    pub client: SigningClient,
 }
 
 impl ContractUploadUi {
@@ -19,7 +18,6 @@ impl ContractUploadUi {
             file: Mutable::new(None),
             error: Mutable::new(None),
             success: Mutable::new(None),
-            client: CLIENT.get().unwrap_ext().clone(),
         })
     }
 
@@ -36,7 +34,7 @@ impl ContractUploadUi {
         html!("div", {
             .class(&*CONTAINER)
             .child(html!("label", {
-                .class(&*TEXT_SIZE_MD)
+                .class(FontSize::Header.class())
                 .attr("for", "contract-upload")
                 .text("Choose a .wasm file")
             }))
@@ -66,10 +64,11 @@ impl ContractUploadUi {
                             match JsFuture::from(file.array_buffer()).await {
                                 Ok(array_buffer) => {
                                     let wasm_byte_code = js_sys::Uint8Array::new(&array_buffer).to_vec();
-                                    let mut tx_builder = state.client.tx_builder();
+                                    let client = signing_client();
+                                    let mut tx_builder = client.tx_builder();
                                     tx_builder.set_gas_simulate_multiplier(2.0);
 
-                                    match state.client.contract_upload_file(wasm_byte_code, Some(tx_builder)).await {
+                                    match client.contract_upload_file(wasm_byte_code, Some(tx_builder)).await {
                                         Ok((code_id, tx_resp)) => {
                                             state.success.set(Some((code_id, tx_resp)));
                                         },
@@ -91,7 +90,7 @@ impl ContractUploadUi {
             .child_signal(state.loader.is_loading().map(|is_loading| {
                 match is_loading {
                     true => Some(html!("div", {
-                        .class(&*TEXT_SIZE_MD)
+                        .class(FontSize::Body.class())
                         .text("Uploading...")
                     })),
                     false => None
@@ -101,11 +100,11 @@ impl ContractUploadUi {
                 match success {
                     Some((code_id, tx_resp)) => Some(html!("div", {
                         .child(html!("div", {
-                            .class([&*TEXT_SIZE_MD, Color::Darkish.class()])
+                            .class([FontSize::Body.class(), ColorText::Body.color_class()])
                             .text(&format!("Contract uploaded! Code ID: {}", code_id))
                         }))
                         .child(html!("div", {
-                            .class([&*TEXT_SIZE_SM, Color::Accent.class()])
+                            .class([FontSize::Body.class(), ColorText::Brand.color_class()])
                             .text(&format!("Tx Hash: {}", tx_resp.txhash))
                         }))
                     })),
@@ -115,7 +114,7 @@ impl ContractUploadUi {
             .child_signal(state.error.signal_cloned().map(|error| {
                 match error {
                     Some(error) => Some(html!("div", {
-                        .class([&*TEXT_SIZE_SM, Color::Red.class()])
+                        .class([FontSize::Body.class(), &*COLOR_TEXT_INTERACTIVE_ERROR])
                         .text(&error)
                     })),
                     None => None

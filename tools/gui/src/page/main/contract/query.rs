@@ -2,24 +2,22 @@ use crate::prelude::*;
 use dominator_helpers::futures::AsyncLoader;
 use layer_climb::proto::abci::TxResponse;
 
-pub struct ContractInstantiateUi {
+pub struct ContractQueryUi {
     pub loader: AsyncLoader,
-    pub code_id: Mutable<Option<u64>>,
+    pub address: Mutable<Option<Address>>,
     pub msg: Mutable<Option<String>>,
     pub error: Mutable<Option<String>>,
-    pub success: Mutable<Option<(Address, TxResponse)>>,
-    pub client: SigningClient,
+    pub success: Mutable<Option<String>>,
 }
 
-impl ContractInstantiateUi {
+impl ContractQueryUi {
     pub fn new() -> Arc<Self> {
         Arc::new(Self {
             loader: AsyncLoader::new(),
-            code_id: Mutable::new(None),
+            address: Mutable::new(None),
             msg: Mutable::new(None),
             error: Mutable::new(None),
             success: Mutable::new(None),
-            client: CLIENT.get().unwrap_ext().clone(),
         })
     }
 
@@ -36,17 +34,20 @@ impl ContractInstantiateUi {
         html!("div", {
             .class(&*CONTAINER)
             .child(Label::new()
-                .with_text("Code ID")
+                .with_text("Address")
                 .with_direction(LabelDirection::Column)
                 .render(TextInput::new()
-                    .with_kind(TextInputKind::Number)
-                    .with_placeholder("e.g. 123")
-                    .with_on_input(clone!(state => move |code_id| {
-                        match code_id {
-                            None => state.code_id.set(None),
-                            Some(code_id) => {
-                                let code_id = code_id.parse::<u64>().ok();
-                                state.code_id.set(code_id);
+                    .with_placeholder("e.g. slayaddr...")
+                    .with_mixin(|dom| {
+                        dom
+                            .style("width", "30rem")
+                    })
+                    .with_on_input(clone!(state => move |address| {
+                        match address {
+                            None => state.address.set(None),
+                            Some(address) => {
+                                let address = query_client().chain_config.parse_address(&address).ok();
+                                state.address.set(address);
                             }
                         }
                     }))
@@ -72,31 +73,34 @@ impl ContractInstantiateUi {
             )
             .child(html!("div", {
                 .child(Button::new()
-                    .with_text("Instantiate")
+                    .with_text("Query")
                     .with_disabled_signal(state.validate_signal().map(|valid| !valid))
                     .with_on_click(clone!(state => move || {
                         state.loader.load(clone!(state => async move {
                             state.error.set(None);
                             state.success.set(None);
-                            let code_id = state.code_id.get_cloned().unwrap_ext();
+                            let address = state.address.get_cloned().unwrap_ext();
                             let msg = state.msg.get_cloned();
                             match contract_str_to_msg(msg.as_deref()) {
                                 Err(err) => {
                                     state.error.set(Some(err.to_string()));
                                 },
                                 Ok(msg) => {
-                                    let resp = state.client.contract_instantiate(
-                                        state.client.addr.clone(),
-                                        code_id,
-                                        "instantiate".to_string(),
+                                    let resp = query_client().contract_smart_raw(
+                                        &address,
                                         &msg,
-                                        Vec::new(),
-                                        None,
                                     ).await;
 
                                     match resp {
                                         Ok(resp) => {
-                                            state.success.set(Some(resp));
+                                            match std::str::from_utf8(&resp) {
+                                                Ok(resp) => {
+                                                    state.success.set(Some(resp.to_string()));
+                                                },
+                                                Err(err) => {
+                                                    state.error.set(Some(err.to_string()));
+                                                }
+                                            }
                                         },
                                         Err(err) => {
                                             state.error.set(Some(err.to_string()));
@@ -113,7 +117,7 @@ impl ContractInstantiateUi {
             .child_signal(state.loader.is_loading().map(|is_loading| {
                 match is_loading {
                     true => Some(html!("div", {
-                        .class(&*TEXT_SIZE_MD)
+                        .class(FontSize::Body.class())
                         .text("Uploading...")
                     })),
                     false => None
@@ -121,14 +125,14 @@ impl ContractInstantiateUi {
             }))
             .child_signal(state.success.signal_cloned().map(|success| {
                 match success {
-                    Some((addr, tx_resp)) => Some(html!("div", {
+                    Some(resp) => Some(html!("div", {
                         .child(html!("div", {
-                            .class([&*TEXT_SIZE_MD, Color::Darkish.class()])
-                            .text(&format!("Contract instantiated! address: {}", addr))
+                            .class([FontSize::Body.class(), ColorText::Body.color_class()])
+                            .text(&format!("Contract queried! Response:"))
                         }))
                         .child(html!("div", {
-                            .class([&*TEXT_SIZE_SM, Color::Accent.class()])
-                            .text(&format!("Tx Hash: {}", tx_resp.txhash))
+                            .class(FontSize::Body.class())
+                            .text(&resp)
                         }))
                     })),
                     None => None
@@ -137,7 +141,7 @@ impl ContractInstantiateUi {
             .child_signal(state.error.signal_cloned().map(|error| {
                 match error {
                     Some(error) => Some(html!("div", {
-                        .class([&*TEXT_SIZE_SM, Color::Red.class()])
+                        .class([FontSize::Body.class(), &*COLOR_TEXT_INTERACTIVE_ERROR])
                         .text(&error)
                     })),
                     None => None
@@ -147,8 +151,8 @@ impl ContractInstantiateUi {
     }
 
     fn validate_signal(&self) -> impl Signal<Item = bool> {
-        self.code_id
+        self.address
             .signal_cloned()
-            .map(|code_id| code_id.is_some())
+            .map(|address| address.is_some())
     }
 }

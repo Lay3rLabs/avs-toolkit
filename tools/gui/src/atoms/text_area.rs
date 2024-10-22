@@ -59,7 +59,7 @@ impl TextArea {
                 dom.attr("placeholder", &placeholder.unwrap_ext())
             })
             .apply_if(initial_value.is_some(), |dom| {
-                dom.attr("value", &initial_value.unwrap_ext())
+                dom.text(&initial_value.unwrap_ext())
             })
 
             .apply_if(mixin.is_some(), |dom| {

@@ -40,14 +40,10 @@ impl TryFrom<&Event> for TaskExecutedEvent {
                     }
                 }
                 "task-queue" => {
-                    if let Ok(value) = value.parse() {
-                        task_queue = Some(value);
-                    }
+                    task_queue = Some(value.to_string());
                 }
                 "operator" => {
-                    if let Ok(value) = value.parse() {
-                        operator = Some(value);
-                    }
+                    operator = Some(value.to_string());
                 }
                 "completed" => {
                     if let Ok(value) = value.parse() {

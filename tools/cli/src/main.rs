@@ -4,13 +4,20 @@ mod config;
 mod context;
 
 use anyhow::{Context, Result};
-use args::{CliArgs, Command, DeployCommand, FaucetCommand, TaskQueueCommand, WasmaticCommand};
-use clap::Parser;
-use commands::{
-    deploy::{deploy_contracts, DeployContractArgs},
+use args::{
+    CliArgs, Command, DeployCommand, DeployMode, FaucetCommand, TargetEnvironment,
+    TaskQueueCommand, UploadCommand, WasmaticCommand,
+};
+use avs_toolkit_shared::{
+    deploy::{DeployContractAddrs, DeployContractArgs, DeployContractArgsVerifierMode},
     faucet::tap_faucet,
     task_queue::TaskQueue,
-    wasmatic::{app, deploy, info, remove, run, test, Trigger},
+    wasmatic,
+};
+use clap::Parser;
+use commands::{
+    upload::{upload_contracts, WasmFiles},
+    wasmatic::wasm_arg_to_file,
 };
 use context::AppContext;
 use lavs_apis::time::Duration;
@@ -50,9 +57,14 @@ async fn main() -> Result<()> {
                 allowed_spread,
                 slashable_spread,
             } => {
+                let wasm_files = WasmFiles::read(artifacts_path).await?;
+                let code_ids = upload_contracts(&ctx, wasm_files).await?;
+
                 let args = DeployContractArgs::parse(
-                    &ctx,
-                    artifacts_path,
+                    reqwest::Client::new(),
+                    ctx.signing_client().await?,
+                    ctx.chain_info()?.wasmatic.endpoints.clone(),
+                    code_ids,
                     Duration::new_seconds(task_timeout_seconds),
                     required_voting_percentage,
                     threshold_percentage,
@@ -60,21 +72,46 @@ async fn main() -> Result<()> {
                     slashable_spread,
                     operators,
                     requestor,
+                    match deploy_args.mode {
+                        DeployMode::VerifierSimple => DeployContractArgsVerifierMode::Simple,
+                        DeployMode::OracleVerifier => DeployContractArgsVerifierMode::Oracle,
+                    },
                 )
                 .await?;
 
-                let addrs = deploy_contracts(ctx, deploy_args.mode, args).await?;
+                let addrs = DeployContractAddrs::run(ctx.signing_client().await?, args).await?;
                 tracing::info!("---- All contracts instantiated successfully ----");
-                tracing::info!("Mock Operators: {}", addrs.operators);
-                tracing::info!("Verifier Simple: {}", addrs.verifier_simple);
+                tracing::info!("Operator: {}", addrs.operator);
+                tracing::info!("Verifier: {}", addrs.verifier);
                 tracing::info!("Task Queue: {}", addrs.task_queue);
-                // TODO: make a flag to select one of these
-                tracing::info!("export LOCAL_TASK_QUEUE_ADDRESS={}", addrs.task_queue);
-                tracing::info!("export TEST_TASK_QUEUE_ADDRESS={}", addrs.task_queue);
+            }
+        },
+        Command::Upload(upload_args) => match upload_args.command {
+            UploadCommand::Contracts { artifacts_path } => {
+                let wasm_files = WasmFiles::read(artifacts_path).await?;
+                let code_ids = upload_contracts(&ctx, wasm_files).await?;
+
+                tracing::info!("---- All contracts uploaded successfully ----");
+                tracing::info!("Mock Operators: {}", code_ids.mock_operators);
+                tracing::info!("Verifier Simple: {}", code_ids.verifier_simple);
+                tracing::info!("Verifier Oracle: {}", code_ids.verifier_oracle);
+                tracing::info!("Task Queue: {}", code_ids.task_queue);
             }
         },
         Command::TaskQueue(task_queue_args) => {
-            let task_queue = TaskQueue::new(ctx.clone(), &task_queue_args).await?;
+            let addr_string = match task_queue_args.address.clone() {
+                Some(x) => x,
+                None => match ctx.args.target {
+                    TargetEnvironment::Local => std::env::var("LOCAL_TASK_QUEUE_ADDRESS")
+                        .context("LOCAL_TASK_QUEUE_ADDRESS not found")?,
+                    TargetEnvironment::Testnet => std::env::var("TEST_TASK_QUEUE_ADDRESS")
+                        .context("TEST_TASK_QUEUE_ADDRESS not found")?,
+                },
+            };
+
+            let contract_addr = ctx.chain_config()?.parse_address(&addr_string)?;
+
+            let task_queue = TaskQueue::new(ctx.signing_client().await?, contract_addr).await;
 
             match task_queue_args.command {
                 TaskQueueCommand::AddTask {
@@ -86,7 +123,8 @@ async fn main() -> Result<()> {
                     // Timestamp as argument
                     let timeout = timeout.map(Duration::new_seconds);
 
-                    let _ = task_queue.add_task(body, description, timeout).await?;
+                    let payload = serde_json::from_str(&body).context("failed to parse body")?;
+                    let _ = task_queue.add_task(payload, description, timeout).await?;
                 }
                 TaskQueueCommand::ViewQueue { start_after, limit } => {
                     let res = task_queue
@@ -109,7 +147,7 @@ async fn main() -> Result<()> {
                 };
 
                 let amount = amount.unwrap_or(FaucetCommand::DEFAULT_TAP_AMOUNT);
-                tap_faucet(&ctx, to, amount, denom).await?;
+                tap_faucet(ctx.faucet_client().await?, to, amount, denom).await?;
             }
         },
         Command::Wallet(wallet_args) => {
@@ -187,8 +225,8 @@ async fn main() -> Result<()> {
                 testable,
             } => {
                 let trigger = match (cron_trigger, task_trigger) {
-                    (Some(cron), None) => Trigger::Cron { schedule: cron },
-                    (None, Some(task)) => Trigger::Queue {
+                    (Some(cron), None) => wasmatic::Trigger::Cron { schedule: cron },
+                    (None, Some(task)) => wasmatic::Trigger::Queue {
                         task_queue_addr: task,
                         hd_index,
                         poll_interval,
@@ -197,20 +235,44 @@ async fn main() -> Result<()> {
                         panic!("Error: You need to provide either cron_trigger or task_trigger")
                     }
                 };
-                deploy(
-                    &ctx,
+
+                let envs = envs
+                    .iter()
+                    .map(|env| {
+                        let (k, v) = env.split_once('=').unwrap();
+                        (k.to_string(), v.to_string())
+                    })
+                    .collect::<Vec<(String, String)>>();
+
+                let permissions: serde_json::Value = serde_json::from_str(&permissions).unwrap();
+
+                wasmatic::deploy(
+                    reqwest::Client::new(),
+                    ctx.query_client().await?,
+                    ctx.chain_info()?.wasmatic.endpoints.clone(),
                     name,
                     digest,
-                    wasm_source,
+                    wasm_arg_to_file(wasm_source).await?,
                     trigger,
                     permissions,
                     envs,
                     testable,
+                    |endpoint| {
+                        println!("Deployment successful to: {endpoint}");
+                    },
                 )
                 .await?;
             }
             WasmaticCommand::Remove { name } => {
-                remove(&ctx, name).await?;
+                wasmatic::remove(
+                    reqwest::Client::new(),
+                    ctx.chain_info()?.wasmatic.endpoints.clone(),
+                    name,
+                    |endpoint| {
+                        println!("Removal successful from: {endpoint}");
+                    },
+                )
+                .await?;
             }
             WasmaticCommand::Run {
                 wasm_source,
@@ -227,19 +289,54 @@ async fn main() -> Result<()> {
                         .path()
                         .into()
                 };
+                let wasm_file = wasm_arg_to_file(wasm_source).await?;
                 println!(
                     "{}",
-                    run(wasm_source, cron_trigger, envs, app_cache_path, input).await?
+                    commands::wasmatic::run(wasm_file, cron_trigger, envs, app_cache_path, input)
+                        .await?
                 );
             }
             WasmaticCommand::Test { name, input } => {
-                test(&ctx, name, input).await?;
+                wasmatic::test(
+                    reqwest::Client::new(),
+                    ctx.chain_info()?.wasmatic.endpoints.clone(),
+                    name,
+                    input,
+                    |wasmatic::TestResult {
+                         endpoint,
+                         response_text,
+                     }| {
+                        println!("Test executed successfully!");
+                        println!("Output for operator `{endpoint}`: {}", response_text);
+                    },
+                )
+                .await?;
             }
             WasmaticCommand::Info {} => {
-                info(&ctx).await?;
+                wasmatic::info(
+                    reqwest::Client::new(),
+                    ctx.chain_info()?.wasmatic.endpoints.clone(),
+                    |wasmatic::InfoResponse { endpoint, response }| {
+                        println!(
+                            "Output for operator `{endpoint}`: {}",
+                            serde_json::to_string_pretty(&response).unwrap()
+                        );
+                    },
+                )
+                .await?;
             }
             WasmaticCommand::App { endpoint } => {
-                app(&ctx, endpoint).await?;
+                let endpoint = endpoint.unwrap_or_else(|| {
+                    ctx.chain_info()
+                        .unwrap()
+                        .wasmatic
+                        .endpoints
+                        .first()
+                        .unwrap()
+                        .clone()
+                });
+
+                wasmatic::app(reqwest::Client::new(), endpoint).await?;
             }
         },
     }

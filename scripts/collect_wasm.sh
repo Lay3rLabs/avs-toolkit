@@ -8,7 +8,7 @@ mkdir -p artifacts
 rm -f target/wasm32-unknown-unknown/release/*.wasm
 
 # compile the wasm
-RUSTFLAGS="-C link-arg=-s" cargo wasm --workspace --exclude lay3r-deploy
+RUSTFLAGS="-C link-arg=-s" cargo wasm --workspace --exclude avs-toolkit-gui --exclude avs-toolkit-cli
 
 # place in proper outdir and add checksum
 cp target/wasm32-unknown-unknown/release/*.wasm artifacts

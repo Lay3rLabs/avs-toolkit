@@ -6,7 +6,6 @@ use futures_signals::{signal, signal_vec};
 use layer_climb::querier::stream::BlockEvents;
 
 pub struct BlockEventsUi {
-    pub client: SigningClient,
     pub error: Mutable<Option<String>>,
     pub stream_ready: Mutable<bool>,
     pub only_blocks_with_events: Mutable<bool>,
@@ -15,7 +14,6 @@ pub struct BlockEventsUi {
 impl BlockEventsUi {
     pub fn new() -> Arc<Self> {
         Arc::new(Self {
-            client: CLIENT.get().unwrap_ext().clone(),
             error: Mutable::new(None),
             stream_ready: Mutable::new(false),
             only_blocks_with_events: Mutable::new(false),
@@ -55,7 +53,7 @@ impl BlockEventsUi {
     }
     fn render_list(self: &Arc<Self>) -> Dom {
         let state = self;
-        let stream = state.client.querier.clone().stream_block_events(None);
+        let stream = query_client().stream_block_events(None);
 
         html!("div", {
             .child_signal(signal::from_future(stream).map(clone!(state => move |block_events| {
@@ -69,7 +67,7 @@ impl BlockEventsUi {
                                     },
                                     Err(err) => {
                                         html!("div", {
-                                            .class([&*TEXT_SIZE_MD, Color::Red.class()])
+                                            .class([FontSize::Body.class(), &*COLOR_TEXT_INTERACTIVE_ERROR])
                                             .text("Error fetching block events")
                                         })
                                     }
@@ -79,7 +77,7 @@ impl BlockEventsUi {
                     },
                     Some(Err(err)) => {
                         Some(html!("div", {
-                            .class([&*TEXT_SIZE_MD, Color::Red.class()])
+                            .class([FontSize::Body.class(), &*COLOR_TEXT_INTERACTIVE_ERROR])
                             .text("Error fetching block events")
                         }))
                     },
@@ -137,7 +135,7 @@ impl BlockEventsUi {
 
         html!("div", {
             .class(&*CONTAINER)
-            .class(&*TEXT_SIZE_MD)
+            .class(FontSize::Body.class())
             .style_signal("display", state.only_blocks_with_events.signal().map(move |only_blocks_with_events| {
                 if !only_blocks_with_events || event_len > 0 {
                     "block"
@@ -151,7 +149,7 @@ impl BlockEventsUi {
                     .text(&format!("Block #{}", block_events.height))
                 }))
                 .child(html!("div", {
-                    .class([&*Color::Accent.class(), &*CURSOR_POINTER])
+                    .class([&*ColorText::Brand.color_class(), &*CURSOR_POINTER])
                     .text_signal(expanded.signal().map(move |is_expanded| {
                         if is_expanded {
                             format!("Hide events ({event_len})")
@@ -180,7 +178,7 @@ impl BlockEventsUi {
                                 .text("Event type")
                             }))
                             .child(html!("span", {
-                                .class([&*Color::Darkest.class(), &*TEXT_WEIGHT_BOLD])
+                                .class([ColorText::Body.color_class(), FontWeight::Bold.class()])
                                 .text(&event.kind)
                             }))
                         }))
@@ -193,7 +191,7 @@ impl BlockEventsUi {
                                 html!("div", {
                                     .class(&*EVENT_ATTR)
                                     .child(html!("span", {
-                                        .class([&*Color::Darkest.class(), &*TEXT_WEIGHT_BOLD])
+                                        .class([ColorText::Body.color_class(), FontWeight::Bold.class()])
                                         .text(&format!("{}:", attr.key_str().unwrap_or_default()))
                                     }))
                                     .child(html!("span", {

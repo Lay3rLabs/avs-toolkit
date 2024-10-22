@@ -1,19 +1,45 @@
 use crate::{
-    client::CLIENT,
-    page::{dashboard::DashboardUi, landing::LandingUi, notfound::NotFoundUi},
+    client::{has_signing_client, signing_client},
+    page::{landing::LandingUi, main::MainUi, notfound::NotFoundUi},
     prelude::*,
 };
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Route {
     Landing,
-    WalletFaucet,
-    ContractUpload,
-    ContractInstantiate,
-    ContractExecute,
-    ContractQuery,
+    Wallet(WalletRoute),
+    Contract(ContractRoute),
+    Wasmatic(WasmaticRoute),
+    TaskQueue(TaskQueueRoute),
     BlockEvents,
     NotFound,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum WalletRoute {
+    Faucet,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum ContractRoute {
+    Upload,
+    Instantiate,
+    Execute,
+    Query,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum WasmaticRoute {
+    AddApp,
+    ListApps,
+    Info,
+    TestApp,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum TaskQueueRoute {
+    AddTask,
+    ViewQueue,
 }
 
 impl Route {
@@ -34,11 +60,29 @@ impl Route {
         let route = match paths {
             [""] => Self::Landing,
             ["/"] => Self::Landing,
-            ["wallet", "faucet"] => Self::WalletFaucet,
-            ["contract", "upload"] => Self::ContractUpload,
-            ["contract", "instantiate"] => Self::ContractInstantiate,
-            ["contract", "execute"] => Self::ContractExecute,
-            ["contract", "query"] => Self::ContractQuery,
+            ["wallet", wallet_route] => match *wallet_route {
+                "faucet" => Self::Wallet(WalletRoute::Faucet),
+                _ => Self::NotFound,
+            },
+            ["contract", contract_route] => match *contract_route {
+                "upload" => Self::Contract(ContractRoute::Upload),
+                "instantiate" => Self::Contract(ContractRoute::Instantiate),
+                "execute" => Self::Contract(ContractRoute::Execute),
+                "query" => Self::Contract(ContractRoute::Query),
+                _ => Self::NotFound,
+            },
+            ["wasmatic", wasmatic_route] => match *wasmatic_route {
+                "add-app" => Self::Wasmatic(WasmaticRoute::AddApp),
+                "list-apps" => Self::Wasmatic(WasmaticRoute::ListApps),
+                "info" => Self::Wasmatic(WasmaticRoute::Info),
+                "test-app" => Self::Wasmatic(WasmaticRoute::TestApp),
+                _ => Self::NotFound,
+            },
+            ["task-queue", task_queue_route] => match *task_queue_route {
+                "add-task" => Self::TaskQueue(TaskQueueRoute::AddTask),
+                "view-queue" => Self::TaskQueue(TaskQueueRoute::ViewQueue),
+                _ => Self::NotFound,
+            },
             ["block", "events"] => Self::BlockEvents,
             _ => Self::NotFound,
         };
@@ -69,11 +113,10 @@ impl std::fmt::Display for Route {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let s: String = match self {
             Route::Landing => "".to_string(),
-            Route::WalletFaucet => "wallet/faucet".to_string(),
-            Route::ContractUpload => "contract/upload".to_string(),
-            Route::ContractInstantiate => "contract/instantiate".to_string(),
-            Route::ContractExecute => "contract/execute".to_string(),
-            Route::ContractQuery => "contract/query".to_string(),
+            Route::Wallet(wallet_route) => format!("wallet/{wallet_route}"),
+            Route::Contract(contract_route) => format!("contract/{contract_route}"),
+            Route::Wasmatic(wasmatic_route) => format!("wasmatic/{wasmatic_route}"),
+            Route::TaskQueue(task_queue_route) => format!("task-queue/{task_queue_route}"),
             Route::BlockEvents => "block/events".to_string(),
             Route::NotFound => "404".to_string(),
         };
@@ -81,20 +124,68 @@ impl std::fmt::Display for Route {
     }
 }
 
+impl std::fmt::Display for WalletRoute {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s: String = match self {
+            WalletRoute::Faucet => "faucet".to_string(),
+        };
+        write!(f, "{}", s)
+    }
+}
+
+impl std::fmt::Display for ContractRoute {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s: String = match self {
+            ContractRoute::Upload => "upload".to_string(),
+            ContractRoute::Instantiate => "instantiate".to_string(),
+            ContractRoute::Execute => "execute".to_string(),
+            ContractRoute::Query => "query".to_string(),
+        };
+        write!(f, "{}", s)
+    }
+}
+
+impl std::fmt::Display for WasmaticRoute {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s: String = match self {
+            WasmaticRoute::AddApp => "add-app".to_string(),
+            WasmaticRoute::ListApps => "list-apps".to_string(),
+            WasmaticRoute::Info => "info".to_string(),
+            WasmaticRoute::TestApp => "test-app".to_string(),
+        };
+        write!(f, "{}", s)
+    }
+}
+
+impl std::fmt::Display for TaskQueueRoute {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s: String = match self {
+            TaskQueueRoute::AddTask => "add-task".to_string(),
+            TaskQueueRoute::ViewQueue => "view-queue".to_string(),
+        };
+        write!(f, "{}", s)
+    }
+}
+
 pub fn render() -> Dom {
+    static CONTAINER: LazyLock<String> = LazyLock::new(|| {
+        class! {
+            .style("width", "100%")
+            .style("height", "100%")
+        }
+    });
     html!("div", {
-        .style("width", "100%")
-        .style("height", "100%")
+        .class(&*CONTAINER)
         .child_signal(Route::signal().map(|route| {
             match route {
                 Route::Landing => Some(LandingUi::new().render()),
                 Route::NotFound => Some(NotFoundUi::new().render()),
                 _ => {
-                    if CLIENT.get().is_none() {
+                    if !has_signing_client() {
                         Route::Landing.go_to_url();
                         None
                     } else {
-                        Some(DashboardUi::new().render())
+                        Some(MainUi::new().render())
                     }
                 }
             }

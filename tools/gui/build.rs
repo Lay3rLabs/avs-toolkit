@@ -19,4 +19,21 @@ fn main() {
         // .env file is missing; this is not an error
         println!("cargo:warning=.env file not found. Skipping environment variable loading.");
     }
+
+    let env_vars = [
+        "TEST_MNEMONIC",
+        "LOCAL_MNEMONIC",
+        "LOCAL_CODE_ID_TASK_QUEUE",
+        "LOCAL_CODE_ID_MOCK_OPERATORS",
+        "LOCAL_CODE_ID_VERIFIER_SIMPLE",
+        "LOCAL_CODE_ID_VERIFIER_ORACLE",
+        "TEST_CODE_ID_TASK_QUEUE",
+        "TEST_CODE_ID_MOCK_OPERATORS",
+        "TEST_CODE_ID_VERIFIER_SIMPLE",
+        "TEST_CODE_ID_VERIFIER_ORACLE",
+    ];
+
+    for var in &env_vars {
+        println!("cargo:rerun-if-env-changed={}", var);
+    }
 }
