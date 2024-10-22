@@ -12,9 +12,9 @@ curl https://rpc.layer-p.net/status
 curl https://rpc.layer-p.net/status | jq .result.sync_info
 
 # ensure wasmatic opertators are set up with different addresses
-curl https://op1.layer-p.net/info | jq -r .operators[0]
-curl https://op2.layer-p.net/info | jq -r .operators[0]
-curl https://op3.layer-p.net/info | jq -r .operators[0]
+curl https://op1.layer-p.net/info | jq -r ".operators[0]"
+curl https://op2.layer-p.net/info | jq -r ".operators[0]"
+curl https://op3.layer-p.net/info | jq -r ".operators[0]"
 ```
 
 ## Deploy AVS stuff
