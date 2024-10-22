@@ -57,8 +57,8 @@ dotenvy = {version = "0.15.7", features = ["cli"]}
 tracing-subscriber = "0.3.18"
 bip39 = "2.0.0"
 rand = "0.8"
-layer-climb = { git = "https://github.com/Lay3rLabs/climb.git", rev = "6e8fa0b15ae736ef82e8dcd8d72715b4d7010444" }
-layer-climb-cli = { git = "https://github.com/Lay3rLabs/climb.git", rev = "6e8fa0b15ae736ef82e8dcd8d72715b4d7010444" }
+layer-climb = { git = "https://github.com/Lay3rLabs/climb.git", tag="v0.1.1" }
+layer-climb-cli = { git = "https://github.com/Lay3rLabs/climb.git", tag="v0.1.1" }
 reqwest = {version = "0.12.5", features=["json"]} 
 sha2 = "0.10"
 # purposefully left in for now to make debugging easier, will remove eventually:

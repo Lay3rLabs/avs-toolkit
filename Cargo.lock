@@ -3277,8 +3277,8 @@ dependencies = [
 
 [[package]]
 name = "layer-climb"
-version = "0.0.0"
-source = "git+https://github.com/Lay3rLabs/climb.git?rev=6e8fa0b15ae736ef82e8dcd8d72715b4d7010444#6e8fa0b15ae736ef82e8dcd8d72715b4d7010444"
+version = "0.1.1"
+source = "git+https://github.com/Lay3rLabs/climb.git?tag=v0.1.1#30b442e909595ce98eda510d908f4bb1637b234d"
 dependencies = [
  "layer-climb-address",
  "layer-climb-config",
@@ -3288,8 +3288,8 @@ dependencies = [
 
 [[package]]
 name = "layer-climb-address"
-version = "0.0.0"
-source = "git+https://github.com/Lay3rLabs/climb.git?rev=6e8fa0b15ae736ef82e8dcd8d72715b4d7010444#6e8fa0b15ae736ef82e8dcd8d72715b4d7010444"
+version = "0.1.1"
+source = "git+https://github.com/Lay3rLabs/climb.git?tag=v0.1.1#30b442e909595ce98eda510d908f4bb1637b234d"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -3315,8 +3315,8 @@ dependencies = [
 
 [[package]]
 name = "layer-climb-cli"
-version = "0.0.0"
-source = "git+https://github.com/Lay3rLabs/climb.git?rev=6e8fa0b15ae736ef82e8dcd8d72715b4d7010444#6e8fa0b15ae736ef82e8dcd8d72715b4d7010444"
+version = "0.1.1"
+source = "git+https://github.com/Lay3rLabs/climb.git?tag=v0.1.1#30b442e909595ce98eda510d908f4bb1637b234d"
 dependencies = [
  "anyhow",
  "bip39",
@@ -3335,8 +3335,8 @@ dependencies = [
 
 [[package]]
 name = "layer-climb-config"
-version = "0.0.0"
-source = "git+https://github.com/Lay3rLabs/climb.git?rev=6e8fa0b15ae736ef82e8dcd8d72715b4d7010444#6e8fa0b15ae736ef82e8dcd8d72715b4d7010444"
+version = "0.1.1"
+source = "git+https://github.com/Lay3rLabs/climb.git?tag=v0.1.1#30b442e909595ce98eda510d908f4bb1637b234d"
 dependencies = [
  "anyhow",
  "serde",
@@ -3345,8 +3345,8 @@ dependencies = [
 
 [[package]]
 name = "layer-climb-core"
-version = "0.0.0"
-source = "git+https://github.com/Lay3rLabs/climb.git?rev=6e8fa0b15ae736ef82e8dcd8d72715b4d7010444#6e8fa0b15ae736ef82e8dcd8d72715b4d7010444"
+version = "0.1.1"
+source = "git+https://github.com/Lay3rLabs/climb.git?tag=v0.1.1#30b442e909595ce98eda510d908f4bb1637b234d"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -3378,8 +3378,8 @@ dependencies = [
 
 [[package]]
 name = "layer-climb-proto"
-version = "0.0.0"
-source = "git+https://github.com/Lay3rLabs/climb.git?rev=6e8fa0b15ae736ef82e8dcd8d72715b4d7010444#6e8fa0b15ae736ef82e8dcd8d72715b4d7010444"
+version = "0.1.1"
+source = "git+https://github.com/Lay3rLabs/climb.git?tag=v0.1.1#30b442e909595ce98eda510d908f4bb1637b234d"
 dependencies = [
  "anyhow",
  "cosmos-sdk-proto 0.25.0",
@@ -3462,6 +3462,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "19b955cdeb2a02b9117f121ce63aa52d08ade45de53e48fe6a38b39c10f6f709"
 dependencies = [
  "libc",
+]
+
+[[package]]
+name = "matchers"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8263075bb86c5a1b1427b5ae862e8889656f126e9f77c484496e8b47cf5c5558"
+dependencies = [
+ "regex-automata 0.1.10",
 ]
 
 [[package]]
@@ -4067,8 +4076,17 @@ checksum = "38200e5ee88914975b69f657f0801b6f6dccafd44fd9326302a4aaeecfacb1d8"
 dependencies = [
  "aho-corasick",
  "memchr",
- "regex-automata",
- "regex-syntax",
+ "regex-automata 0.4.8",
+ "regex-syntax 0.8.5",
+]
+
+[[package]]
+name = "regex-automata"
+version = "0.1.10"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6c230d73fb8d8c1b9c0b3135c5142a8acee3a0558fb8db5cf1cb65f8d7862132"
+dependencies = [
+ "regex-syntax 0.6.29",
 ]
 
 [[package]]
@@ -4079,8 +4097,14 @@ checksum = "368758f23274712b504848e9d5a6f010445cc8b87a7cdb4d7cbee666c1288da3"
 dependencies = [
  "aho-corasick",
  "memchr",
- "regex-syntax",
+ "regex-syntax 0.8.5",
 ]
+
+[[package]]
+name = "regex-syntax"
+version = "0.6.29"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f162c6dd7b008981e4d40210aca20b4bd0f9b60ca9271061b07f78537722f2e1"
 
 [[package]]
 name = "regex-syntax"
@@ -5092,9 +5116,9 @@ checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
 
 [[package]]
 name = "tokio"
-version = "1.40.0"
+version = "1.41.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e2b070231665d27ad9ec9b8df639893f46727666c6767db40317fbe920a5d998"
+checksum = "145f3413504347a2be84393cc8a7d2fb4d863b375909ea59f2158261aa258bbb"
 dependencies = [
  "backtrace",
  "bytes",
@@ -5373,10 +5397,14 @@ version = "0.3.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ad0f048c97dbd9faa9b7df56362b8ebcaa52adb06b498c050d2f4e32f90a7a8b"
 dependencies = [
+ "matchers",
  "nu-ansi-term",
+ "once_cell",
+ "regex",
  "sharded-slab",
  "smallvec",
  "thread_local",
+ "tracing",
  "tracing-core",
  "tracing-log",
 ]

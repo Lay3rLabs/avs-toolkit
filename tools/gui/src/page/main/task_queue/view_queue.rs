@@ -278,7 +278,7 @@ fn render_task(task_queue_addr: &Address, task: &TaskView) -> Dom {
 
     html!("div", {
         .future(clone!(task_details, task_id, task_queue_addr => async move {
-            let res = query_client().contract_smart::<TaskResponse>(&task_queue_addr, &lavs_task_queue::msg::QueryMsg::Custom(lavs_task_queue::msg::CustomQueryMsg::Task {
+            let res:Result<TaskResponse> = query_client().contract_smart(&task_queue_addr, &lavs_task_queue::msg::QueryMsg::Custom(lavs_task_queue::msg::CustomQueryMsg::Task {
                 id: task_id.clone(),
             })).await;
 
