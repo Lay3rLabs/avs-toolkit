@@ -2,7 +2,7 @@ use cosmwasm_std::{Timestamp, Uint128};
 use cw_orch::environment::{ChainState, CwEnv, Environment, IndexResponse, QueryHandler};
 use cw_orch::prelude::*;
 use lavs_apis::id::TaskId;
-use lavs_apis::tasks::TaskStatus;
+use lavs_apis::tasks::{InfoStatus, TaskInfoResponse, TaskStatus};
 use lavs_apis::time::Duration;
 use mock_hook_consumer::msg::{ExecuteMsgFns, QueryMsgFns};
 use serde_json::json;
@@ -296,8 +296,12 @@ where
     let payload = json! ({ "pair": ["eth", "usd"]});
     let result = json! ({ "price": "1234.56"});
 
+    let one_created = chain.block_info().unwrap().time;
     let one = make_task(&contract, "One", Some(Duration::new_seconds(300)), &payload);
+
     chain.next_block().unwrap();
+
+    let two_created = chain.block_info().unwrap().time;
     let two = make_task(&contract, "Two", Some(Duration::new_seconds(100)), &payload);
 
     // list completed empty
@@ -307,6 +311,31 @@ where
     // two total tasks exist
     let ListResponse { tasks: all_tasks } = contract.list(None, None).unwrap();
     assert_eq!(all_tasks.len(), 2);
+    assert_eq!(
+        all_tasks,
+        vec![
+            TaskInfoResponse {
+                id: two,
+                description: "Two".to_string(),
+                status: InfoStatus::Open {
+                    expires: two_created.plus_seconds(100)
+                },
+                payload: payload.clone(),
+                result: None,
+                created_at: two_created,
+            },
+            TaskInfoResponse {
+                id: one,
+                description: "One".to_string(),
+                status: InfoStatus::Open {
+                    expires: one_created.plus_seconds(300)
+                },
+                payload: payload.clone(),
+                result: None,
+                created_at: one_created,
+            },
+        ]
+    );
 
     // normal user cannot complete
     let err = contract.complete(one, result.clone()).unwrap_err();
@@ -368,13 +397,38 @@ where
         CompletedTaskOverview {
             id: one,
             completed: completion_time,
-            result,
+            result: result.clone(),
         }
     );
 
     // two total tasks still exist
     let ListResponse { tasks: all_tasks } = contract.list(None, None).unwrap();
     assert_eq!(all_tasks.len(), 2);
+    assert_eq!(
+        all_tasks,
+        vec![
+            TaskInfoResponse {
+                id: two,
+                description: "Two".to_string(),
+                status: InfoStatus::Expired {
+                    expired: two_created.plus_seconds(100)
+                },
+                payload: payload.clone(),
+                result: None,
+                created_at: two_created,
+            },
+            TaskInfoResponse {
+                id: one,
+                description: "One".to_string(),
+                status: InfoStatus::Completed {
+                    completed: completion_time
+                },
+                payload,
+                result: Some(result),
+                created_at: one_created,
+            },
+        ]
+    );
 }
 
 pub fn task_status_works<C>(chain: C)

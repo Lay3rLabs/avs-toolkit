@@ -342,13 +342,15 @@ mod query {
             )
             .map(|r| {
                 r.map(|(id, task)| {
-                    // add expires timestamp to status open enum
+                    // add timestamps to status enum
                     let status = match task.validate_status(&env) {
                         Status::Open {} => InfoStatus::Open {
                             expires: task.timing.expires_at,
                         },
                         Status::Completed { completed, .. } => InfoStatus::Completed { completed },
-                        Status::Expired {} => InfoStatus::Expired {},
+                        Status::Expired {} => InfoStatus::Expired {
+                            expired: task.timing.expires_at,
+                        },
                     };
 
                     TaskInfoResponse {

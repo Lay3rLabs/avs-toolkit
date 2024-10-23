@@ -166,7 +166,7 @@ pub struct TaskInfoResponse {
 pub enum InfoStatus {
     Open { expires: Timestamp },
     Completed { completed: Timestamp },
-    Expired {},
+    Expired { expired: Timestamp },
 }
 
 #[cw_serde]
