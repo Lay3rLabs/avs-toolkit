@@ -4,6 +4,7 @@ members = [
     "contracts/*",
     "wasi/square",
     "wasi/oracle-example",
+    "wasi/ollama",
     "tools/cli",
     "tools/gui",
     "tools/shared",

@@ -3660,6 +3660,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "ollama"
+version = "0.2.0"
+dependencies = [
+ "anyhow",
+ "layer-wasi",
+ "serde",
+ "serde_json",
+ "wit-bindgen-rt 0.32.0",
+]
+
+[[package]]
 name = "once_cell"
 version = "1.20.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
