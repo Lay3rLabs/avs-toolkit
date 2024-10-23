@@ -42,8 +42,9 @@ Anyone can call to mark a task as timed out if the block time has passed the tas
 
 ## Queries
 
-- List open tasks (oldest first)
-- List closed tasks (most recently closed first)
+- List all tasks (most recently created first)
+- List open tasks (most recently created first)
+- List closed tasks (most recently created first)
 - Get Task info by id (included status and result if any)
 
 ## Data

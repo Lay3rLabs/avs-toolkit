@@ -71,6 +71,12 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<Binary, ContractErro
         },
         QueryMsg::Custom(custom) => match custom {
             CustomQueryMsg::Task { id } => Ok(to_json_binary(&query::task(deps, env, id)?)?),
+            CustomQueryMsg::List { start_after, limit } => Ok(to_json_binary(&query::list(
+                deps,
+                env,
+                start_after,
+                limit,
+            )?)?),
             CustomQueryMsg::ListOpen { start_after, limit } => Ok(to_json_binary(
                 &query::list_open(deps, env, start_after, limit)?,
             )?),
@@ -270,8 +276,8 @@ mod query {
     use lavs_apis::{id::TaskId, tasks::ConfigResponse};
 
     use crate::msg::{
-        CompletedTaskOverview, ListCompletedResponse, ListOpenResponse, OpenTaskOverview,
-        TaskResponse, TaskStatusResponse,
+        CompletedTaskOverview, InfoStatus, ListCompletedResponse, ListOpenResponse, ListResponse,
+        OpenTaskOverview, TaskInfoResponse, TaskResponse, TaskStatusResponse,
     };
 
     use super::*;
@@ -319,6 +325,50 @@ mod query {
     }
 
     // TODO: There should probably be a max page limit, but it's left unbound to keep the API simple for now
+    pub fn list(
+        deps: Deps,
+        env: Env,
+        start_after: Option<TaskId>,
+        limit: Option<u32>,
+    ) -> Result<ListResponse, ContractError> {
+        let limit = limit.map(|v| v as usize).unwrap_or(usize::MAX);
+
+        let tasks = TASKS
+            .range(
+                deps.storage,
+                None,
+                start_after.map(Bound::exclusive),
+                cosmwasm_std::Order::Descending,
+            )
+            .map(|r| {
+                r.map(|(id, task)| {
+                    // add timestamps to status enum
+                    let status = match task.validate_status(&env) {
+                        Status::Open {} => InfoStatus::Open {
+                            expires: task.timing.expires_at,
+                        },
+                        Status::Completed { completed, .. } => InfoStatus::Completed { completed },
+                        Status::Expired {} => InfoStatus::Expired {
+                            expired: task.timing.expires_at,
+                        },
+                    };
+
+                    TaskInfoResponse {
+                        id,
+                        description: task.description,
+                        status,
+                        payload: task.payload,
+                        result: task.result,
+                        created_at: task.timing.created_at,
+                    }
+                })
+            })
+            .take(limit)
+            .collect::<Result<Vec<_>, _>>()?;
+
+        Ok(ListResponse { tasks })
+    }
+
     pub fn list_open(
         deps: Deps,
         env: Env,
