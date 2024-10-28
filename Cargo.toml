@@ -44,7 +44,10 @@ cw-orch-core = "2"
 cw-ownable = "2.1.0"
 cw-storage-plus = "2.0.0"
 cw-utils = "2.0.0"
+cw-controllers = "2.0.0"
 cw2 = "2.0.0"
+cw4 = "2.0.0"
+cw4-group = "2.0.0"
 schemars = "0.8.17"
 serde = { version = "1.0.210", default-features = false, features = ["derive"] }
 serde_json = { version = "1.0.128" }
