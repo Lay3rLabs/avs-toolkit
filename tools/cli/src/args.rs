@@ -3,6 +3,7 @@ use clap::Parser;
 use clap::{Args, Subcommand, ValueEnum};
 use cosmwasm_std::Decimal;
 use lavs_apis::id::TaskId;
+use lavs_apis::interfaces::task_hooks::TaskHookType;
 use layer_climb_cli::command::{ContractCommand, WalletCommand};
 use std::path::PathBuf;
 
@@ -183,6 +184,42 @@ pub enum TaskQueueCommand {
         #[clap(short, long)]
         limit: Option<u32>,
     },
+
+    /// Adds a task queue hook
+    AddHook {
+        #[clap(short, long, value_enum)]
+        hook_type: CliHookType,
+        #[clap(short, long)]
+        receiver: String,
+    },
+
+    /// Removes a task queue hook
+    RemoveHook {
+        #[clap(short, long, value_enum)]
+        hook_type: CliHookType,
+        #[clap(short, long)]
+        receiver: String,
+    },
+}
+
+#[derive(Debug, Clone, Copy, ValueEnum)]
+pub enum CliHookType {
+    /// Hook triggered when a task is completed
+    Completed,
+    /// Hook triggered when a task times out
+    Timeout,
+    /// Hook triggered when a task is created
+    Created,
+}
+
+impl From<CliHookType> for TaskHookType {
+    fn from(cli_type: CliHookType) -> Self {
+        match cli_type {
+            CliHookType::Completed => TaskHookType::Completed,
+            CliHookType::Timeout => TaskHookType::Timeout,
+            CliHookType::Created => TaskHookType::Created,
+        }
+    }
 }
 
 #[derive(Clone, Args)]

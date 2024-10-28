@@ -62,6 +62,7 @@ where
         requestor: Requestor::Fixed(chain.sender_addr().into()),
         timeout: TimeoutInfo::new(Duration::new_seconds(600)),
         verifier: verifier.addr_str().unwrap(),
+        hook_admin: None,
     };
     let tasker = TasksContract::new(chain.clone());
     tasker.upload().unwrap();
@@ -144,6 +145,7 @@ where
         requestor: Requestor::Fixed(chain.sender_addr().into()),
         timeout: TimeoutInfo::new(Duration::new_seconds(600)),
         verifier: verifier.addr_str().unwrap(),
+        hook_admin: None,
     };
     let tasker = TasksContract::new(chain.clone());
     tasker.upload().unwrap();

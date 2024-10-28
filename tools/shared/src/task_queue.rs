@@ -3,6 +3,7 @@ use cosmwasm_std::Order;
 use lavs_apis::{
     events::{task_queue_events::TaskCreatedEvent, traits::TypedEvent as _},
     id::TaskId,
+    interfaces::task_hooks::TaskHookType,
     tasks::{CompletedTaskOverview, ListCompletedResponse, ListOpenResponse, OpenTaskOverview},
     time::Duration,
 };
@@ -76,6 +77,54 @@ impl TaskQueue {
         tracing::debug!("Tx hash: {}", tx_resp.txhash);
 
         Ok((event.task_id, tx_resp))
+    }
+
+    pub async fn add_hook<T: Into<TaskHookType>>(
+        &self,
+        hook_type: T,
+        receiver: String,
+    ) -> Result<TxResponse> {
+        let hook_type = hook_type.into();
+        let tx_resp = self
+            .admin
+            .contract_execute(
+                &self.contract_addr,
+                &CustomExecuteMsg::AddHook {
+                    hook_type,
+                    receiver,
+                },
+                vec![],
+                None,
+            )
+            .await?;
+
+        tracing::info!("Added task hook.");
+        tracing::debug!("Tx hash: {}", tx_resp.txhash);
+        Ok(tx_resp)
+    }
+
+    pub async fn remove_hook<T: Into<TaskHookType>>(
+        &self,
+        hook_type: T,
+        receiver: String,
+    ) -> Result<TxResponse> {
+        let hook_type = hook_type.into();
+        let tx_resp = self
+            .admin
+            .contract_execute(
+                &self.contract_addr,
+                &CustomExecuteMsg::RemoveHook {
+                    hook_type,
+                    receiver,
+                },
+                vec![],
+                None,
+            )
+            .await?;
+
+        tracing::info!("Removed task hook.");
+        tracing::debug!("Tx hash: {}", tx_resp.txhash);
+        Ok(tx_resp)
     }
 }
 

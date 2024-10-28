@@ -29,6 +29,7 @@ pub struct DeployContractArgs {
     pub operators: Vec<lavs_mock_operators::msg::InstantiateOperator>,
     pub requestor: Requestor,
     pub task_timeout: TimeoutInfo,
+    pub hook_admin: Option<String>,
     pub verifier_mode: DeployVerifierMode,
 }
 
@@ -142,6 +143,7 @@ impl DeployContractArgs {
             operators: instantiate_operators,
             requestor,
             task_timeout,
+            hook_admin: Some(signing_client.addr.to_string()),
             verifier_mode: match mode {
                 DeployContractArgsVerifierMode::Simple => DeployVerifierMode::Simple {
                     required_voting_percentage,
@@ -181,6 +183,7 @@ impl DeployContractAddrs {
             requestor,
             task_timeout,
             verifier_mode,
+            hook_admin,
         } = args;
 
         let (operators_addr, tx_resp) = client
@@ -252,6 +255,7 @@ impl DeployContractAddrs {
                     requestor,
                     timeout: task_timeout,
                     verifier: verifier_addr.to_string(),
+                    hook_admin,
                 },
                 vec![],
                 None,

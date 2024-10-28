@@ -26,13 +26,28 @@ impl TaskHooks {
     pub fn add_hook(
         &self,
         storage: &mut dyn Storage,
-        task_hook_type: TaskHookType,
+        task_hook_type: &TaskHookType,
         addr: Addr,
     ) -> Result<(), HookError> {
         match task_hook_type {
             TaskHookType::Completed => self.completed.add_hook(storage, addr),
             TaskHookType::Timeout => self.timeout.add_hook(storage, addr),
             TaskHookType::Created => self.created.add_hook(storage, addr),
+        }?;
+
+        Ok(())
+    }
+
+    pub fn remove_hook(
+        &self,
+        storage: &mut dyn Storage,
+        task_hook_type: &TaskHookType,
+        addr: Addr,
+    ) -> Result<(), HookError> {
+        match task_hook_type {
+            TaskHookType::Completed => self.completed.remove_hook(storage, addr),
+            TaskHookType::Timeout => self.timeout.remove_hook(storage, addr),
+            TaskHookType::Created => self.created.remove_hook(storage, addr),
         }?;
 
         Ok(())

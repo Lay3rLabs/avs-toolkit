@@ -38,7 +38,6 @@ logic to ensure correctness and then call the task queue if it passes.
 ### Timeout Task
 
 Anyone can call to mark a task as timed out if the block time has passed the task-specified timeout.
-(TODO: consider if the payment is refunded in such a case)
 
 ## Queries
 

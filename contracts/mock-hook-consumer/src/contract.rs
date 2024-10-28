@@ -54,7 +54,7 @@ mod execute {
     /// Register all of the hooks on the task queue
     pub fn add_hooks(
         deps: DepsMut,
-        _env: Env,
+        env: Env,
         _info: MessageInfo,
         task_queue: String,
     ) -> StdResult<Response> {
@@ -64,21 +64,30 @@ mod execute {
             CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: task_queue.to_string(),
                 msg: to_json_binary(&lavs_apis::tasks::ExecuteMsg::Custom(
-                    lavs_apis::tasks::CustomExecuteMsg::AddHook(TaskHookType::Created),
+                    lavs_apis::tasks::CustomExecuteMsg::AddHook {
+                        hook_type: TaskHookType::Created,
+                        receiver: env.contract.address.to_string(),
+                    },
                 ))?,
                 funds: vec![],
             }),
             CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: task_queue.to_string(),
                 msg: to_json_binary(&lavs_apis::tasks::ExecuteMsg::Custom(
-                    lavs_apis::tasks::CustomExecuteMsg::AddHook(TaskHookType::Completed),
+                    lavs_apis::tasks::CustomExecuteMsg::AddHook {
+                        hook_type: TaskHookType::Completed,
+                        receiver: env.contract.address.to_string(),
+                    },
                 ))?,
                 funds: vec![],
             }),
             CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: task_queue.to_string(),
                 msg: to_json_binary(&lavs_apis::tasks::ExecuteMsg::Custom(
-                    lavs_apis::tasks::CustomExecuteMsg::AddHook(TaskHookType::Timeout),
+                    lavs_apis::tasks::CustomExecuteMsg::AddHook {
+                        hook_type: TaskHookType::Timeout,
+                        receiver: env.contract.address.to_string(),
+                    },
                 ))?,
                 funds: vec![],
             }),

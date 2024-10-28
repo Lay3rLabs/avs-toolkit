@@ -42,6 +42,7 @@ pub struct Config {
     pub requestor: RequestorConfig,
     pub timeout: TimeoutConfig,
     pub verifier: Addr,
+    pub hook_admin: Option<Addr>,
 }
 
 #[cw_serde]
@@ -56,11 +57,16 @@ impl Config {
         let requestor = RequestorConfig::validate(deps, input.requestor)?;
         let timeout = validate_timeout_info(input.timeout)?;
         let verifier = deps.api.addr_validate(&input.verifier)?;
+        let hook_admin = input
+            .hook_admin
+            .map(|x| deps.api.addr_validate(&x))
+            .transpose()?;
         Ok(Config {
             next_id: TaskId::new(1),
             requestor,
             timeout,
             verifier,
+            hook_admin,
         })
     }
 }

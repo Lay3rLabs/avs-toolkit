@@ -145,6 +145,18 @@ async fn main() -> Result<()> {
                         println!("{}", line);
                     })?;
                 }
+                TaskQueueCommand::AddHook {
+                    hook_type,
+                    receiver,
+                } => {
+                    let _ = task_queue.add_hook(hook_type, receiver).await?;
+                }
+                TaskQueueCommand::RemoveHook {
+                    hook_type,
+                    receiver,
+                } => {
+                    let _ = task_queue.remove_hook(hook_type, receiver).await?;
+                }
             }
         }
         Command::Faucet(faucet_args) => match faucet_args.command {

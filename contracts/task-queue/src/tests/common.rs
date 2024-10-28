@@ -48,6 +48,7 @@ where
         requestor: Requestor::Fixed(chain.sender_addr().into()),
         timeout: mock_timeout(timeout),
         verifier: verifier.addr().into(),
+        hook_admin: None,
     };
 
     let contract = setup(chain.clone(), msg);
@@ -599,6 +600,7 @@ where
         requestor: Requestor::OpenPayment(coin),
         timeout: mock_timeout(Duration::new_seconds(200)),
         verifier: verifier.addr().into(),
+        hook_admin: Some(mock_consumer.addr_str().unwrap()),
     };
     let task_contract = setup(chain.clone(), msg);
 
@@ -667,6 +669,7 @@ where
         requestor: Requestor::OpenPayment(coin.clone()),
         timeout: mock_timeout(Duration::new_seconds(200)),
         verifier: verifier.addr().into(),
+        hook_admin: None,
     };
     let task_contract = setup(chain.clone(), msg);
 

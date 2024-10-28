@@ -52,11 +52,14 @@ pub fn execute(
                 payload,
             } => execute::create(deps, env, info, description, timeout, payload),
             CustomExecuteMsg::Timeout { task_id } => execute::timeout(deps, env, info, task_id),
-            CustomExecuteMsg::AddHook(task_hook_type) => {
-                TASK_HOOKS.add_hook(deps.storage, task_hook_type, info.sender)?;
-
-                Ok(Response::new())
-            }
+            CustomExecuteMsg::AddHook {
+                hook_type,
+                receiver,
+            } => execute::add_hook(deps, info, hook_type, receiver),
+            CustomExecuteMsg::RemoveHook {
+                hook_type,
+                receiver,
+            } => execute::remove_hook(deps, info, hook_type, receiver),
         },
     }
 }
@@ -95,9 +98,12 @@ mod execute {
     use cosmwasm_std::{BankMsg, SubMsg, WasmMsg};
     use cw_utils::nonpayable;
     use lavs_apis::{
-        events::task_queue_events::{TaskCompletedEvent, TaskCreatedEvent, TaskExpiredEvent},
+        events::task_queue_events::{
+            HookAddedEvent, HookRemovedEvent, TaskCompletedEvent, TaskCreatedEvent,
+            TaskExpiredEvent,
+        },
         id::TaskId,
-        interfaces::task_hooks::TaskHookExecuteMsg,
+        interfaces::task_hooks::{TaskHookExecuteMsg, TaskHookType},
         tasks::TaskResponse,
         time::Duration,
     };
@@ -267,6 +273,62 @@ mod execute {
         }
 
         Ok(res)
+    }
+
+    pub fn add_hook(
+        deps: DepsMut,
+        info: MessageInfo,
+        hook_type: TaskHookType,
+        receiver: String,
+    ) -> Result<Response, ContractError> {
+        // Validate the address
+        let receiver = deps.api.addr_validate(&receiver)?;
+
+        let config = CONFIG.load(deps.storage)?;
+
+        // Only allow the hook admin to register hooks
+        if config.hook_admin.map_or(true, |admin| admin != info.sender) {
+            return Err(ContractError::Unauthorized {});
+        }
+
+        // Register the hook
+        TASK_HOOKS.add_hook(deps.storage, &hook_type, receiver.clone())?;
+
+        // Create event
+        let hook_added_event = HookAddedEvent {
+            hook_type,
+            address: receiver.to_string(),
+        };
+
+        Ok(Response::new().add_event(hook_added_event))
+    }
+
+    pub fn remove_hook(
+        deps: DepsMut,
+        info: MessageInfo,
+        hook_type: TaskHookType,
+        receiver: String,
+    ) -> Result<Response, ContractError> {
+        // Validate the address
+        let receiver = deps.api.addr_validate(&receiver)?;
+
+        let config = CONFIG.load(deps.storage)?;
+
+        // Only allow the hook admin to remove hooks
+        if config.hook_admin.map_or(true, |admin| admin != info.sender) {
+            return Err(ContractError::Unauthorized {});
+        }
+
+        // Remove the hook
+        TASK_HOOKS.remove_hook(deps.storage, &hook_type, receiver.clone())?;
+
+        // Create event
+        let hook_removed_event = HookRemovedEvent {
+            hook_type,
+            address: receiver.to_string(),
+        };
+
+        Ok(Response::new().add_event(hook_removed_event))
     }
 }
 

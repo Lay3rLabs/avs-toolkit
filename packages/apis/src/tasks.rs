@@ -20,6 +20,8 @@ pub struct InstantiateMsg {
     pub timeout: TimeoutInfo,
     /// Which contract can verify results
     pub verifier: String,
+    /// Which address can update hooks
+    pub hook_admin: Option<String>,
 }
 
 #[cw_serde]
@@ -77,8 +79,18 @@ pub enum CustomExecuteMsg {
         /// The task ID to complete
         task_id: TaskId,
     },
-    /// Adds a hook to the caller for the given task hook type
-    AddHook(TaskHookType),
+    /// Adds a hook to the receiver for the given task hook type
+    AddHook {
+        hook_type: TaskHookType,
+        /// The receiver address of the hook messages
+        receiver: String,
+    },
+    /// Remove a hook from a receiver
+    RemoveHook {
+        hook_type: TaskHookType,
+        /// The receiver address that will stop receiving hook messages
+        receiver: String,
+    },
 }
 
 impl From<CustomExecuteMsg> for ExecuteMsg {

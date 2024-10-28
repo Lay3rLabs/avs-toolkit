@@ -197,6 +197,7 @@ where
         requestor: Requestor::Fixed(chain.sender_addr().into()),
         timeout: TimeoutInfo::new(Duration::new_seconds(600)),
         verifier: verifier_addr.to_string(),
+        hook_admin: None,
     };
     let tasker = TasksContract::new(chain);
     tasker.upload().unwrap();
