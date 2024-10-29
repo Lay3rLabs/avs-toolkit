@@ -83,6 +83,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "ai-bouncer"
+version = "0.2.0"
+dependencies = [
+ "anyhow",
+ "layer-wasi",
+ "serde",
+ "serde_json",
+ "wit-bindgen-rt 0.32.0",
+]
+
+[[package]]
 name = "ai-bouncer-hook-consumer"
 version = "0.1.0"
 dependencies = [

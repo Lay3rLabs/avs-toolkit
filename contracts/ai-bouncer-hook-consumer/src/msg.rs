@@ -1,5 +1,4 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::Addr;
 use cw_orch::{ExecuteFns, QueryFns};
 use lavs_apis::interfaces::task_hooks::TaskHookExecuteMsg;
 
@@ -63,18 +62,7 @@ pub enum QueryMsg {
 }
 
 #[cw_serde]
-pub struct TaskRequestData {
-    /// the session ID of the address being evaluated
-    pub session_id: String,
-    /// the message ID being responded to
-    pub message_id: String,
-    /// the address being evaluated
-    pub address: Addr,
-    /// the next message in the conversation
-    pub next_message: String,
-}
-
-#[cw_serde]
+#[serde(rename_all = "camelCase")]
 pub struct TaskResponseData {
     /// the session ID of the address being evaluated
     pub session_id: String,
