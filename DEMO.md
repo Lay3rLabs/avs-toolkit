@@ -91,6 +91,42 @@ cargo run task-queue add-task -b '{"x": 12}' -d 'test 1'
 cargo run task-queue view-queue
 ```
 
+### Task Hooks
+
+Task hooks allow contracts to receive notifications for task events. The task queue's hook admin can manage hooks for any receiver address.
+
+View current hooks:
+```bash
+# View hooks for a specific type
+cargo run task-queue view-hooks --hook-type completed
+
+# Available hook types: completed, timeout, created
+```
+
+Register a hook for task events:
+```bash
+# Add hook for completed tasks
+cargo run task-queue add-hook --hook-type completed --receiver CONTRACT_ADDRESS_HERE
+
+# Add hook for timeouts
+cargo run task-queue add-hook --hook-type timeout --receiver CONTRACT_ADDRESS_HERE
+
+# Add hook for new tasks
+cargo run task-queue add-hook --hook-type created --receiver CONTRACT_ADDRESS_HERE
+```
+
+Remove hooks when no longer needed:
+```bash
+cargo run task-queue remove-hook --hook-type completed --receiver CONTRACT_ADDRESS_HERE
+```
+
+The receiver contract will be notified when:
+- `completed`: A task is successfully completed
+- `timeout`: A task expires before completion
+- `created`: A new task is added to the queue
+
+Note: Ensure your receiver contract can properly handle the hook messages.
+
 ## Clean Up Application (Optional)
 
 There is a global namespace for these applications, so you might get a conflict above
