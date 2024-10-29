@@ -217,6 +217,7 @@ pub struct ConfigResponse {
     pub requestor: Requestor,
     pub timeout: TimeoutConfig,
     pub verifier: String,
+    pub hook_admin: Option<String>,
 }
 
 /// All timeouts are defined in seconds

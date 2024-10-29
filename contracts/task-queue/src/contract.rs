@@ -382,6 +382,7 @@ mod query {
             requestor: config.requestor.into(),
             timeout: config.timeout,
             verifier: config.verifier.into_string(),
+            hook_admin: config.hook_admin.map(|x| x.to_string()),
         };
         Ok(r)
     }

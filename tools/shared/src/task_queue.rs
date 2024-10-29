@@ -151,6 +151,11 @@ impl TaskQueueQuerier {
     ) -> Result<TaskQueueView> {
         let contract_config: ConfigResponse = self.config().await?;
 
+        let hook_admin = contract_config
+            .hook_admin
+            .map(|x| self.query_client.chain_config.parse_address(&x))
+            .transpose()?;
+
         let verifier_addr = self
             .query_client
             .chain_config
@@ -173,6 +178,7 @@ impl TaskQueueQuerier {
         Ok(TaskQueueView {
             verifier_addr,
             operator_addr,
+            hook_admin,
             operators,
             tasks,
         })
@@ -233,6 +239,7 @@ impl TaskQueueQuerier {
 pub struct TaskQueueView {
     pub verifier_addr: Address,
     pub operator_addr: Address,
+    pub hook_admin: Option<Address>,
     pub operators: Vec<Operator>,
     pub tasks: Vec<TaskView>,
 }
@@ -241,6 +248,13 @@ impl TaskQueueView {
     pub fn report(&self, log: impl Fn(&str)) -> Result<()> {
         log(&format!("Verifier: {}", self.verifier_addr));
         log(&format!("Operator: {}", self.operator_addr));
+        log(&format!(
+            "Hook Admin: {}",
+            self.hook_admin
+                .as_ref()
+                .map(|x| x.to_string())
+                .unwrap_or("none".to_string())
+        ));
 
         log("\nOperators:");
         for operator in &self.operators {
