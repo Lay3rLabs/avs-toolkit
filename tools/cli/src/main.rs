@@ -157,6 +157,27 @@ async fn main() -> Result<()> {
                 } => {
                     let _ = task_queue.remove_hook(hook_type, receiver).await?;
                 }
+                TaskQueueCommand::ViewHooks { hook_type } => {
+                    let res = task_queue.querier.view_hooks(hook_type).await?;
+
+                    let display = match hook_type {
+                        args::CliHookType::Completed => "Completed",
+                        args::CliHookType::Timeout => "Timeout",
+                        args::CliHookType::Created => "Created",
+                    };
+
+                    tracing::info!("Task Queue Hooks");
+                    tracing::info!("Address: {}", task_queue.contract_addr);
+                    println!(
+                        "Registered hooks for type '{}': {}",
+                        display,
+                        if res.hooks.is_empty() {
+                            "none".to_string()
+                        } else {
+                            res.hooks.join(", ")
+                        }
+                    );
+                }
             }
         }
         Command::Faucet(faucet_args) => match faucet_args.command {

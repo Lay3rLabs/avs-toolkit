@@ -448,6 +448,7 @@ version = "0.0.0"
 dependencies = [
  "anyhow",
  "cosmwasm-std 2.1.4",
+ "cw-controllers",
  "futures",
  "lavs-apis",
  "lavs-mock-operators",

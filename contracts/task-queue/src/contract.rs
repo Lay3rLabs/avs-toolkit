@@ -87,9 +87,9 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<Binary, ContractErro
                 &query::list_completed(deps, env, start_after, limit)?,
             )?),
             CustomQueryMsg::Config {} => Ok(to_json_binary(&query::config(deps, env)?)?),
-            CustomQueryMsg::TaskHooks(task_hook_type) => Ok(to_json_binary(
-                &TASK_HOOKS.query_hooks(deps, task_hook_type)?,
-            )?),
+            CustomQueryMsg::TaskHooks(hook_type) => {
+                Ok(to_json_binary(&TASK_HOOKS.query_hooks(deps, hook_type)?)?)
+            }
         },
     }
 }

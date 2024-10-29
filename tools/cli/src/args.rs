@@ -200,6 +200,12 @@ pub enum TaskQueueCommand {
         #[clap(short, long)]
         receiver: String,
     },
+
+    /// Views the task hooks of a type
+    ViewHooks {
+        #[clap(short, long, value_enum)]
+        hook_type: CliHookType,
+    },
 }
 
 #[derive(Debug, Clone, Copy, ValueEnum)]

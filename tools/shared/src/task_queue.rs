@@ -1,5 +1,6 @@
 use anyhow::{bail, Result};
 use cosmwasm_std::Order;
+use cw_controllers::HooksResponse;
 use lavs_apis::{
     events::{task_queue_events::TaskCreatedEvent, traits::TypedEvent as _},
     id::TaskId,
@@ -216,6 +217,15 @@ impl TaskQueueQuerier {
         });
 
         Ok(all_tasks)
+    }
+
+    pub async fn view_hooks<T: Into<TaskHookType>>(&self, hook_type: T) -> Result<HooksResponse> {
+        self.query_client
+            .contract_smart(
+                &self.contract_addr,
+                &QueryMsg::Custom(CustomQueryMsg::TaskHooks(hook_type.into())),
+            )
+            .await
     }
 }
 
