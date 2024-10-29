@@ -101,6 +101,7 @@ impl TriggerUi {
                     signing_client(),
                     CONFIG.chain_info().unwrap_ext().wasmatic.endpoints.clone(),
                     code_ids,
+                    None,
                     state.task_queue.task_timeout.get_cloned(),
                     state.task_queue.required_voting_percentage.get_cloned(),
                     state.task_queue.threshold_percentage.get_cloned(),

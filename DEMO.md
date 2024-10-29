@@ -93,7 +93,7 @@ cargo run task-queue view-queue
 
 ### Task Hooks
 
-Task hooks allow contracts to receive notifications for task events. The task queue's hook admin can manage hooks for any receiver address.
+Task hooks allow contracts to receive notifications for task events. The task queue's owner can manage hooks for any receiver address.
 
 View current hooks:
 ```bash

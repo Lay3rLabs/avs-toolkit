@@ -1,19 +1,33 @@
 [workspace]
-members = ["packages/*", "contracts/*","wasi/square", "wasi/oracle-example", "tools/cli", "tools/gui", "tools/shared"]
+members = [
+    "packages/*",
+    "contracts/*",
+    "wasi/square",
+    "wasi/oracle-example",
+    "tools/cli",
+    "tools/gui",
+    "tools/shared",
+]
 resolver = "2"
 
 [workspace.package]
-edition       = "2021"
-version       = "0.2.0"
-license       = "MIT"
-repository    = "https://github.com/Lay3rLabs/avs-toolkit"
+edition = "2021"
+version = "0.2.0"
+license = "MIT"
+repository = "https://github.com/Lay3rLabs/avs-toolkit"
 rust-version = "1.80.0"
 
 [workspace.dependencies]
-lavs-mock-operators = { path = "contracts/mock-operators", features = ["library"]}
+lavs-mock-operators = { path = "contracts/mock-operators", features = [
+    "library",
+] }
 lavs-task-queue = { path = "contracts/task-queue", features = ["library"] }
-lavs-verifier-simple = { path = "contracts/verifier-simple", features = ["library"] }
-lavs-oracle-verifier = { path = "contracts/oracle-verifier", features = ["library"] }
+lavs-verifier-simple = { path = "contracts/verifier-simple", features = [
+    "library",
+] }
+lavs-oracle-verifier = { path = "contracts/oracle-verifier", features = [
+    "library",
+] }
 avs-toolkit-shared = { path = "tools/shared" }
 
 lavs-apis = { path = "packages/apis" }
@@ -21,45 +35,52 @@ lavs-orch = { path = "packages/orch" }
 lavs-helpers = { path = "packages/helpers" }
 
 
-cosmwasm-schema  = "2.1.4"
-cosmwasm-std     = "2.1.4"
+cosmwasm-schema = "2.1.4"
+cosmwasm-std = "2.1.4"
 
 cw-orch = "0.25.0"
 cw-orch-core = "2"
-cw-storage-plus  = "2.0.0"
-cw-utils         = "2.0.0"
-cw-controllers   = "2.0.0"
-cw2              = "2.0.0"
-schemars         = "0.8.17"
-serde            = { version = "1.0.210", default-features = false, features = ["derive"] }
-serde_json       = { version = "1.0.128" }
-thiserror        = "1.0.59"
+cw-ownable = "2.1.0"
+cw-storage-plus = "2.0.0"
+cw-utils = "2.0.0"
+cw-controllers = "2.0.0"
+cw2 = "2.0.0"
+schemars = "0.8.17"
+serde = { version = "1.0.210", default-features = false, features = ["derive"] }
+serde_json = { version = "1.0.128" }
+thiserror = "1.0.59"
 semver = "1.0.22"
 itertools = "0.12.1"
 cfg-if = "1.0.0"
 tempfile = "3.13.0"
-wasmtime = { version = "24.0.0", features = ["cache", "component-model", "async", "runtime", "std"] }
+wasmtime = { version = "24.0.0", features = [
+    "cache",
+    "component-model",
+    "async",
+    "runtime",
+    "std",
+] }
 wasmtime-wasi-http = "24.0.0"
 wasmtime-wasi = { version = "24.0.0", default-features = true }
 
 # dev deps
-anyhow        = "1"
+anyhow = "1"
 cw-multi-test = "0.20"
-derivative    = "2"
-test-case     = "3.3.1"
+derivative = "2"
+test-case = "3.3.1"
 clap = { version = "4.5.1", features = ["derive", "env"] }
 
 # tooling deps
 tokio = { version = "1", features = ["full"] }
 futures = "0.3"
 tracing = "0.1.40"
-dotenvy = {version = "0.15.7", features = ["cli"]}
+dotenvy = { version = "0.15.7", features = ["cli"] }
 tracing-subscriber = "0.3.18"
 bip39 = "2.0.0"
 rand = "0.8"
-layer-climb = { git = "https://github.com/Lay3rLabs/climb.git", tag="v0.1.1" }
-layer-climb-cli = { git = "https://github.com/Lay3rLabs/climb.git", tag="v0.1.1" }
-reqwest = {version = "0.12.5", features=["json"]} 
+layer-climb = { git = "https://github.com/Lay3rLabs/climb.git", tag = "v0.1.1" }
+layer-climb-cli = { git = "https://github.com/Lay3rLabs/climb.git", tag = "v0.1.1" }
+reqwest = { version = "0.12.5", features = ["json"] }
 sha2 = "0.10"
 # purposefully left in for now to make debugging easier, will remove eventually:
 # layer-climb = { path = "../climb/packages/layer-climb" }
@@ -75,9 +96,9 @@ dominator = "0.5.38"
 dominator_helpers = "0.8.0"
 futures-signals = "0.3.34"
 gloo-events = "0.2.0"
-gloo-timers = {version = "0.3.0", features = ["futures"]}
+gloo-timers = { version = "0.3.0", features = ["futures"] }
 # TODO: waiting for https://github.com/smol-rs/async-broadcast/pull/61 to land
-async-broadcast = { git = "https://github.com/smol-rs/async-broadcast.git", rev="de420a3b6e72939d96250573c7c242d0ff195424"}
+async-broadcast = { git = "https://github.com/smol-rs/async-broadcast.git", rev = "de420a3b6e72939d96250573c7c242d0ff195424" }
 
 # wasi stuff
 wit-bindgen-rt = { version = "0.32.0", features = ["bitflags"] }
@@ -87,12 +108,12 @@ wasi = "=0.13.1"
 wstd = "=0.4.0"
 
 [profile.release]
-codegen-units    = 1
-incremental      = false
-debug            = false
+codegen-units = 1
+incremental = false
+debug = false
 debug-assertions = false
-lto              = true
-panic            = 'abort'
-rpath            = false
-opt-level        = 3
-overflow-checks  = true
+lto = true
+panic = 'abort'
+rpath = false
+opt-level = 3
+overflow-checks = true

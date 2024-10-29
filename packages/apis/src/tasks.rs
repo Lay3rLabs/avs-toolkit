@@ -1,6 +1,7 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Coin, Env, Timestamp};
+use cosmwasm_std::{Addr, Coin, Env, Timestamp};
 use cw_orch::{ExecuteFns, QueryFns};
+use cw_ownable::{cw_ownable_execute, cw_ownable_query, Ownership};
 
 pub use crate::interfaces::tasks::{
     TaskExecuteMsg, TaskExecuteMsgFns, TaskQueryMsg, TaskQueryMsgFns, TaskStatus,
@@ -20,8 +21,15 @@ pub struct InstantiateMsg {
     pub timeout: TimeoutInfo,
     /// Which contract can verify results
     pub verifier: String,
-    /// Which address can update hooks
-    pub hook_admin: Option<String>,
+    /// The address that owns and manages the task queue.
+    ///
+    /// ## Privileges
+    /// - Can update task hooks
+    /// - Can remove task hooks
+    /// - Can transfer ownership
+    ///
+    /// Defaults to the message sender during initialization.
+    pub owner: Option<String>,
 }
 
 #[cw_serde]
@@ -61,6 +69,7 @@ pub enum ExecuteMsg {
     Custom(CustomExecuteMsg),
 }
 
+#[cw_ownable_execute]
 #[cw_serde]
 #[derive(ExecuteFns)]
 #[cw_orch(disable_fields_sorting)]
@@ -116,6 +125,7 @@ pub enum QueryMsg {
     Custom(CustomQueryMsg),
 }
 
+#[cw_ownable_query]
 #[cw_serde]
 #[derive(QueryFns)]
 #[cw_orch(disable_fields_sorting)]
@@ -214,10 +224,10 @@ pub struct CompletedTaskOverview {
 
 #[cw_serde]
 pub struct ConfigResponse {
+    pub ownership: Ownership<Addr>,
     pub requestor: Requestor,
     pub timeout: TimeoutConfig,
     pub verifier: String,
-    pub hook_admin: Option<String>,
 }
 
 /// All timeouts are defined in seconds

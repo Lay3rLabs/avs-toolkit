@@ -1,5 +1,6 @@
 use cosmwasm_std::StdError;
 use cw_controllers::HookError;
+use cw_ownable::OwnershipError;
 use cw_utils::PaymentError;
 use lavs_apis::{id::TaskId, time::Duration};
 use thiserror::Error;
@@ -14,6 +15,9 @@ pub enum ContractError {
 
     #[error("{0}")]
     Hook(#[from] HookError),
+
+    #[error("{0}")]
+    Ownership(#[from] OwnershipError),
 
     #[error("Unauthorized")]
     Unauthorized,

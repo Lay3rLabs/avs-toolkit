@@ -1,6 +1,8 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response};
+use cosmwasm_std::{
+    to_json_binary, Binary, Deps, DepsMut, Env, Event, MessageInfo, Reply, Response,
+};
 use cw2::set_contract_version;
 
 use lavs_apis::interfaces::tasks as interface;
@@ -21,11 +23,13 @@ const HOOK_ERROR_REPLY_ID: u64 = 0;
 pub fn instantiate(
     deps: DepsMut,
     _env: Env,
-    _info: MessageInfo,
+    info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
+    let owner = msg.owner.clone().unwrap_or(info.sender.to_string());
     let config = Config::validate(deps.as_ref(), msg)?;
     CONFIG.save(deps.storage, &config)?;
+    cw_ownable::initialize_owner(deps.storage, deps.api, Some(&owner))?;
 
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
@@ -60,6 +64,15 @@ pub fn execute(
                 hook_type,
                 receiver,
             } => execute::remove_hook(deps, info, hook_type, receiver),
+            CustomExecuteMsg::UpdateOwnership(action) => {
+                let ownership =
+                    cw_ownable::update_ownership(deps, &env.block, &info.sender, action)?;
+
+                let event =
+                    Event::new("update_ownership").add_attributes(ownership.into_attributes());
+
+                Ok(Response::new().add_event(event))
+            }
         },
     }
 }
@@ -90,12 +103,16 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<Binary, ContractErro
             CustomQueryMsg::TaskHooks(hook_type) => {
                 Ok(to_json_binary(&TASK_HOOKS.query_hooks(deps, hook_type)?)?)
             }
+            CustomQueryMsg::Ownership {} => {
+                Ok(to_json_binary(&cw_ownable::get_ownership(deps.storage)?)?)
+            }
         },
     }
 }
 
 mod execute {
     use cosmwasm_std::{BankMsg, SubMsg, WasmMsg};
+    use cw_ownable::assert_owner;
     use cw_utils::nonpayable;
     use lavs_apis::{
         events::task_queue_events::{
@@ -284,12 +301,8 @@ mod execute {
         // Validate the address
         let receiver = deps.api.addr_validate(&receiver)?;
 
-        let config = CONFIG.load(deps.storage)?;
-
-        // Only allow the hook admin to register hooks
-        if config.hook_admin.map_or(true, |admin| admin != info.sender) {
-            return Err(ContractError::Unauthorized {});
-        }
+        // Only the owner can register hooks
+        assert_owner(deps.storage, &info.sender)?;
 
         // Register the hook
         TASK_HOOKS.add_hook(deps.storage, &hook_type, receiver.clone())?;
@@ -312,12 +325,8 @@ mod execute {
         // Validate the address
         let receiver = deps.api.addr_validate(&receiver)?;
 
-        let config = CONFIG.load(deps.storage)?;
-
-        // Only allow the hook admin to remove hooks
-        if config.hook_admin.map_or(true, |admin| admin != info.sender) {
-            return Err(ContractError::Unauthorized {});
-        }
+        // Only the owner can remove hooks
+        assert_owner(deps.storage, &info.sender)?;
 
         // Remove the hook
         TASK_HOOKS.remove_hook(deps.storage, &hook_type, receiver.clone())?;
@@ -334,6 +343,7 @@ mod execute {
 
 mod query {
     use cosmwasm_std::Timestamp;
+    use cw_ownable::get_ownership;
     use cw_storage_plus::Bound;
     use lavs_apis::{id::TaskId, tasks::ConfigResponse};
 
@@ -379,10 +389,10 @@ mod query {
     pub fn config(deps: Deps, _env: Env) -> Result<ConfigResponse, ContractError> {
         let config = CONFIG.load(deps.storage)?;
         let r = ConfigResponse {
+            ownership: get_ownership(deps.storage)?,
             requestor: config.requestor.into(),
             timeout: config.timeout,
             verifier: config.verifier.into_string(),
-            hook_admin: config.hook_admin.map(|x| x.to_string()),
         };
         Ok(r)
     }

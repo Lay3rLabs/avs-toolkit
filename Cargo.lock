@@ -449,6 +449,7 @@ dependencies = [
  "anyhow",
  "cosmwasm-std 2.1.4",
  "cw-controllers",
+ "cw-ownable",
  "futures",
  "lavs-apis",
  "lavs-mock-operators",
@@ -1488,6 +1489,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "cw-address-like"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "73553ee4dad5b1678977ff603e72c3fdd41518ca2b0bd9b245b21e4c72eafa9e"
+dependencies = [
+ "cosmwasm-std 2.1.4",
+]
+
+[[package]]
 name = "cw-controllers"
 version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1670,6 +1680,32 @@ dependencies = [
  "cw-orch-core",
  "prost 0.13.3",
  "prost-types",
+]
+
+[[package]]
+name = "cw-ownable"
+version = "2.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ed2f8ee96ac5342c795a0610410998fc075a95af8c796b6d16479cdffd2471f1"
+dependencies = [
+ "cosmwasm-schema 2.1.4",
+ "cosmwasm-std 2.1.4",
+ "cw-address-like",
+ "cw-ownable-derive",
+ "cw-storage-plus 2.0.0",
+ "cw-utils 2.0.0",
+ "thiserror",
+]
+
+[[package]]
+name = "cw-ownable-derive"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0e69178d27793063dd13812777709cf7d7860ba35a598094d4bd89e1b30c9341"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 1.0.109",
 ]
 
 [[package]]
@@ -3162,6 +3198,7 @@ dependencies = [
  "cosmwasm-std 2.1.4",
  "cw-controllers",
  "cw-orch",
+ "cw-ownable",
  "cw-storage-plus 2.0.0",
  "cw-utils 2.0.0",
  "serde",
@@ -3241,6 +3278,7 @@ dependencies = [
  "cw-controllers",
  "cw-multi-test",
  "cw-orch",
+ "cw-ownable",
  "cw-storage-plus 2.0.0",
  "cw-utils 2.0.0",
  "cw2 2.0.0",
