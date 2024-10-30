@@ -20,7 +20,7 @@ cw-storage-plus = { workspace = true }
 cw-controllers = { workspace = true }
 cw2 = { workspace = true }
 cw4 = { workspace = true }
-cw4-group = { workspace = true }
+cw4-group = { workspace = true, features = ["library"] }
 schemars = { workspace = true }
 serde = { workspace = true }
 thiserror = { workspace = true }

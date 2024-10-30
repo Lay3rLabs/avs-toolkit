@@ -57,7 +57,7 @@ mod execute {
     use cosmwasm_std::{to_json_binary, CosmosMsg, StdError, WasmMsg};
     use lavs_apis::{interfaces::task_hooks::TaskHookType, tasks::TaskResponse};
 
-    use crate::msg::TaskResponseData;
+    use crate::msg::TaskOutput;
 
     use super::*;
 
@@ -190,7 +190,7 @@ mod execute {
         }
 
         // Attempt to deserialize the task response
-        let response: TaskResponseData =
+        let response: TaskOutput =
             serde_json::from_value(task.result.expect("Result is not available")).map_err(|e| {
                 StdError::generic_err(format!(
                     "Could not deserialize input request from JSON: {}",
@@ -198,45 +198,50 @@ mod execute {
                 ))
             })?;
 
-        if response.decision.is_none() {
-            return Ok(Response::default()
-                .add_attribute("action", "task_completed")
-                .add_attribute("decision", "none"));
+        match response {
+            TaskOutput::Success(success) => {
+                if let Some(decision) = success.decision {
+                    let address = deps.api.addr_validate(&success.address)?;
+
+                    if DECISIONS.has(deps.storage, &address) {
+                        return Ok(Response::default()
+                            .add_attribute("action", "task_completed")
+                            .add_attribute("decision", "already_decided"));
+                    }
+
+                    DECISIONS.save(deps.storage, &address, &decision)?;
+
+                    let mut response = Response::default()
+                        .add_attribute("action", "task_completed")
+                        .add_attribute("decision", decision.to_string());
+
+                    if decision {
+                        let cw4_group = CW4_GROUP.load(deps.storage)?;
+                        let weight = NEW_MEMBER_WEIGHT.load(deps.storage)?;
+
+                        let msg = CosmosMsg::Wasm(WasmMsg::Execute {
+                            contract_addr: cw4_group.to_string(),
+                            msg: to_json_binary(&cw4_group::msg::ExecuteMsg::UpdateMembers {
+                                add: vec![cw4::Member {
+                                    addr: address.to_string(),
+                                    weight,
+                                }],
+                                remove: vec![],
+                            })?,
+                            funds: vec![],
+                        });
+                        response = response.add_message(msg);
+                    }
+
+                    return Ok(response);
+                }
+            }
+            _ => {}
         }
 
-        let address = deps.api.addr_validate(&response.address)?;
-        if DECISIONS.has(deps.storage, &address) {
-            return Ok(Response::default()
-                .add_attribute("action", "task_completed")
-                .add_attribute("decision", "already_decided"));
-        }
-
-        let decision = response.decision.unwrap();
-        DECISIONS.save(deps.storage, &address, &decision)?;
-
-        let mut response = Response::default()
+        Ok(Response::default()
             .add_attribute("action", "task_completed")
-            .add_attribute("decision", decision.to_string());
-
-        if decision {
-            let cw4_group = CW4_GROUP.load(deps.storage)?;
-            let weight = NEW_MEMBER_WEIGHT.load(deps.storage)?;
-
-            let msg = CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: cw4_group.to_string(),
-                msg: to_json_binary(&cw4_group::msg::ExecuteMsg::UpdateMembers {
-                    add: vec![cw4::Member {
-                        addr: address.to_string(),
-                        weight,
-                    }],
-                    remove: vec![],
-                })?,
-                funds: vec![],
-            });
-            response = response.add_message(msg);
-        }
-
-        Ok(response)
+            .add_attribute("decision", "none"))
     }
 }
 

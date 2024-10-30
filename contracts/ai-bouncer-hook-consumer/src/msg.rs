@@ -62,12 +62,18 @@ pub enum QueryMsg {
 }
 
 #[cw_serde]
+pub enum TaskOutput {
+    Success(TaskOutputSuccess),
+    Error(String),
+}
+
+#[cw_serde]
 #[serde(rename_all = "camelCase")]
-pub struct TaskResponseData {
+pub struct TaskOutputSuccess {
     /// the session ID of the address being evaluated
     pub session_id: String,
     /// the message ID being responded to
-    pub message_id: String,
+    pub message_id: u16,
     /// the address being evaluated
     pub address: String,
     /// the response to the message

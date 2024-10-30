@@ -12,7 +12,7 @@ struct Component;
 impl Guest for Component {
     fn run_task(request: TaskQueueInput) -> Output {
         match serde_json::from_slice(&request.request) {
-            Ok(input) => block_on(|reactor| get_ollama_response(reactor, input)),
+            Ok(input) => block_on(|reactor| get_output(reactor, input)),
             Err(e) => serde_json::to_vec(&TaskOutput::Error(format!(
                 "Could not deserialize input request from JSON: {}",
                 e
@@ -22,23 +22,11 @@ impl Guest for Component {
     }
 }
 
-async fn get_ollama_response(reactor: Reactor, input: TaskInput) -> Result<Vec<u8>, String> {
-    let res = ollama::get_ollama_response(&reactor, input.next_message).await;
-
-    // serialize JSON response
-
-    let output = res
-        .map(|r| {
-            TaskOutput::Success(TaskOutputSuccess {
-                session_id: input.session_id,
-                message_id: input.message_id,
-                address: input.address,
-                response: r.message.content,
-                decision: r.decision,
-            })
-        })
-        .unwrap_or_else(|e| TaskOutput::Error(e.to_string()));
-
+async fn get_output(reactor: Reactor, input: TaskInput) -> Result<Vec<u8>, String> {
+    let output = ollama::get_output(&reactor, &input)
+        .await
+        .map(TaskOutput::Success)
+        .unwrap_or_else(TaskOutput::Error);
     serde_json::to_vec(&output).map_err(|e| e.to_string())
 }
 
@@ -49,8 +37,8 @@ pub struct TaskInput {
     pub session_id: String,
     /// the incrementing message index, starting at 0
     pub message_id: u16,
-    /// the address being evaluated
-    pub address: String,
+    /// the address being evaluated. only needed on first message (where ID = 0)
+    pub address: Option<String>,
     /// the next message in the conversation
     pub next_message: String,
 }
