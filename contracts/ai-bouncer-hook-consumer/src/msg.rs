@@ -72,10 +72,10 @@ pub enum TaskOutput {
 pub struct TaskOutputSuccess {
     /// the session ID of the address being evaluated
     pub session_id: String,
-    /// the message ID being responded to
-    pub message_id: u16,
     /// the address being evaluated
     pub address: String,
+    /// the message ID being responded to
+    pub message_id: u16,
     /// the response to the message
     pub response: String,
     /// the decision made by the AI bouncer, which will be present once

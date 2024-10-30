@@ -152,7 +152,7 @@ pub async fn get_output(reactor: &Reactor, input: &TaskInput) -> Result<TaskOutp
 
     session.messages.push(OllamaChatMessage {
         role: "user".to_string(),
-        content: input.next_message.clone(),
+        content: input.message.clone(),
         tool_calls: None,
     });
 
