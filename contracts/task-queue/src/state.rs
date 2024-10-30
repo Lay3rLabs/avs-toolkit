@@ -12,7 +12,11 @@ use crate::error::ContractError;
 use crate::msg::{self, InstantiateMsg, RequestType, ResponseType};
 
 pub const CONFIG: Item<Config> = Item::new("config");
-pub const TASK_HOOKS: TaskHooks = TaskHooks::new("global_hooks", "task_specific_hooks");
+pub const TASK_HOOKS: TaskHooks = TaskHooks::new(
+    "global_hooks",
+    "task_specific_hooks",
+    "task_specific_whitelist",
+);
 pub const TASK_DEPOSITS: Map<TaskId, TaskDeposit> = Map::new("task_deposits");
 
 pub struct TaskIndexes<'a> {
@@ -135,6 +139,7 @@ pub fn check_timeout(
 
 #[cw_serde]
 pub struct Task {
+    pub creator: Addr,
     pub description: String,
     pub status: Status,
     pub timing: Timing,

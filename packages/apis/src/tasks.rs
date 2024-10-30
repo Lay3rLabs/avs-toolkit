@@ -106,6 +106,12 @@ pub enum CustomExecuteMsg {
         /// The receiver address that will stop receiving hook messages
         receiver: String,
     },
+    /// Update task-specific whitelist
+    /// These users are allowed to add task hooks to their submissions
+    UpdateTaskSpecificWhitelist {
+        to_add: Option<Vec<String>>,
+        to_remove: Option<Vec<String>>,
+    },
 }
 
 impl From<CustomExecuteMsg> for ExecuteMsg {

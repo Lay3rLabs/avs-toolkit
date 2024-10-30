@@ -76,6 +76,9 @@ pub fn execute(
 
                 Ok(Response::new().add_event(event))
             }
+            CustomExecuteMsg::UpdateTaskSpecificWhitelist { to_add, to_remove } => {
+                execute::update_task_specific_whitelist(deps, info, to_add, to_remove)
+            }
         },
     }
 }
@@ -152,6 +155,7 @@ mod execute {
             timing,
             payload,
             result: None,
+            creator: info.sender.clone(),
         };
         let task_id = config.next_id;
         TASKS.save(deps.storage, task_id, &task)?;
@@ -310,8 +314,24 @@ mod execute {
         // Validate the address
         let receiver = deps.api.addr_validate(&receiver)?;
 
-        // Only the owner can register hooks
-        assert_owner(deps.storage, &info.sender)?;
+        // Only the owner - or task-specific whitelisted accounts for their own tasks - can register hooks
+        let result = assert_owner(deps.storage, &info.sender);
+        if result.is_err() {
+            if !TASK_HOOKS
+                .task_specific_whitelist
+                .has(deps.storage, &info.sender)
+            {
+                result?
+            } else if let Some(task_id) = task_id {
+                let task = TASKS.load(deps.storage, task_id)?;
+
+                if task.creator != info.sender {
+                    result?
+                }
+            } else {
+                result?
+            }
+        }
 
         // Register the hook
         let is_task_created = if let Some(task_id) = task_id {
@@ -359,6 +379,19 @@ mod execute {
         };
 
         Ok(Response::new().add_event(hook_removed_event))
+    }
+
+    pub fn update_task_specific_whitelist(
+        deps: DepsMut,
+        info: MessageInfo,
+        to_add: Option<Vec<String>>,
+        to_remove: Option<Vec<String>>,
+    ) -> Result<Response, ContractError> {
+        assert_owner(deps.storage, &info.sender)?;
+
+        TASK_HOOKS.update_task_specific_whitelist(deps.api, deps.storage, to_add, to_remove)?;
+
+        Ok(Response::new().add_attribute("action", "Update_task_specific_whitelist"))
     }
 }
 

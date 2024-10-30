@@ -1,5 +1,7 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{to_json_binary, Addr, CustomQuery, Deps, StdError, StdResult, Storage, SubMsg};
+use cosmwasm_std::{
+    to_json_binary, Addr, Api, CustomQuery, Deps, StdError, StdResult, Storage, SubMsg,
+};
 use cw_storage_plus::Map;
 use thiserror::Error;
 
@@ -18,6 +20,8 @@ pub struct TaskHooks<'a> {
     /// Hooks executed only on specific tasks of the task queue
     /// (task_id, hook_type) -> receivers
     pub task_specific_hooks: Map<(TaskId, &'a str), Vec<Addr>>,
+    /// Whitelist of addresses allowed to submit a hook for their submissions
+    pub task_specific_whitelist: Map<&'a Addr, ()>,
 }
 
 #[cw_serde]
@@ -28,11 +32,43 @@ pub struct TaskHookPayload {
 }
 
 impl<'a> TaskHooks<'a> {
-    pub const fn new(global_hooks: &'static str, task_specific_hooks: &'static str) -> Self {
+    pub const fn new(
+        global_hooks: &'static str,
+        task_specific_hooks: &'static str,
+        task_specific_whitelist: &'static str,
+    ) -> Self {
         Self {
             global_hooks: Map::new(global_hooks),
             task_specific_hooks: Map::new(task_specific_hooks),
+            task_specific_whitelist: Map::new(task_specific_whitelist),
         }
+    }
+
+    /// Updates the whitelist of addresses allowed to submit a hook for their submission
+    pub fn update_task_specific_whitelist(
+        &self,
+        api: &dyn Api,
+        storage: &mut dyn Storage,
+        to_add: Option<Vec<String>>,
+        to_remove: Option<Vec<String>>,
+    ) -> Result<(), TaskHookError> {
+        // Add new addresses to whitelist
+        if let Some(addresses) = to_add {
+            for addr in addresses {
+                let addr = api.addr_validate(&addr)?;
+                self.task_specific_whitelist.save(storage, &addr, &())?;
+            }
+        }
+
+        // Remove addresses from whitelist
+        if let Some(addresses) = to_remove {
+            for addr in addresses {
+                let addr = api.addr_validate(&addr)?;
+                self.task_specific_whitelist.remove(storage, &addr);
+            }
+        }
+
+        Ok(())
     }
 
     /// Adds a hook for either a specific task or globally
@@ -194,12 +230,6 @@ impl<'a> TaskHooks<'a> {
         }
 
         Ok(HooksResponse { hooks })
-    }
-}
-
-impl<'a> Default for TaskHooks<'a> {
-    fn default() -> Self {
-        Self::new("global_hooks", "task_specific_hooks")
     }
 }
 
