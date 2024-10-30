@@ -1,10 +1,11 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_json_binary, Binary, Deps, DepsMut, Env, Event, MessageInfo, Reply, Response,
+    from_json, to_json_binary, Binary, Deps, DepsMut, Env, Event, MessageInfo, Reply, Response,
 };
 use cw2::set_contract_version;
 
+use lavs_apis::interfaces::task_hooks::TaskHookPayload;
 use lavs_apis::interfaces::tasks as interface;
 use lavs_apis::tasks::{CustomExecuteMsg, CustomQueryMsg, TaskQueryMsg};
 
@@ -17,7 +18,7 @@ use crate::state::{Config, Task, CONFIG, TASKS, TASK_HOOKS};
 const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
-const HOOK_ERROR_REPLY_ID: u64 = 0;
+const TASK_HOOK_REPLY_ID: u64 = 0;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -57,13 +58,15 @@ pub fn execute(
             } => execute::create(deps, env, info, description, timeout, payload),
             CustomExecuteMsg::Timeout { task_id } => execute::timeout(deps, env, info, task_id),
             CustomExecuteMsg::AddHook {
+                task_id,
                 hook_type,
                 receiver,
-            } => execute::add_hook(deps, info, hook_type, receiver),
+            } => execute::add_hook(deps, info, task_id, hook_type, receiver),
             CustomExecuteMsg::RemoveHook {
+                task_id,
                 hook_type,
                 receiver,
-            } => execute::remove_hook(deps, info, hook_type, receiver),
+            } => execute::remove_hook(deps, info, task_id, hook_type, receiver),
             CustomExecuteMsg::UpdateOwnership(action) => {
                 let ownership =
                     cw_ownable::update_ownership(deps, &env.block, &info.sender, action)?;
@@ -100,9 +103,9 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<Binary, ContractErro
                 &query::list_completed(deps, env, start_after, limit)?,
             )?),
             CustomQueryMsg::Config {} => Ok(to_json_binary(&query::config(deps, env)?)?),
-            CustomQueryMsg::TaskHooks(hook_type) => {
-                Ok(to_json_binary(&TASK_HOOKS.query_hooks(deps, hook_type)?)?)
-            }
+            CustomQueryMsg::TaskHooks { hook_type, task_id } => Ok(to_json_binary(
+                &TASK_HOOKS.query_hooks(deps, task_id, hook_type)?,
+            )?),
             CustomQueryMsg::Ownership {} => {
                 Ok(to_json_binary(&cw_ownable::get_ownership(deps.storage)?)?)
             }
@@ -167,22 +170,23 @@ mod execute {
         }
 
         // Prepare hooks
-        let hooks = TASK_HOOKS.created.prepare_hooks(deps.storage, |addr| {
-            Ok(SubMsg::reply_on_error(
-                WasmMsg::Execute {
-                    contract_addr: addr.to_string(),
-                    msg: to_json_binary(&TaskHookExecuteMsg::TaskCreatedHook(TaskResponse {
-                        description: task.description.clone(),
-                        status: task.status.clone(),
-                        id: task_id,
-                        payload: task.payload.clone(),
-                        result: None,
-                    }))?,
-                    funds: vec![],
-                },
-                HOOK_ERROR_REPLY_ID,
-            ))
-        })?;
+        let hooks =
+            TASK_HOOKS.prepare_hooks(deps.storage, task_id, TaskHookType::Created, |addr| {
+                Ok(SubMsg::reply_always(
+                    WasmMsg::Execute {
+                        contract_addr: addr.to_string(),
+                        msg: to_json_binary(&TaskHookExecuteMsg::TaskCreatedHook(TaskResponse {
+                            description: task.description.clone(),
+                            status: task.status.clone(),
+                            id: task_id,
+                            payload: task.payload.clone(),
+                            result: None,
+                        }))?,
+                        funds: vec![],
+                    },
+                    TASK_HOOK_REPLY_ID,
+                ))
+            })?;
 
         let task_queue_event = TaskCreatedEvent { task_id };
 
@@ -217,22 +221,25 @@ mod execute {
         }
 
         // Prepare hooks
-        let hooks = TASK_HOOKS.completed.prepare_hooks(deps.storage, |addr| {
-            Ok(SubMsg::reply_on_error(
-                WasmMsg::Execute {
-                    contract_addr: addr.to_string(),
-                    msg: to_json_binary(&TaskHookExecuteMsg::TaskCompletedHook(TaskResponse {
-                        description: task.description.clone(),
-                        status: task.status.clone(),
-                        id: task_id,
-                        payload: task.payload.clone(),
-                        result: task.result.clone(),
-                    }))?,
-                    funds: vec![],
-                },
-                HOOK_ERROR_REPLY_ID,
-            ))
-        })?;
+        let hooks =
+            TASK_HOOKS.prepare_hooks(deps.storage, task_id, TaskHookType::Completed, |addr| {
+                Ok(SubMsg::reply_always(
+                    WasmMsg::Execute {
+                        contract_addr: addr.to_string(),
+                        msg: to_json_binary(&TaskHookExecuteMsg::TaskCompletedHook(
+                            TaskResponse {
+                                description: task.description.clone(),
+                                status: task.status.clone(),
+                                id: task_id,
+                                payload: task.payload.clone(),
+                                result: task.result.clone(),
+                            },
+                        ))?,
+                        funds: vec![],
+                    },
+                    TASK_HOOK_REPLY_ID,
+                ))
+            })?;
 
         let task_queue_event = TaskCompletedEvent { task_id };
 
@@ -257,22 +264,23 @@ mod execute {
         TASKS.save(deps.storage, task_id, &task)?;
 
         // Prepare hooks
-        let hooks = TASK_HOOKS.timeout.prepare_hooks(deps.storage, |addr| {
-            Ok(SubMsg::reply_on_error(
-                WasmMsg::Execute {
-                    contract_addr: addr.to_string(),
-                    msg: to_json_binary(&TaskHookExecuteMsg::TaskTimeoutHook(TaskResponse {
-                        description: task.description.clone(),
-                        status: task.status.clone(),
-                        id: task_id,
-                        payload: task.payload.clone(),
-                        result: None,
-                    }))?,
-                    funds: vec![],
-                },
-                HOOK_ERROR_REPLY_ID,
-            ))
-        })?;
+        let hooks =
+            TASK_HOOKS.prepare_hooks(deps.storage, task_id, TaskHookType::Timeout, |addr| {
+                Ok(SubMsg::reply_always(
+                    WasmMsg::Execute {
+                        contract_addr: addr.to_string(),
+                        msg: to_json_binary(&TaskHookExecuteMsg::TaskTimeoutHook(TaskResponse {
+                            description: task.description.clone(),
+                            status: task.status.clone(),
+                            id: task_id,
+                            payload: task.payload.clone(),
+                            result: None,
+                        }))?,
+                        funds: vec![],
+                    },
+                    TASK_HOOK_REPLY_ID,
+                ))
+            })?;
 
         let task_queue_event = TaskExpiredEvent { task_id };
 
@@ -295,6 +303,7 @@ mod execute {
     pub fn add_hook(
         deps: DepsMut,
         info: MessageInfo,
+        task_id: Option<TaskId>,
         hook_type: TaskHookType,
         receiver: String,
     ) -> Result<Response, ContractError> {
@@ -305,7 +314,18 @@ mod execute {
         assert_owner(deps.storage, &info.sender)?;
 
         // Register the hook
-        TASK_HOOKS.add_hook(deps.storage, &hook_type, receiver.clone())?;
+        let is_task_created = if let Some(task_id) = task_id {
+            TASKS.has(deps.storage, task_id)
+        } else {
+            false
+        };
+        TASK_HOOKS.add_hook(
+            deps.storage,
+            is_task_created,
+            task_id,
+            &hook_type,
+            receiver.clone(),
+        )?;
 
         // Create event
         let hook_added_event = HookAddedEvent {
@@ -319,6 +339,7 @@ mod execute {
     pub fn remove_hook(
         deps: DepsMut,
         info: MessageInfo,
+        task_id: Option<TaskId>,
         hook_type: TaskHookType,
         receiver: String,
     ) -> Result<Response, ContractError> {
@@ -329,7 +350,7 @@ mod execute {
         assert_owner(deps.storage, &info.sender)?;
 
         // Remove the hook
-        TASK_HOOKS.remove_hook(deps.storage, &hook_type, receiver.clone())?;
+        TASK_HOOKS.remove_hook(deps.storage, task_id, &hook_type, receiver.clone())?;
 
         // Create event
         let hook_removed_event = HookRemovedEvent {
@@ -533,10 +554,23 @@ mod query {
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn reply(_deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractError> {
+pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractError> {
     match msg.id {
-        // Allow hooks to fail
-        HOOK_ERROR_REPLY_ID => Ok(Response::default()),
+        TASK_HOOK_REPLY_ID => {
+            // NOTE: cw-orch is not registering the payload even with cosmwasm_2_1 flag on cosmwasm_std
+            if let Ok(payload) = from_json::<TaskHookPayload>(msg.payload) {
+                // If we have a valid TaskHookPayload, then we can remove the task-specific hook
+                TASK_HOOKS.remove_hook(
+                    deps.storage,
+                    Some(payload.task_id),
+                    &payload.hook_type,
+                    payload.addr,
+                )?;
+            }
+
+            // Handle any result as valid to prevent blocking
+            Ok(Response::default())
+        }
         _ => Err(ContractError::UnknownReplyId { id: msg.id }),
     }
 }

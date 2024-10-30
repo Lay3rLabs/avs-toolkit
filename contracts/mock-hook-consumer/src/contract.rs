@@ -1,7 +1,7 @@
 use cosmwasm_std::{entry_point, to_json_binary, Binary, Deps, Empty, StdResult};
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response};
 use cw2::set_contract_version;
-use execute::{add_hooks, task_completed, task_created, task_timeout};
+use execute::{task_completed, task_created, task_timeout};
 use lavs_apis::interfaces::task_hooks::TaskHookExecuteMsg;
 
 use crate::msg::{ExecuteMsg, QueryMsg};
@@ -33,16 +33,12 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             TaskHookExecuteMsg::TaskCompletedHook(task) => task_completed(deps, env, info, task),
             TaskHookExecuteMsg::TaskTimeoutHook(task) => task_timeout(deps, env, info, task),
         },
-        ExecuteMsg::AddHooks { task_queue } => add_hooks(deps, env, info, task_queue),
     }
 }
 
 mod execute {
     use cosmwasm_std::{to_json_binary, CosmosMsg, StdError, WasmMsg};
-    use lavs_apis::{
-        interfaces::task_hooks::TaskHookType,
-        tasks::{ConfigResponse, Requestor, TaskResponse},
-    };
+    use lavs_apis::tasks::{ConfigResponse, Requestor, TaskResponse};
 
     use crate::{
         msg::{TaskRequestData, TaskResponseData},
@@ -50,51 +46,6 @@ mod execute {
     };
 
     use super::*;
-
-    /// Register all of the hooks on the task queue
-    pub fn add_hooks(
-        deps: DepsMut,
-        env: Env,
-        _info: MessageInfo,
-        task_queue: String,
-    ) -> StdResult<Response> {
-        let task_queue = deps.api.addr_validate(&task_queue)?;
-
-        let msgs = vec![
-            CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: task_queue.to_string(),
-                msg: to_json_binary(&lavs_apis::tasks::ExecuteMsg::Custom(
-                    lavs_apis::tasks::CustomExecuteMsg::AddHook {
-                        hook_type: TaskHookType::Created,
-                        receiver: env.contract.address.to_string(),
-                    },
-                ))?,
-                funds: vec![],
-            }),
-            CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: task_queue.to_string(),
-                msg: to_json_binary(&lavs_apis::tasks::ExecuteMsg::Custom(
-                    lavs_apis::tasks::CustomExecuteMsg::AddHook {
-                        hook_type: TaskHookType::Completed,
-                        receiver: env.contract.address.to_string(),
-                    },
-                ))?,
-                funds: vec![],
-            }),
-            CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: task_queue.to_string(),
-                msg: to_json_binary(&lavs_apis::tasks::ExecuteMsg::Custom(
-                    lavs_apis::tasks::CustomExecuteMsg::AddHook {
-                        hook_type: TaskHookType::Timeout,
-                        receiver: env.contract.address.to_string(),
-                    },
-                ))?,
-                funds: vec![],
-            }),
-        ];
-
-        Ok(Response::default().add_messages(msgs))
-    }
 
     /// For a task created, we want to increase our created counter.
     pub fn task_created(

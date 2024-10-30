@@ -1,8 +1,7 @@
 use cosmwasm_std::StdError;
-use cw_controllers::HookError;
 use cw_ownable::OwnershipError;
 use cw_utils::PaymentError;
-use lavs_apis::{id::TaskId, time::Duration};
+use lavs_apis::{id::TaskId, interfaces::task_hooks::TaskHookError, time::Duration};
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -14,7 +13,7 @@ pub enum ContractError {
     Payment(#[from] PaymentError),
 
     #[error("{0}")]
-    Hook(#[from] HookError),
+    TaskHook(#[from] TaskHookError),
 
     #[error("{0}")]
     Ownership(#[from] OwnershipError),

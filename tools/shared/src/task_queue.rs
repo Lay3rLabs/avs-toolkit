@@ -1,10 +1,9 @@
 use anyhow::{bail, Result};
 use cosmwasm_std::Order;
-use cw_controllers::HooksResponse;
 use lavs_apis::{
     events::{task_queue_events::TaskCreatedEvent, traits::TypedEvent as _},
     id::TaskId,
-    interfaces::task_hooks::TaskHookType,
+    interfaces::task_hooks::{HooksResponse, TaskHookType},
     tasks::{CompletedTaskOverview, ListCompletedResponse, ListOpenResponse, OpenTaskOverview},
     time::Duration,
 };
@@ -82,6 +81,7 @@ impl TaskQueue {
 
     pub async fn add_hook<T: Into<TaskHookType>>(
         &self,
+        task_id: Option<TaskId>,
         hook_type: T,
         receiver: String,
     ) -> Result<TxResponse> {
@@ -91,6 +91,7 @@ impl TaskQueue {
             .contract_execute(
                 &self.contract_addr,
                 &CustomExecuteMsg::AddHook {
+                    task_id,
                     hook_type,
                     receiver,
                 },
@@ -106,6 +107,7 @@ impl TaskQueue {
 
     pub async fn remove_hook<T: Into<TaskHookType>>(
         &self,
+        task_id: Option<TaskId>,
         hook_type: T,
         receiver: String,
     ) -> Result<TxResponse> {
@@ -115,6 +117,7 @@ impl TaskQueue {
             .contract_execute(
                 &self.contract_addr,
                 &CustomExecuteMsg::RemoveHook {
+                    task_id,
                     hook_type,
                     receiver,
                 },
@@ -226,11 +229,18 @@ impl TaskQueueQuerier {
         Ok(all_tasks)
     }
 
-    pub async fn view_hooks<T: Into<TaskHookType>>(&self, hook_type: T) -> Result<HooksResponse> {
+    pub async fn view_hooks<T: Into<TaskHookType>>(
+        &self,
+        task_id: Option<TaskId>,
+        hook_type: T,
+    ) -> Result<HooksResponse> {
         self.query_client
             .contract_smart(
                 &self.contract_addr,
-                &QueryMsg::Custom(CustomQueryMsg::TaskHooks(hook_type.into())),
+                &QueryMsg::Custom(CustomQueryMsg::TaskHooks {
+                    hook_type: hook_type.into(),
+                    task_id,
+                }),
             )
             .await
     }

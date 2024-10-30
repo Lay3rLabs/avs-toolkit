@@ -198,6 +198,8 @@ pub enum TaskQueueCommand {
         hook_type: CliHookType,
         #[clap(short, long)]
         receiver: String,
+        #[clap(short, long)]
+        task_id: Option<TaskId>,
     },
 
     /// Removes a task queue hook
@@ -206,10 +208,14 @@ pub enum TaskQueueCommand {
         hook_type: CliHookType,
         #[clap(short, long)]
         receiver: String,
+        #[clap(short, long)]
+        task_id: Option<TaskId>,
     },
 
     /// Views the task hooks of a type
     ViewHooks {
+        #[clap(short, long)]
+        task_id: Option<TaskId>,
         #[clap(short, long, value_enum)]
         hook_type: CliHookType,
     },

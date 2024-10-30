@@ -93,31 +93,57 @@ cargo run task-queue view-queue
 
 ### Task Hooks
 
-Task hooks allow contracts to receive notifications for task events. The task queue's owner can manage hooks for any receiver address.
+Task hooks allow contracts to receive notifications for task events. The task queue's owner can manage hooks for any receiver address, with the option to make hooks either global or specific to particular tasks.
 
 View current hooks:
 ```bash
-# View hooks for a specific type
+# View global hooks for a specific type
 cargo run task-queue view-hooks --hook-type completed
+
+# View hooks for specific type and task
+cargo run task-queue view-hooks --hook-type completed --task-id TASK_ID
 
 # Available hook types: completed, timeout, created
 ```
 
 Register a hook for task events:
 ```bash
-# Add hook for completed tasks
-cargo run task-queue add-hook --hook-type completed --receiver CONTRACT_ADDRESS_HERE
+# Add global hook for completed tasks
+cargo run task-queue add-hook \
+    --hook-type completed \
+    --receiver CONTRACT_ADDRESS_HERE
+
+# Add task-specific hook
+cargo run task-queue add-hook \
+    --hook-type completed \
+    --receiver CONTRACT_ADDRESS_HERE \
+    --task-id TASK_ID
 
 # Add hook for timeouts
-cargo run task-queue add-hook --hook-type timeout --receiver CONTRACT_ADDRESS_HERE
+cargo run task-queue add-hook \
+    --hook-type timeout \
+    --receiver CONTRACT_ADDRESS_HERE \
+    [--task-id TASK_ID]
 
-# Add hook for new tasks
-cargo run task-queue add-hook --hook-type created --receiver CONTRACT_ADDRESS_HERE
+# Add hook for future tasks
+cargo run task-queue add-hook \
+    --hook-type created \
+    --receiver CONTRACT_ADDRESS_HERE \
+    [--task-id TASK_ID]
 ```
 
 Remove hooks when no longer needed:
 ```bash
-cargo run task-queue remove-hook --hook-type completed --receiver CONTRACT_ADDRESS_HERE
+# Remove global hook
+cargo run task-queue remove-hook \
+    --hook-type completed \
+    --receiver CONTRACT_ADDRESS_HERE
+
+# Remove task-specific hook
+cargo run task-queue remove-hook \
+    --hook-type completed \
+    --receiver CONTRACT_ADDRESS_HERE \
+    --task-id TASK_ID
 ```
 
 The receiver contract will be notified when:

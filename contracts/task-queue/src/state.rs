@@ -12,11 +12,7 @@ use crate::error::ContractError;
 use crate::msg::{self, InstantiateMsg, RequestType, ResponseType};
 
 pub const CONFIG: Item<Config> = Item::new("config");
-pub const TASK_HOOKS: TaskHooks = TaskHooks::new(
-    "task_completed_hooks",
-    "task_timeout_hooks",
-    "task_created_hooks",
-);
+pub const TASK_HOOKS: TaskHooks = TaskHooks::new("global_hooks", "task_specific_hooks");
 pub const TASK_DEPOSITS: Map<TaskId, TaskDeposit> = Map::new("task_deposits");
 
 pub struct TaskIndexes<'a> {

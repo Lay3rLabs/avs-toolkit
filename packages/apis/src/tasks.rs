@@ -7,7 +7,11 @@ pub use crate::interfaces::tasks::{
     TaskExecuteMsg, TaskExecuteMsgFns, TaskQueryMsg, TaskQueryMsgFns, TaskStatus,
     TaskStatusResponse,
 };
-use crate::{id::TaskId, interfaces::task_hooks::TaskHookType, time::Duration};
+use crate::{
+    id::TaskId,
+    interfaces::task_hooks::{HooksResponse, TaskHookType},
+    time::Duration,
+};
 
 // FIXME: make these generic
 pub type RequestType = serde_json::Value;
@@ -90,12 +94,18 @@ pub enum CustomExecuteMsg {
     },
     /// Adds a hook to the receiver for the given task hook type
     AddHook {
+        /// Optional task id for task-specific hooks. If None, adds a global hook.
+        task_id: Option<TaskId>,
+        /// The type of hook to add
         hook_type: TaskHookType,
         /// The receiver address of the hook messages
         receiver: String,
     },
     /// Remove a hook from a receiver
     RemoveHook {
+        /// Optional task id to remove a task-specific hook. If None, removes a global hook.
+        task_id: Option<TaskId>,
+        /// The type of hook to remove (Created, Completed, or Timeout)
         hook_type: TaskHookType,
         /// The receiver address that will stop receiving hook messages
         receiver: String,
@@ -156,8 +166,11 @@ pub enum CustomQueryMsg {
     #[returns(ConfigResponse)]
     Config {},
     /// Gets the task hooks for the given task hook type
-    #[returns(cw_controllers::HooksResponse)]
-    TaskHooks(TaskHookType),
+    #[returns(HooksResponse)]
+    TaskHooks {
+        hook_type: TaskHookType,
+        task_id: Option<TaskId>,
+    },
 }
 
 impl From<TaskQueryMsg> for QueryMsg {

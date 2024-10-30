@@ -150,17 +150,19 @@ async fn main() -> Result<()> {
                 TaskQueueCommand::AddHook {
                     hook_type,
                     receiver,
+                    task_id,
                 } => {
-                    let _ = task_queue.add_hook(hook_type, receiver).await?;
+                    let _ = task_queue.add_hook(task_id, hook_type, receiver).await?;
                 }
                 TaskQueueCommand::RemoveHook {
                     hook_type,
                     receiver,
+                    task_id,
                 } => {
-                    let _ = task_queue.remove_hook(hook_type, receiver).await?;
+                    let _ = task_queue.remove_hook(task_id, hook_type, receiver).await?;
                 }
-                TaskQueueCommand::ViewHooks { hook_type } => {
-                    let res = task_queue.querier.view_hooks(hook_type).await?;
+                TaskQueueCommand::ViewHooks { task_id, hook_type } => {
+                    let res = task_queue.querier.view_hooks(task_id, hook_type).await?;
 
                     let display = match hook_type {
                         args::CliHookType::Completed => "Completed",

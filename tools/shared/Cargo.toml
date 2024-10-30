@@ -13,7 +13,6 @@ lavs-apis = { workspace = true }
 layer-climb = { workspace = true }
 anyhow = { workspace = true }
 cosmwasm-std = { workspace = true }
-cw-controllers = { workspace = true }
 cw-ownable = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }

@@ -2,9 +2,10 @@ use cosmwasm_std::{Timestamp, Uint128};
 use cw_orch::environment::{ChainState, CwEnv, Environment, IndexResponse, QueryHandler};
 use cw_orch::prelude::*;
 use lavs_apis::id::TaskId;
+use lavs_apis::interfaces::task_hooks::TaskHookType;
 use lavs_apis::tasks::{InfoStatus, TaskInfoResponse, TaskStatus};
 use lavs_apis::time::Duration;
-use mock_hook_consumer::msg::{ExecuteMsgFns, QueryMsgFns};
+use mock_hook_consumer::msg::QueryMsgFns as _;
 use serde_json::json;
 
 use crate::error::ContractError;
@@ -600,14 +601,39 @@ where
         requestor: Requestor::OpenPayment(coin),
         timeout: mock_timeout(Duration::new_seconds(200)),
         verifier: verifier.addr().into(),
-        owner: Some(mock_consumer.addr_str().unwrap()),
+        owner: None, // defaults to sender
     };
     let task_contract = setup(chain.clone(), msg);
 
     // Establish hooks
-    mock_consumer
-        .add_hooks(task_contract.addr_str().unwrap())
+    let task_id_for_specific_hook = TaskId::new(1);
+    task_contract
+        .add_hook(
+            None,
+            TaskHookType::Created,
+            mock_consumer.addr_str().unwrap(),
+        )
         .unwrap();
+    task_contract
+        .add_hook(
+            Some(task_id_for_specific_hook), // Only task 1 will create another task on completion
+            TaskHookType::Completed,
+            mock_consumer.addr_str().unwrap(),
+        )
+        .unwrap();
+    task_contract
+        .add_hook(
+            None,
+            TaskHookType::Timeout,
+            mock_consumer.addr_str().unwrap(),
+        )
+        .unwrap();
+
+    // Ensure the task-specific hook count is 1
+    let task_hooks = task_contract
+        .task_hooks(TaskHookType::Completed, Some(task_id_for_specific_hook))
+        .unwrap();
+    assert_eq!(task_hooks.hooks.len(), 1);
 
     // Ensure created counter starts at 0
     let counter = mock_consumer.created_count().unwrap();
@@ -650,6 +676,29 @@ where
     // The consumer should error out, but the function should not block
     let result = task_contract.call_as(&verifier).timeout(timeout_task_id);
     assert!(result.is_ok());
+
+    // Create another task
+    let payload = json!({"x": 5});
+    let task_id = make_task_with_funds(&task_contract, "Test Task", None, &payload, &funds);
+
+    // Complete this task
+    let result = json!({"y": 25});
+    task_contract
+        .call_as(&verifier)
+        .complete(task_id, result)
+        .unwrap();
+
+    // Ensure task count is only 4
+    // The task-specific hook only created another task for task 1
+    let task_list = task_contract.list(None, None).unwrap();
+    assert_eq!(task_list.tasks.len(), 4);
+
+    // Ensure the task-specific hook was removed
+    // NOTE: cw-orch is not registering the payload even with cosmwasm_2_1 flag on cosmwasm_std
+    // let task_hooks = task_contract
+    //     .task_hooks(TaskHookType::Completed, Some(task_id_for_specific_hook))
+    //     .unwrap();
+    // assert!(task_hooks.hooks.is_empty());
 }
 
 pub fn timeout_refund_test<C>(chain: C, denom: String)
