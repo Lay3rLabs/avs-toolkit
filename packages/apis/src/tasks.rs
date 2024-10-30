@@ -7,11 +7,7 @@ pub use crate::interfaces::tasks::{
     TaskExecuteMsg, TaskExecuteMsgFns, TaskQueryMsg, TaskQueryMsgFns, TaskStatus,
     TaskStatusResponse,
 };
-use crate::{
-    id::TaskId,
-    interfaces::task_hooks::{HooksResponse, TaskHookType},
-    time::Duration,
-};
+use crate::{id::TaskId, interfaces::task_hooks::TaskHookType, time::Duration};
 
 // FIXME: make these generic
 pub type RequestType = serde_json::Value;
@@ -166,7 +162,7 @@ pub enum CustomQueryMsg {
     #[returns(ConfigResponse)]
     Config {},
     /// Gets the task hooks for the given task hook type
-    #[returns(HooksResponse)]
+    #[returns(crate::interfaces::task_hooks::HooksResponse)]
     TaskHooks {
         hook_type: TaskHookType,
         task_id: Option<TaskId>,
