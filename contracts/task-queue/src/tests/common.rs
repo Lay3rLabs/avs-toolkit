@@ -165,6 +165,8 @@ where
             "Too Short".to_string(),
             Some(Duration::new_seconds(4)),
             payload.clone(),
+            None,
+            None,
             &[],
         )
         .unwrap_err();
@@ -177,7 +179,7 @@ where
     );
 
     let one = contract
-        .create("One".to_string(), None, payload.clone(), &[])
+        .create("One".to_string(), None, payload.clone(), None, None, &[])
         .unwrap();
     let task_one = one
         .event_attr_value("wasm-task_created_event", "task-id")
@@ -187,7 +189,7 @@ where
     assert_eq!(task_one, 1u64);
 
     let two = contract
-        .create("Two".to_string(), None, payload.clone(), &[])
+        .create("Two".to_string(), None, payload.clone(), None, None, &[])
         .unwrap();
     let task_two = get_task_id(&two);
     assert_eq!(task_two, TaskId::new(2u64));
@@ -610,24 +612,24 @@ where
     // Establish hooks
     let task_id_for_specific_hook = TaskId::new(1);
     task_contract
-        .add_hook(
+        .add_hooks(
             None,
             TaskHookType::Created,
-            mock_consumer.addr_str().unwrap(),
+            vec![mock_consumer.addr_str().unwrap()],
         )
         .unwrap();
     task_contract
-        .add_hook(
+        .add_hooks(
             Some(task_id_for_specific_hook), // Only task 1 will create another task on completion
             TaskHookType::Completed,
-            mock_consumer.addr_str().unwrap(),
+            vec![mock_consumer.addr_str().unwrap()],
         )
         .unwrap();
     task_contract
-        .add_hook(
+        .add_hooks(
             None,
             TaskHookType::Timeout,
-            mock_consumer.addr_str().unwrap(),
+            vec![mock_consumer.addr_str().unwrap()],
         )
         .unwrap();
 
@@ -711,10 +713,10 @@ where
     // Other user can't register a hook on that same task
     task_contract
         .call_as(&chain.alt_signer(1))
-        .add_hook(
+        .add_hooks(
             Some(new_task_id),
             TaskHookType::Completed,
-            mock_consumer.addr_str().unwrap(),
+            vec![mock_consumer.addr_str().unwrap()],
         )
         .unwrap_err();
 
@@ -728,6 +730,50 @@ where
     // Ensure another task was created - 5
     let task_list = task_contract.list(None, None).unwrap();
     assert_eq!(task_list.tasks.len(), 5);
+
+    // Update task-specific whitelist
+    let whitelisted = chain.alt_signer(1);
+    task_contract
+        .update_task_specific_whitelist(Some(vec![whitelisted.addr().to_string()]), None)
+        .unwrap();
+
+    // Non-whitelisted account cannot create a task with atomic task hooks
+    task_contract
+        .call_as(&chain.alt_signer(2))
+        .create(
+            "Task with unauthorized atomic task hooks",
+            None,
+            payload.clone(),
+            None,
+            Some(vec![mock_consumer.addr_str().unwrap()]),
+            &funds,
+        )
+        .unwrap_err();
+
+    // Test atomic hooks
+    let task_id = TaskId::new(6);
+    task_contract
+        .call_as(&whitelisted)
+        .create(
+            "Task with atomic task hooks",
+            None,
+            payload.clone(),
+            None,
+            Some(vec![mock_consumer.addr_str().unwrap()]),
+            &funds,
+        )
+        .unwrap();
+
+    // Complete this task
+    let result = json!({"y": 25});
+    task_contract
+        .call_as(&verifier)
+        .complete(task_id, result)
+        .unwrap();
+
+    // Ensure another task was created on top of this - 7
+    let task_list = task_contract.list(None, None).unwrap();
+    assert_eq!(task_list.tasks.len(), 7);
 }
 
 pub fn timeout_refund_test<C>(chain: C, denom: String)
@@ -817,7 +863,14 @@ pub fn make_task<C: ChainState + TxHandler>(
     payload: &serde_json::Value,
 ) -> TaskId {
     let res = contract
-        .create(name.to_string(), timeout.into(), payload.clone(), &[])
+        .create(
+            name.to_string(),
+            timeout.into(),
+            payload.clone(),
+            None,
+            None,
+            &[],
+        )
         .unwrap();
     get_task_id(&res)
 }
@@ -831,7 +884,14 @@ pub fn make_task_with_funds<C: ChainState + TxHandler>(
     funds: &[Coin],
 ) -> TaskId {
     let res = contract
-        .create(name.to_string(), timeout.into(), payload.clone(), funds)
+        .create(
+            name.to_string(),
+            timeout.into(),
+            payload.clone(),
+            None,
+            None,
+            funds,
+        )
         .unwrap();
     get_task_id(&res)
 }

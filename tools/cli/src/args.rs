@@ -183,6 +183,12 @@ pub enum TaskQueueCommand {
         /// Specify a task timeout, or use the default
         #[clap(short, long)]
         timeout: Option<u64>,
+        /// Specify the completed task hook receivers
+        #[clap(short, long)]
+        with_completed_hooks: Option<Vec<String>>,
+        /// Specify the timeout task hook receivers
+        #[clap(short, long)]
+        with_timeout_hooks: Option<Vec<String>>,
     },
 
     /// View the task queue
@@ -193,12 +199,12 @@ pub enum TaskQueueCommand {
         limit: Option<u32>,
     },
 
-    /// Adds a task queue hook
-    AddHook {
+    /// Adds hooks to the task queue
+    AddHooks {
         #[clap(short, long, value_enum)]
         hook_type: CliHookType,
-        #[clap(short, long)]
-        receiver: String,
+        #[clap(short, long, num_args(1..))]
+        receivers: Vec<String>,
         #[clap(short, long)]
         task_id: Option<TaskId>,
     },

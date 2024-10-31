@@ -72,13 +72,24 @@ pub fn execute(
                 description,
                 timeout,
                 payload,
-            } => execute::create(deps, env, info, description, timeout, payload),
+                with_completed_hooks,
+                with_timeout_hooks,
+            } => execute::create(
+                deps,
+                env,
+                info,
+                description,
+                timeout,
+                payload,
+                with_completed_hooks,
+                with_timeout_hooks,
+            ),
             CustomExecuteMsg::Timeout { task_id } => execute::timeout(deps, env, info, task_id),
-            CustomExecuteMsg::AddHook {
+            CustomExecuteMsg::AddHooks {
                 task_id,
                 hook_type,
-                receiver,
-            } => execute::add_hook(deps, info, task_id, hook_type, receiver),
+                receivers,
+            } => execute::add_hooks(deps, env, info, task_id, hook_type, receivers),
             CustomExecuteMsg::RemoveHook {
                 task_id,
                 hook_type,
@@ -137,7 +148,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<Binary, ContractErro
 }
 
 mod execute {
-    use cosmwasm_std::{BankMsg, SubMsg, WasmMsg};
+    use cosmwasm_std::{ensure, BankMsg, SubMsg, WasmMsg};
     use cw_ownable::assert_owner;
     use cw_utils::nonpayable;
     use lavs_apis::{
@@ -155,6 +166,7 @@ mod execute {
 
     use super::*;
 
+    #[allow(clippy::too_many_arguments)]
     pub fn create(
         deps: DepsMut,
         env: Env,
@@ -162,6 +174,8 @@ mod execute {
         description: String,
         timeout: Option<Duration>,
         payload: RequestType,
+        with_completed_hooks: Option<Vec<String>>,
+        with_timeout_hooks: Option<Vec<String>>,
     ) -> Result<Response, ContractError> {
         let mut config = CONFIG.load(deps.storage)?;
         let timeout = check_timeout(&config.timeout, timeout)?;
@@ -187,7 +201,7 @@ mod execute {
                 deps.storage,
                 task_id,
                 &TaskDeposit {
-                    addr: info.sender,
+                    addr: info.sender.clone(),
                     coin,
                 },
             )?;
@@ -212,10 +226,46 @@ mod execute {
                 ))
             })?;
 
+        let mut add_hooks_msgs = vec![];
+
+        // Validate task-specific whitelist if we have some atomic hooks
+        if with_completed_hooks.is_some() || with_timeout_hooks.is_some() {
+            ensure!(
+                TASK_HOOKS
+                    .task_specific_whitelist
+                    .has(deps.storage, &info.sender)
+                    || assert_owner(deps.storage, &info.sender).is_ok(),
+                ContractError::Unauthorized
+            )
+        }
+        if let Some(receivers) = with_completed_hooks {
+            add_hooks_msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: env.contract.address.to_string(),
+                msg: to_json_binary(&ExecuteMsg::Custom(CustomExecuteMsg::AddHooks {
+                    task_id: Some(task_id),
+                    hook_type: TaskHookType::Completed,
+                    receivers,
+                }))?,
+                funds: vec![],
+            }))
+        }
+        if let Some(receivers) = with_timeout_hooks {
+            add_hooks_msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: env.contract.address.to_string(),
+                msg: to_json_binary(&ExecuteMsg::Custom(CustomExecuteMsg::AddHooks {
+                    task_id: Some(task_id),
+                    hook_type: TaskHookType::Timeout,
+                    receivers,
+                }))?,
+                funds: vec![],
+            }))
+        }
+
         let task_queue_event = TaskCreatedEvent { task_id };
 
         let res = Response::new()
             .add_event(task_queue_event)
+            .add_messages(add_hooks_msgs)
             .add_submessages(hooks);
 
         Ok(res)
@@ -324,41 +374,41 @@ mod execute {
         Ok(res)
     }
 
-    pub fn add_hook(
+    pub fn add_hooks(
         deps: DepsMut,
+        env: Env,
         info: MessageInfo,
         task_id: Option<TaskId>,
         hook_type: TaskHookType,
-        receiver: String,
+        receivers: Vec<String>,
     ) -> Result<Response, ContractError> {
-        // Validate the address
-        let receiver = deps.api.addr_validate(&receiver)?;
+        // This method assumes an authorization check was done at task creation
+        if info.sender != env.contract.address {
+            // Only the owner - or task-specific whitelisted accounts for their own tasks - can register hooks
+            if assert_owner(deps.storage, &info.sender).is_err() {
+                if !TASK_HOOKS
+                    .task_specific_whitelist
+                    .has(deps.storage, &info.sender)
+                {
+                    // If the sender is not in the task specific whitelist, then error out
+                    return Err(ContractError::Unauthorized);
+                } else if let Some(task_id) = task_id {
+                    let maybe_task = TASKS.may_load(deps.storage, task_id)?;
 
-        // Only the owner - or task-specific whitelisted accounts for their own tasks - can register hooks
-        let result = assert_owner(deps.storage, &info.sender);
-        if result.is_err() {
-            if !TASK_HOOKS
-                .task_specific_whitelist
-                .has(deps.storage, &info.sender)
-            {
-                // If the sender is not in the task specific whitelist, then error out
-                result?
-            } else if let Some(task_id) = task_id {
-                let maybe_task = TASKS.may_load(deps.storage, task_id)?;
-
-                if let Some(task) = maybe_task {
-                    // If task exists, but the creator is not the sender, then error out
-                    if task.creator != info.sender {
-                        result?
+                    if let Some(task) = maybe_task {
+                        // If task exists, but the creator is not the sender, then error out
+                        if task.creator != info.sender {
+                            return Err(ContractError::Unauthorized);
+                        }
+                        // Succesful auth here
+                    } else {
+                        // If task does not exist, then we cannot determine the creator to authorize
+                        return Err(ContractError::Unauthorized);
                     }
-                    // Succesful auth here
                 } else {
-                    // If task does not exist, then we cannot determine the creator to authorize
-                    result?
+                    // If a task id is not provided, then we can't go through the task-specific whitelist flow
+                    return Err(ContractError::Unauthorized);
                 }
-            } else {
-                // If a task id is not provided, then we can't go through the task-specific whitelist flow
-                result?
             }
         }
 
@@ -368,21 +418,30 @@ mod execute {
         } else {
             false
         };
-        TASK_HOOKS.add_hook(
-            deps.storage,
-            is_task_created, // Param to determine if we can add a hook for the Created status
-            task_id,
-            &hook_type,
-            receiver.clone(),
-        )?;
 
-        // Create event
-        let hook_added_event = HookAddedEvent {
-            hook_type,
-            address: receiver.to_string(),
-        };
+        let mut response = Response::new();
+        for receiver in receivers {
+            // Validate the address
+            let receiver = deps.api.addr_validate(&receiver)?;
 
-        Ok(Response::new().add_event(hook_added_event))
+            TASK_HOOKS.add_hook(
+                deps.storage,
+                is_task_created, // Param to determine if we can add a hook for the Created status
+                task_id,
+                &hook_type,
+                receiver.clone(),
+            )?;
+
+            // Create event
+            let hook_added_event = HookAddedEvent {
+                hook_type: hook_type.clone(),
+                address: receiver.to_string(),
+            };
+
+            response = response.add_event(hook_added_event);
+        }
+
+        Ok(response)
     }
 
     pub fn remove_hook(

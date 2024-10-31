@@ -1,6 +1,7 @@
 use cosmwasm_std::{coins, Uint128};
 use cw_orch::prelude::*;
 use lavs_apis::time::Duration;
+use lavs_orch::AltSigner;
 
 use crate::interface::Contract;
 use crate::msg::{InstantiateMsg, Requestor, TimeoutInfo};
@@ -65,6 +66,12 @@ fn task_hooks() {
             &mock_hook_consumer.address().unwrap(),
             coins(10_000_000, DENOM),
         )
+        .unwrap();
+    chain
+        .add_balance(&chain.alt_signer(1), coins(10_000_000, DENOM))
+        .unwrap();
+    chain
+        .add_balance(&chain.alt_signer(2), coins(10_000_000, DENOM))
         .unwrap();
 
     super::common::mock_hook_consumer_test(chain, mock_hook_consumer);

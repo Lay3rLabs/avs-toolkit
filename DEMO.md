@@ -120,27 +120,27 @@ cargo run task-queue view-task-specific-whitelist
 
 Register a hook for task events:
 ```bash
-# Add global hook for completed tasks
-cargo run task-queue add-hook \
+# Add global hooks for completed tasks
+cargo run task-queue add-hooks \
     --hook-type completed \
-    --receiver CONTRACT_ADDRESS_HERE
+    --receivers CONTRACT_ADDRESS_1,CONTRACT_ADDRESS_2
 
-# Add task-specific hook
-cargo run task-queue add-hook \
+# Add task-specific hooks
+cargo run task-queue add-hooks \
     --hook-type completed \
-    --receiver CONTRACT_ADDRESS_HERE \
+    --receivers CONTRACT_ADDRESS \
     --task-id TASK_ID
 
-# Add hook for timeouts
-cargo run task-queue add-hook \
+# Add hooks for timeouts
+cargo run task-queue add-hooks \
     --hook-type timeout \
-    --receiver CONTRACT_ADDRESS_HERE \
+    --receivers CONTRACT_ADDRESS_HERE \
     [--task-id TASK_ID]
 
-# Add hook for future tasks
-cargo run task-queue add-hook \
+# Add hooks for future tasks
+cargo run task-queue add-hooks \
     --hook-type created \
-    --receiver CONTRACT_ADDRESS_HERE \
+    --receivers CONTRACT_ADDRESS_HERE \
     [--task-id TASK_ID]
 ```
 

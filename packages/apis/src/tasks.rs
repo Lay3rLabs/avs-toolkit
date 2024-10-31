@@ -86,19 +86,25 @@ pub enum CustomExecuteMsg {
         /// Machine-readable data for the AVS to use
         /// FIXME: use generic T to enforce a AVS-specific format
         payload: RequestType,
+        /// Optionally register timeout task hooks to a set of receiver
+        /// Requires the sender to be in the task-specific whitelist
+        with_timeout_hooks: Option<Vec<String>>,
+        /// Optionally register completed task hooks to a set of receiver
+        /// Requires the sender to be in the task-specific whitelist
+        with_completed_hooks: Option<Vec<String>>,
     },
     Timeout {
         /// The task ID to complete
         task_id: TaskId,
     },
     /// Adds a hook to the receiver for the given task hook type
-    AddHook {
+    AddHooks {
         /// Optional task id for task-specific hooks. If None, adds a global hook.
         task_id: Option<TaskId>,
         /// The type of hook to add
         hook_type: TaskHookType,
-        /// The receiver address of the hook messages
-        receiver: String,
+        /// The receiver addresses of the hook messages
+        receivers: Vec<String>,
     },
     /// Remove a hook from a receiver
     RemoveHook {

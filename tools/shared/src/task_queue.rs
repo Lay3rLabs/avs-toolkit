@@ -44,6 +44,8 @@ impl TaskQueue {
         payload: serde_json::Value,
         description: String,
         timeout: Option<Duration>,
+        with_timeout_hooks: Option<Vec<String>>,
+        with_completed_hooks: Option<Vec<String>>,
     ) -> Result<(TaskId, TxResponse)> {
         let contract_config = self.querier.config().await?;
 
@@ -65,6 +67,8 @@ impl TaskQueue {
                     description,
                     timeout,
                     payload,
+                    with_completed_hooks,
+                    with_timeout_hooks,
                 },
                 payment,
                 None,
@@ -82,21 +86,21 @@ impl TaskQueue {
         Ok((event.task_id, tx_resp))
     }
 
-    pub async fn add_hook<T: Into<TaskHookType>>(
+    pub async fn add_hooks<T: Into<TaskHookType>>(
         &self,
         task_id: Option<TaskId>,
         hook_type: T,
-        receiver: String,
+        receivers: Vec<String>,
     ) -> Result<TxResponse> {
         let hook_type = hook_type.into();
         let tx_resp = self
             .admin
             .contract_execute(
                 &self.contract_addr,
-                &CustomExecuteMsg::AddHook {
+                &CustomExecuteMsg::AddHooks {
                     task_id,
                     hook_type,
-                    receiver,
+                    receivers,
                 },
                 vec![],
                 None,

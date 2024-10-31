@@ -225,7 +225,14 @@ pub fn make_task<C: ChainState + TxHandler>(
     payload: &serde_json::Value,
 ) -> TaskId {
     let res = contract
-        .create(name.to_string(), timeout.into(), payload.clone(), &[])
+        .create(
+            name.to_string(),
+            timeout.into(),
+            payload.clone(),
+            None,
+            None,
+            &[],
+        )
         .unwrap();
     get_task_id(&res)
 }

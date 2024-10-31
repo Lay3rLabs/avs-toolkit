@@ -128,13 +128,23 @@ async fn main() -> Result<()> {
                     body,
                     description,
                     timeout,
+                    with_completed_hooks,
+                    with_timeout_hooks,
                 } => {
                     // NOTE: I've left only this input argument as u64, because of `clap` not liking
                     // Timestamp as argument
                     let timeout = timeout.map(Duration::new_seconds);
 
                     let payload = serde_json::from_str(&body).context("failed to parse body")?;
-                    let _ = task_queue.add_task(payload, description, timeout).await?;
+                    let _ = task_queue
+                        .add_task(
+                            payload,
+                            description,
+                            timeout,
+                            with_timeout_hooks,
+                            with_completed_hooks,
+                        )
+                        .await?;
                 }
                 TaskQueueCommand::ViewQueue { start_after, limit } => {
                     let res = task_queue
@@ -147,12 +157,12 @@ async fn main() -> Result<()> {
                         println!("{}", line);
                     })?;
                 }
-                TaskQueueCommand::AddHook {
+                TaskQueueCommand::AddHooks {
                     hook_type,
-                    receiver,
+                    receivers,
                     task_id,
                 } => {
-                    let _ = task_queue.add_hook(task_id, hook_type, receiver).await?;
+                    let _ = task_queue.add_hooks(task_id, hook_type, receivers).await?;
                 }
                 TaskQueueCommand::RemoveHook {
                     hook_type,

@@ -126,6 +126,8 @@ mod execute {
                             e
                         ))
                     })?,
+                    with_completed_hooks: None,
+                    with_timeout_hooks: None,
                 },
             ))?,
             funds,
@@ -158,10 +160,10 @@ mod execute {
         let msg = CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: task_queue.to_string(),
             msg: to_json_binary(&lavs_apis::tasks::ExecuteMsg::Custom(
-                lavs_apis::tasks::CustomExecuteMsg::AddHook {
+                lavs_apis::tasks::CustomExecuteMsg::AddHooks {
                     task_id: Some(task_id),
                     hook_type,
-                    receiver: env.contract.address.to_string(),
+                    receivers: vec![env.contract.address.to_string()],
                 },
             ))?,
             funds: vec![],
