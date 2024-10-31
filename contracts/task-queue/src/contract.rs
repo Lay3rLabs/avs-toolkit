@@ -590,7 +590,6 @@ mod query {
 pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractError> {
     match msg.id {
         TASK_HOOK_REPLY_ID => {
-            // NOTE: cw-orch is not registering the payload even with cosmwasm_2_1 flag on cosmwasm_std
             if let Ok(payload) = from_json::<TaskHookPayload>(msg.payload) {
                 // If we have a valid TaskHookPayload, then we can remove the task-specific hook
                 TASK_HOOKS.remove_hook(

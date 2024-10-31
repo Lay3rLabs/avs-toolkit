@@ -694,11 +694,10 @@ where
     assert_eq!(task_list.tasks.len(), 4);
 
     // Ensure the task-specific hook was removed
-    // NOTE: cw-orch is not registering the payload even with cosmwasm_2_1 flag on cosmwasm_std
-    // let task_hooks = task_contract
-    //     .task_hooks(TaskHookType::Completed, Some(task_id_for_specific_hook))
-    //     .unwrap();
-    // assert!(task_hooks.hooks.is_empty());
+    let task_hooks = task_contract
+        .task_hooks(TaskHookType::Completed, Some(task_id_for_specific_hook))
+        .unwrap();
+    assert!(task_hooks.hooks.is_empty());
 }
 
 pub fn timeout_refund_test<C>(chain: C, denom: String)
