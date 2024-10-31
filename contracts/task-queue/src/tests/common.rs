@@ -5,7 +5,7 @@ use lavs_apis::id::TaskId;
 use lavs_apis::interfaces::task_hooks::TaskHookType;
 use lavs_apis::tasks::{InfoStatus, TaskInfoResponse, TaskStatus};
 use lavs_apis::time::Duration;
-use mock_hook_consumer::msg::QueryMsgFns as _;
+use mock_hook_consumer::msg::{ExecuteMsgFns, QueryMsgFns as _};
 use serde_json::json;
 
 use crate::error::ContractError;
@@ -50,6 +50,7 @@ where
         timeout: mock_timeout(timeout),
         verifier: verifier.addr().into(),
         owner: None,
+        task_specific_whitelist: None,
     };
 
     let contract = setup(chain.clone(), msg);
@@ -602,6 +603,7 @@ where
         timeout: mock_timeout(Duration::new_seconds(200)),
         verifier: verifier.addr().into(),
         owner: None, // defaults to sender
+        task_specific_whitelist: Some(vec![mock_consumer.addr_str().unwrap()]),
     };
     let task_contract = setup(chain.clone(), msg);
 
@@ -674,8 +676,10 @@ where
 
     // Timeout the task
     // The consumer should error out, but the function should not block
-    let result = task_contract.call_as(&verifier).timeout(timeout_task_id);
-    assert!(result.is_ok());
+    task_contract
+        .call_as(&verifier)
+        .timeout(timeout_task_id)
+        .unwrap();
 
     // Create another task
     let payload = json!({"x": 5});
@@ -698,6 +702,32 @@ where
         .task_hooks(TaskHookType::Completed, Some(task_id_for_specific_hook))
         .unwrap();
     assert!(task_hooks.hooks.is_empty());
+
+    // Register a hook from the mock-hook-consumer to test the task-specific whitelist (task that was created from mock_consumer)
+    mock_consumer
+        .register_hook(TaskHookType::Completed, new_task_id)
+        .unwrap();
+
+    // Other user can't register a hook on that same task
+    task_contract
+        .call_as(&chain.alt_signer(1))
+        .add_hook(
+            Some(new_task_id),
+            TaskHookType::Completed,
+            mock_consumer.addr_str().unwrap(),
+        )
+        .unwrap_err();
+
+    // Process this task
+    let result = json!({"y": 625});
+    task_contract
+        .call_as(&verifier)
+        .complete(new_task_id, result)
+        .unwrap();
+
+    // Ensure another task was created - 5
+    let task_list = task_contract.list(None, None).unwrap();
+    assert_eq!(task_list.tasks.len(), 5);
 }
 
 pub fn timeout_refund_test<C>(chain: C, denom: String)
@@ -718,6 +748,7 @@ where
         timeout: mock_timeout(Duration::new_seconds(200)),
         verifier: verifier.addr().into(),
         owner: None,
+        task_specific_whitelist: None,
     };
     let task_contract = setup(chain.clone(), msg);
 

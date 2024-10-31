@@ -257,6 +257,7 @@ impl DeployContractAddrs {
                     timeout: task_timeout,
                     verifier: verifier_addr.to_string(),
                     owner,
+                    task_specific_whitelist: None,
                 },
                 vec![],
                 None,

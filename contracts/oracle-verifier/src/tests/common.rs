@@ -198,6 +198,7 @@ where
         timeout: TimeoutInfo::new(Duration::new_seconds(600)),
         verifier: verifier_addr.to_string(),
         owner: None,
+        task_specific_whitelist: None,
     };
     let tasker = TasksContract::new(chain);
     tasker.upload().unwrap();

@@ -1,7 +1,6 @@
 use cosmwasm_std::{entry_point, to_json_binary, Binary, Deps, Empty, StdResult};
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response};
 use cw2::set_contract_version;
-use execute::{task_completed, task_created, task_timeout};
 use lavs_apis::interfaces::task_hooks::TaskHookExecuteMsg;
 
 use crate::msg::{ExecuteMsg, QueryMsg};
@@ -28,21 +27,34 @@ pub fn instantiate(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> StdResult<Response> {
     match msg {
+        ExecuteMsg::RegisterHook { task_id, hook_type } => {
+            execute::register_hook(deps, env, task_id, hook_type)
+        }
         ExecuteMsg::TaskHook(task_hook) => match task_hook {
-            TaskHookExecuteMsg::TaskCreatedHook(task) => task_created(deps, env, info, task),
-            TaskHookExecuteMsg::TaskCompletedHook(task) => task_completed(deps, env, info, task),
-            TaskHookExecuteMsg::TaskTimeoutHook(task) => task_timeout(deps, env, info, task),
+            TaskHookExecuteMsg::TaskCreatedHook(task) => {
+                execute::task_created(deps, env, info, task)
+            }
+            TaskHookExecuteMsg::TaskCompletedHook(task) => {
+                execute::task_completed(deps, env, info, task)
+            }
+            TaskHookExecuteMsg::TaskTimeoutHook(task) => {
+                execute::task_timeout(deps, env, info, task)
+            }
         },
     }
 }
 
 mod execute {
     use cosmwasm_std::{to_json_binary, CosmosMsg, StdError, WasmMsg};
-    use lavs_apis::tasks::{ConfigResponse, Requestor, TaskResponse};
+    use lavs_apis::{
+        id::TaskId,
+        interfaces::task_hooks::TaskHookType,
+        tasks::{ConfigResponse, Requestor, TaskResponse},
+    };
 
     use crate::{
         msg::{TaskRequestData, TaskResponseData},
-        state::CREATED_COUNT,
+        state::{CREATED_COUNT, TASK_QUEUE},
     };
 
     use super::*;
@@ -67,6 +79,8 @@ mod execute {
         task: TaskResponse,
     ) -> StdResult<Response> {
         let task_queue = info.sender;
+
+        TASK_QUEUE.save(deps.storage, &task_queue)?;
 
         // Attempt to deserialize the task response
         let response: TaskResponseData =
@@ -130,6 +144,30 @@ mod execute {
         _task: TaskResponse,
     ) -> StdResult<Response> {
         Err(StdError::generic_err("This is an error"))
+    }
+
+    /// This method is used to test the task-specific whitelist authorization
+    pub fn register_hook(
+        deps: DepsMut,
+        env: Env,
+        task_id: TaskId,
+        hook_type: TaskHookType,
+    ) -> StdResult<Response> {
+        let task_queue = TASK_QUEUE.load(deps.storage)?;
+
+        let msg = CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: task_queue.to_string(),
+            msg: to_json_binary(&lavs_apis::tasks::ExecuteMsg::Custom(
+                lavs_apis::tasks::CustomExecuteMsg::AddHook {
+                    task_id: Some(task_id),
+                    hook_type,
+                    receiver: env.contract.address.to_string(),
+                },
+            ))?,
+            funds: vec![],
+        });
+
+        Ok(Response::default().add_message(msg))
     }
 }
 

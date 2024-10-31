@@ -1,7 +1,8 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    from_json, to_json_binary, Binary, Deps, DepsMut, Env, Event, MessageInfo, Reply, Response,
+    from_json, to_json_binary, Binary, CosmosMsg, Deps, DepsMut, Env, Event, MessageInfo, Reply,
+    Response, WasmMsg,
 };
 use cw2::set_contract_version;
 
@@ -23,18 +24,34 @@ const TASK_HOOK_REPLY_ID: u64 = 0;
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     let owner = msg.owner.clone().unwrap_or(info.sender.to_string());
+
+    let msgs = if msg.task_specific_whitelist.is_some() {
+        vec![CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: env.contract.address.to_string(),
+            msg: to_json_binary(&ExecuteMsg::Custom(
+                CustomExecuteMsg::UpdateTaskSpecificWhitelist {
+                    to_add: msg.task_specific_whitelist.clone(),
+                    to_remove: None,
+                },
+            ))?,
+            funds: vec![],
+        })]
+    } else {
+        vec![]
+    };
+
     let config = Config::validate(deps.as_ref(), msg)?;
     CONFIG.save(deps.storage, &config)?;
     cw_ownable::initialize_owner(deps.storage, deps.api, Some(&owner))?;
 
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
-    Ok(Response::default())
+    Ok(Response::default().add_messages(msgs))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -77,7 +94,7 @@ pub fn execute(
                 Ok(Response::new().add_event(event))
             }
             CustomExecuteMsg::UpdateTaskSpecificWhitelist { to_add, to_remove } => {
-                execute::update_task_specific_whitelist(deps, info, to_add, to_remove)
+                execute::update_task_specific_whitelist(deps, env, info, to_add, to_remove)
             }
         },
     }
@@ -112,6 +129,9 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<Binary, ContractErro
             CustomQueryMsg::Ownership {} => {
                 Ok(to_json_binary(&cw_ownable::get_ownership(deps.storage)?)?)
             }
+            CustomQueryMsg::TaskSpecificWhitelist { start_after, limit } => Ok(to_json_binary(
+                &query::task_specific_whitelist(deps, start_after, limit)?,
+            )?),
         },
     }
 }
@@ -321,14 +341,23 @@ mod execute {
                 .task_specific_whitelist
                 .has(deps.storage, &info.sender)
             {
+                // If the sender is not in the task specific whitelist, then error out
                 result?
             } else if let Some(task_id) = task_id {
-                let task = TASKS.load(deps.storage, task_id)?;
+                let maybe_task = TASKS.may_load(deps.storage, task_id)?;
 
-                if task.creator != info.sender {
+                if let Some(task) = maybe_task {
+                    // If task exists, but the creator is not the sender, then error out
+                    if task.creator != info.sender {
+                        result?
+                    }
+                    // Succesful auth here
+                } else {
+                    // If task does not exist, then we cannot determine the creator to authorize
                     result?
                 }
             } else {
+                // If a task id is not provided, then we can't go through the task-specific whitelist flow
                 result?
             }
         }
@@ -341,7 +370,7 @@ mod execute {
         };
         TASK_HOOKS.add_hook(
             deps.storage,
-            is_task_created,
+            is_task_created, // Param to determine if we can add a hook for the Created status
             task_id,
             &hook_type,
             receiver.clone(),
@@ -383,11 +412,15 @@ mod execute {
 
     pub fn update_task_specific_whitelist(
         deps: DepsMut,
+        env: Env,
         info: MessageInfo,
         to_add: Option<Vec<String>>,
         to_remove: Option<Vec<String>>,
     ) -> Result<Response, ContractError> {
-        assert_owner(deps.storage, &info.sender)?;
+        // Allow the whitelist to be set at instantiation
+        if info.sender != env.contract.address {
+            assert_owner(deps.storage, &info.sender)?;
+        }
 
         TASK_HOOKS.update_task_specific_whitelist(deps.api, deps.storage, to_add, to_remove)?;
 
@@ -399,7 +432,10 @@ mod query {
     use cosmwasm_std::Timestamp;
     use cw_ownable::get_ownership;
     use cw_storage_plus::Bound;
-    use lavs_apis::{id::TaskId, tasks::ConfigResponse};
+    use lavs_apis::{
+        id::TaskId,
+        tasks::{ConfigResponse, TaskSpecificWhitelistResponse},
+    };
 
     use crate::msg::{
         CompletedTaskOverview, InfoStatus, ListCompletedResponse, ListOpenResponse, ListResponse,
@@ -583,6 +619,31 @@ mod query {
             .collect::<Result<Vec<_>, _>>()?;
 
         Ok(ListCompletedResponse { tasks: completed })
+    }
+
+    pub fn task_specific_whitelist(
+        deps: Deps,
+        start_after: Option<String>,
+        limit: Option<u32>,
+    ) -> Result<TaskSpecificWhitelistResponse, ContractError> {
+        let limit = limit.unwrap_or(30);
+        let binding = start_after
+            .map(|x| deps.api.addr_validate(&x))
+            .transpose()?;
+        let start_after = binding.as_ref().map(Bound::exclusive);
+
+        let addrs = TASK_HOOKS
+            .task_specific_whitelist
+            .keys(
+                deps.storage,
+                start_after,
+                None,
+                cosmwasm_std::Order::Ascending,
+            )
+            .take(limit as usize)
+            .collect::<Result<Vec<_>, _>>()?;
+
+        Ok(TaskSpecificWhitelistResponse { addrs })
     }
 }
 

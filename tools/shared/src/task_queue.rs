@@ -4,7 +4,10 @@ use lavs_apis::{
     events::{task_queue_events::TaskCreatedEvent, traits::TypedEvent as _},
     id::TaskId,
     interfaces::task_hooks::{HooksResponse, TaskHookType},
-    tasks::{CompletedTaskOverview, ListCompletedResponse, ListOpenResponse, OpenTaskOverview},
+    tasks::{
+        CompletedTaskOverview, ListCompletedResponse, ListOpenResponse, OpenTaskOverview,
+        TaskSpecificWhitelistResponse,
+    },
     time::Duration,
 };
 use lavs_task_queue::msg::{ConfigResponse, CustomExecuteMsg, CustomQueryMsg, QueryMsg, Requestor};
@@ -130,6 +133,26 @@ impl TaskQueue {
         tracing::debug!("Tx hash: {}", tx_resp.txhash);
         Ok(tx_resp)
     }
+
+    pub async fn update_task_specific_whitelist(
+        &self,
+        to_add: Option<Vec<String>>,
+        to_remove: Option<Vec<String>>,
+    ) -> Result<TxResponse> {
+        let tx_resp = self
+            .admin
+            .contract_execute(
+                &self.contract_addr,
+                &CustomExecuteMsg::UpdateTaskSpecificWhitelist { to_add, to_remove },
+                vec![],
+                None,
+            )
+            .await?;
+
+        tracing::info!("Updated task specific whitelist.");
+        tracing::debug!("Tx hash: {}", tx_resp.txhash);
+        Ok(tx_resp)
+    }
 }
 
 pub struct TaskQueueQuerier {
@@ -241,6 +264,19 @@ impl TaskQueueQuerier {
                     hook_type: hook_type.into(),
                     task_id,
                 }),
+            )
+            .await
+    }
+
+    pub async fn view_task_specific_whitelist(
+        &self,
+        start_after: Option<String>,
+        limit: Option<u32>,
+    ) -> Result<TaskSpecificWhitelistResponse> {
+        self.query_client
+            .contract_smart(
+                &self.contract_addr,
+                &QueryMsg::Custom(CustomQueryMsg::TaskSpecificWhitelist { start_after, limit }),
             )
             .await
     }

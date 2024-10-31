@@ -106,6 +106,7 @@ fn sanity_check() {
         },
         verifier: verifier.to_string(),
         owner: None,
+        task_specific_whitelist: None,
     };
     let init_res = tasker.instantiate(&msg, None, &[]).unwrap();
     let contract_addr = init_res.instantiated_contract_address().unwrap();

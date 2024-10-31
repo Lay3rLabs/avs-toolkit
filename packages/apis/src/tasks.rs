@@ -26,10 +26,13 @@ pub struct InstantiateMsg {
     /// ## Privileges
     /// - Can update task hooks
     /// - Can remove task hooks
+    /// - Can update task specific whitelist
     /// - Can transfer ownership
     ///
     /// Defaults to the message sender during initialization.
     pub owner: Option<String>,
+    /// Optionally populate the task-specific whitelist at instantiation
+    pub task_specific_whitelist: Option<Vec<String>>,
 }
 
 #[cw_serde]
@@ -173,6 +176,11 @@ pub enum CustomQueryMsg {
         hook_type: TaskHookType,
         task_id: Option<TaskId>,
     },
+    #[returns(TaskSpecificWhitelistResponse)]
+    TaskSpecificWhitelist {
+        start_after: Option<String>,
+        limit: Option<u32>,
+    },
 }
 
 impl From<TaskQueryMsg> for QueryMsg {
@@ -214,6 +222,11 @@ pub struct ListResponse {
 #[cw_serde]
 pub struct ListOpenResponse {
     pub tasks: Vec<OpenTaskOverview>,
+}
+
+#[cw_serde]
+pub struct TaskSpecificWhitelistResponse {
+    pub addrs: Vec<Addr>,
 }
 
 #[cw_serde]

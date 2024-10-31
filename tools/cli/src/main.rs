@@ -164,23 +164,43 @@ async fn main() -> Result<()> {
                 TaskQueueCommand::ViewHooks { task_id, hook_type } => {
                     let res = task_queue.querier.view_hooks(task_id, hook_type).await?;
 
-                    let display = match hook_type {
-                        args::CliHookType::Completed => "Completed",
-                        args::CliHookType::Timeout => "Timeout",
-                        args::CliHookType::Created => "Created",
-                    };
-
                     tracing::info!("Task Queue Hooks");
                     tracing::info!("Address: {}", task_queue.contract_addr);
                     println!(
                         "Registered hooks for type '{}': {}",
-                        display,
+                        hook_type,
                         if res.hooks.is_empty() {
                             "none".to_string()
                         } else {
                             res.hooks.join(", ")
                         }
                     );
+                }
+                TaskQueueCommand::ViewTaskSpecificWhitelist { start_after, limit } => {
+                    let res = task_queue
+                        .querier
+                        .view_task_specific_whitelist(start_after, limit)
+                        .await?;
+
+                    tracing::info!("Task Specific Whitelist");
+                    tracing::info!("Address: {}", task_queue.contract_addr);
+                    println!(
+                        "Task Specific Whitelist: {}",
+                        if res.addrs.is_empty() {
+                            "none".to_string()
+                        } else {
+                            res.addrs
+                                .into_iter()
+                                .map(|x| x.to_string())
+                                .collect::<Vec<_>>()
+                                .join(", ")
+                        }
+                    );
+                }
+                TaskQueueCommand::UpdateTaskSpecificWhitelist { to_add, to_remove } => {
+                    let _ = task_queue
+                        .update_task_specific_whitelist(to_add, to_remove)
+                        .await?;
                 }
             }
         }

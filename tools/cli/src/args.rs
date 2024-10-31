@@ -5,6 +5,7 @@ use cosmwasm_std::Decimal;
 use lavs_apis::id::TaskId;
 use lavs_apis::interfaces::task_hooks::TaskHookType;
 use layer_climb_cli::command::{ContractCommand, WalletCommand};
+use std::fmt;
 use std::path::PathBuf;
 
 #[derive(Parser)]
@@ -219,6 +220,23 @@ pub enum TaskQueueCommand {
         #[clap(short, long, value_enum)]
         hook_type: CliHookType,
     },
+
+    /// Updates the task-specific whitelist for hook management from task creators
+    /// These users can create hooks for their task
+    UpdateTaskSpecificWhitelist {
+        #[clap(short, long)]
+        to_add: Option<Vec<String>>,
+        #[clap(short, long)]
+        to_remove: Option<Vec<String>>,
+    },
+
+    /// View the task-specific hook whitelist
+    ViewTaskSpecificWhitelist {
+        #[clap(short, long)]
+        start_after: Option<String>,
+        #[clap(short, long)]
+        limit: Option<u32>,
+    },
 }
 
 #[derive(Debug, Clone, Copy, ValueEnum)]
@@ -229,6 +247,16 @@ pub enum CliHookType {
     Timeout,
     /// Hook triggered when a task is created
     Created,
+}
+
+impl fmt::Display for CliHookType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            CliHookType::Completed => write!(f, "Completed"),
+            CliHookType::Timeout => write!(f, "Timeout"),
+            CliHookType::Created => write!(f, "Created"),
+        }
+    }
 }
 
 impl From<CliHookType> for TaskHookType {
