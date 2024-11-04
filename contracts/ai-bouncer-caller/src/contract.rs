@@ -25,11 +25,7 @@ pub fn instantiate(
     TASK_QUEUE.save(deps.storage, &deps.api.addr_validate(&msg.task_queue)?)?;
     NEW_MEMBER_WEIGHT.save(deps.storage, &msg.new_member_weight)?;
 
-    let msg = get_register_message(deps)?;
-
-    Ok(Response::new()
-        .add_attribute("method", "instantiate")
-        .add_message(msg))
+    Ok(Response::new().add_attribute("method", "instantiate"))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -59,22 +55,11 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
 
 mod execute {
     use cosmwasm_std::{to_json_binary, CosmosMsg, StdError, WasmMsg};
-    use lavs_apis::{interfaces::task_hooks::TaskHookType, tasks::TaskResponse};
+    use lavs_apis::tasks::TaskResponse;
 
     use crate::msg::{TaskInput, TaskOutput};
 
     use super::*;
-
-    pub fn get_register_message(deps: DepsMut) -> StdResult<CosmosMsg> {
-        let task_queue = TASK_QUEUE.load(deps.storage)?;
-        Ok(CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: task_queue.to_string(),
-            msg: to_json_binary(&lavs_apis::tasks::ExecuteMsg::Custom(
-                lavs_apis::tasks::CustomExecuteMsg::AddHook(TaskHookType::Completed),
-            ))?,
-            funds: vec![],
-        }))
-    }
 
     pub fn trigger(
         deps: DepsMut,
@@ -100,7 +85,6 @@ mod execute {
         })
         .map_err(|e| StdError::generic_err(e.to_string()))?;
 
-        // TODO: add atomic completion hook
         let msg = CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: task_queue.to_string(),
             msg: to_json_binary(&lavs_apis::tasks::ExecuteMsg::Custom(
@@ -111,6 +95,9 @@ mod execute {
                     ),
                     timeout: None,
                     payload,
+                    with_timeout_hooks: None,
+                    // atomic completion hook to this contract
+                    with_completed_hooks: Some(vec![env.contract.address.to_string()]),
                 },
             ))?,
             funds: vec![],
@@ -237,45 +224,42 @@ mod execute {
                 ))
             })?;
 
-        match response {
-            TaskOutput::Success(success) => {
-                if let Some(decision) = success.decision {
-                    let address = deps.api.addr_validate(&success.address)?;
+        if let TaskOutput::Success(success) = response {
+            if let Some(decision) = success.decision {
+                let address = deps.api.addr_validate(&success.address)?;
 
-                    if DECISIONS.has(deps.storage, &address) {
-                        return Ok(Response::default()
-                            .add_attribute("action", "task_completed")
-                            .add_attribute("decision", "already_decided"));
-                    }
-
-                    DECISIONS.save(deps.storage, &address, &decision)?;
-
-                    let mut response = Response::default()
+                if DECISIONS.has(deps.storage, &address) {
+                    return Ok(Response::default()
                         .add_attribute("action", "task_completed")
-                        .add_attribute("decision", decision.to_string());
-
-                    if decision {
-                        let cw4_group = CW4_GROUP.load(deps.storage)?;
-                        let weight = NEW_MEMBER_WEIGHT.load(deps.storage)?;
-
-                        let msg = CosmosMsg::Wasm(WasmMsg::Execute {
-                            contract_addr: cw4_group.to_string(),
-                            msg: to_json_binary(&cw4_group::msg::ExecuteMsg::UpdateMembers {
-                                add: vec![cw4::Member {
-                                    addr: address.to_string(),
-                                    weight,
-                                }],
-                                remove: vec![],
-                            })?,
-                            funds: vec![],
-                        });
-                        response = response.add_message(msg);
-                    }
-
-                    return Ok(response);
+                        .add_attribute("decision", "already_decided"));
                 }
+
+                DECISIONS.save(deps.storage, &address, &decision)?;
+
+                let mut response = Response::default()
+                    .add_attribute("action", "task_completed")
+                    .add_attribute("decision", decision.to_string());
+
+                if decision {
+                    let cw4_group = CW4_GROUP.load(deps.storage)?;
+                    let weight = NEW_MEMBER_WEIGHT.load(deps.storage)?;
+
+                    let msg = CosmosMsg::Wasm(WasmMsg::Execute {
+                        contract_addr: cw4_group.to_string(),
+                        msg: to_json_binary(&cw4_group::msg::ExecuteMsg::UpdateMembers {
+                            add: vec![cw4::Member {
+                                addr: address.to_string(),
+                                weight,
+                            }],
+                            remove: vec![],
+                        })?,
+                        funds: vec![],
+                    });
+                    response = response.add_message(msg);
+                }
+
+                return Ok(response);
             }
-            _ => {}
         }
 
         Ok(Response::default()

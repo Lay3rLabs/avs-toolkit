@@ -5,7 +5,7 @@ members = [
     "wasi/square",
     "wasi/oracle-example",
     "wasi/ollama",
-    "wasm/ai-bouncer",
+    "wasi/ai-bouncer",
     "tools/cli",
     "tools/gui",
     "tools/shared",
