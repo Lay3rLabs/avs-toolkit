@@ -35,7 +35,11 @@ pub fn instantiate(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> StdResult<Response> {
     match msg {
-        ExecuteMsg::Register {} => register(deps, info),
+        ExecuteMsg::Trigger {
+            session_id,
+            message_id,
+            message,
+        } => trigger(deps, env, info, session_id, message_id, message),
         ExecuteMsg::Unregister {} => unregister(deps),
         ExecuteMsg::UpdateDao { dao } => update_dao(deps, info, dao),
         ExecuteMsg::UpdateCw4Group { cw4_group } => update_cw4_group(deps, info, cw4_group),
@@ -57,7 +61,7 @@ mod execute {
     use cosmwasm_std::{to_json_binary, CosmosMsg, StdError, WasmMsg};
     use lavs_apis::{interfaces::task_hooks::TaskHookType, tasks::TaskResponse};
 
-    use crate::msg::TaskOutput;
+    use crate::msg::{TaskInput, TaskOutput};
 
     use super::*;
 
@@ -72,15 +76,50 @@ mod execute {
         }))
     }
 
-    pub fn register(deps: DepsMut, info: MessageInfo) -> StdResult<Response> {
-        if info.sender != DAO.load(deps.storage)? {
-            return Err(StdError::generic_err("unauthorized: not DAO"));
-        }
+    pub fn trigger(
+        deps: DepsMut,
+        env: Env,
+        info: MessageInfo,
+        session_id: String,
+        message_id: u16,
+        message: String,
+    ) -> StdResult<Response> {
+        let task_queue = TASK_QUEUE.load(deps.storage)?;
 
-        let msg = get_register_message(deps)?;
+        let address = if message_id == 0 {
+            Some(info.sender.to_string())
+        } else {
+            None
+        };
+
+        let payload = serde_json::to_value(TaskInput {
+            session_id: session_id.clone(),
+            address,
+            message_id,
+            message,
+        })
+        .map_err(|e| StdError::generic_err(e.to_string()))?;
+
+        // TODO: add atomic completion hook
+        let msg = CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: task_queue.to_string(),
+            msg: to_json_binary(&lavs_apis::tasks::ExecuteMsg::Custom(
+                lavs_apis::tasks::CustomExecuteMsg::Create {
+                    description: format!(
+                        "AI Bouncer Session {} Message {}",
+                        session_id, message_id
+                    ),
+                    timeout: None,
+                    payload,
+                },
+            ))?,
+            funds: vec![],
+        });
 
         Ok(Response::default()
-            .add_attribute("action", "register")
+            .add_attribute("action", "trigger")
+            .add_attribute("session_id", session_id)
+            .add_attribute("message_id", message_id.to_string())
             .add_message(msg))
     }
 
@@ -88,17 +127,17 @@ mod execute {
         let dao = DAO.load(deps.storage)?;
         let cw4_group = CW4_GROUP.load(deps.storage)?;
 
-        let msgs = vec![CosmosMsg::Wasm(WasmMsg::Execute {
+        let msg = CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: cw4_group.to_string(),
             msg: to_json_binary(&cw4_group::msg::ExecuteMsg::UpdateAdmin {
                 admin: Some(dao.to_string()),
             })?,
             funds: vec![],
-        })];
+        });
 
         Ok(Response::default()
             .add_attribute("action", "unregister")
-            .add_messages(msgs))
+            .add_message(msg))
     }
 
     pub fn update_dao(deps: DepsMut, info: MessageInfo, dao: String) -> StdResult<Response> {

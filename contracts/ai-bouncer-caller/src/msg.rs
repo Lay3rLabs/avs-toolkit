@@ -1,6 +1,7 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cw_orch::{ExecuteFns, QueryFns};
 use lavs_apis::interfaces::task_hooks::TaskHookExecuteMsg;
+use serde::{Deserialize, Serialize};
 
 #[cw_serde]
 pub struct InstantiateMsg {
@@ -17,13 +18,17 @@ pub struct InstantiateMsg {
 #[cw_serde]
 #[derive(ExecuteFns)]
 pub enum ExecuteMsg {
-    /// set up the contract by registering it with the task queue. this is only
-    /// necessary after unregistering, since registration automatically happens
-    /// on instantiate. only the DAO can do this.
-    Register {},
-    /// teardown the contract by unregistering it with the task queue and
-    /// changing the cw4-group contract admin back to the DAO. only the DAO can
-    /// do this.
+    /// trigger the AI Bouncer.
+    Trigger {
+        /// the session ID of the address being evaluated.
+        session_id: String,
+        /// the incrementing message index, starting at 0.
+        message_id: u16,
+        /// the next message in the conversation.
+        message: String,
+    },
+    /// teardown the contract by changing the cw4-group contract admin back to
+    /// the DAO. only the DAO can do this.
     Unregister {},
     /// update the DAO address. only the DAO can do this.
     UpdateDao { dao: String },
@@ -61,13 +66,26 @@ pub enum QueryMsg {
     NewMemberWeight {},
 }
 
-#[cw_serde]
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TaskInput {
+    /// the session ID of the address being evaluated
+    pub session_id: String,
+    /// the address being evaluated. only needed on first message (where ID = 0)
+    pub address: Option<String>,
+    /// the incrementing message index, starting at 0
+    pub message_id: u16,
+    /// the next message in the conversation
+    pub message: String,
+}
+
+#[derive(Deserialize)]
 pub enum TaskOutput {
     Success(TaskOutputSuccess),
     Error(String),
 }
 
-#[cw_serde]
+#[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TaskOutputSuccess {
     /// the session ID of the address being evaluated

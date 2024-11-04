@@ -94,7 +94,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "ai-bouncer-hook-consumer"
+name = "ai-bouncer-caller"
 version = "0.1.0"
 dependencies = [
  "cosmwasm-schema 2.1.4",
