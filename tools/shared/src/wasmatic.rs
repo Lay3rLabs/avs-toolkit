@@ -30,7 +30,7 @@ pub async fn deploy(
     digest: Option<String>,
     wasm_file: WasmFile,
     trigger: Trigger,
-    permissions: impl Serialize,
+    _permissions: impl Serialize,
     envs: Vec<(String, String)>,
     testable: bool,
     on_deploy_success: impl Fn(&str),
@@ -50,6 +50,12 @@ pub async fn deploy(
             .context(format!("Contract Not Found: `{task_queue_addr}`"))?;
     }
 
+    // TODO: make this default in wasmatic if the fields are not provided
+    let permissions = json!({
+        "allowedHttpHosts": "all",
+        "fileSystem": true,
+    });
+
     // Prepare the JSON body
     let body = json!({
         "name": name,
@@ -58,6 +64,7 @@ pub async fn deploy(
         "envs": envs,
         "testable": testable,
     });
+    println!("body {:?}", body);
 
     // Check if wasm_source is a URL or a local file path
     let json_body = match wasm_file {
@@ -81,7 +88,7 @@ pub async fn deploy(
             let mut hasher = Sha256::new();
             hasher.update(&wasm_binary);
             let result = hasher.finalize();
-            json_body["digest"] = json!(format!("sha256:{:x}", result));
+            json_body["digest"] = json!(format!("{:x}", result));
 
             futures::future::join_all(endpoints.iter().map(|endpoint| {
                 let http_client = http_client.clone();
