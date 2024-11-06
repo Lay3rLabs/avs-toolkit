@@ -1,25 +1,23 @@
 #[allow(warnings)]
 mod bindings;
-#[allow(warnings)]
-mod ollama;
+
+mod providers;
+mod session;
 
 use bindings::{Guest, Output, TaskQueueInput};
 use layer_wasi::{block_on, Reactor};
+use providers::Provider;
 use serde::{Deserialize, Serialize};
 
 struct Component;
 
 impl Guest for Component {
     fn run_task(request: TaskQueueInput) -> Output {
-        // lock so only one can run at a time
-        let lock = std::path::Path::new("./lock");
-        match std::fs::OpenOptions::new().create_new(true).open(lock) {
-            Ok(_) => {}
-            Err(_) => return Err("another instance is running".to_string()),
-        }
+        let provider =
+            std::env::var("PROVIDER").or(Err("missing env var `PROVIDER`".to_string()))?;
 
         let res = match serde_json::from_slice(&request.request) {
-            Ok(input) => block_on(|reactor| get_output(reactor, input)),
+            Ok(input) => block_on(|reactor| get_output(reactor, provider, input)),
             Err(e) => serde_json::to_vec(&TaskOutput::Error(format!(
                 "Could not deserialize input request from JSON: {}",
                 e
@@ -27,18 +25,43 @@ impl Guest for Component {
             .map_err(|e| e.to_string()),
         };
 
-        // remove lock
-        let _ = std::fs::remove_file(lock);
-
         res
     }
 }
 
-async fn get_output(reactor: Reactor, input: TaskInput) -> Result<Vec<u8>, String> {
-    let output = ollama::get_output(&reactor, &input)
-        .await
-        .map(TaskOutput::Success)
+async fn get_output(
+    reactor: Reactor,
+    provider: String,
+    input: TaskInput,
+) -> Result<Vec<u8>, String> {
+    let session = match provider.as_str() {
+        providers::ollama::OllamaProvider::NAME => {
+            let provider = providers::ollama::OllamaProvider::new()?;
+
+            provider.process(&reactor, &input).await
+        }
+        providers::groq::GroqProvider::NAME => {
+            let provider = providers::groq::GroqProvider::new()?;
+
+            provider.process(&reactor, &input).await
+        }
+        _ => Err(format!("unknown provider: {provider}")),
+    };
+
+    let output = session
+        .and_then(|session| {
+            session.save()?;
+
+            Ok(TaskOutput::Success(TaskOutputSuccess {
+                session_id: session.id,
+                address: session.address,
+                message_id: input.message_id,
+                response: session.messages.last().unwrap().content.clone(),
+                decision: session.messages.last().unwrap().decision,
+            }))
+        })
         .unwrap_or_else(TaskOutput::Error);
+
     serde_json::to_vec(&output).map_err(|e| e.to_string())
 }
 
