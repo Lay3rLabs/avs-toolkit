@@ -2,9 +2,10 @@ use cosmwasm_std::{Timestamp, Uint128};
 use cw_orch::environment::{ChainState, CwEnv, Environment, IndexResponse, QueryHandler};
 use cw_orch::prelude::*;
 use lavs_apis::id::TaskId;
+use lavs_apis::interfaces::task_hooks::TaskHookType;
 use lavs_apis::tasks::{InfoStatus, TaskInfoResponse, TaskStatus};
 use lavs_apis::time::Duration;
-use mock_hook_consumer::msg::{ExecuteMsgFns, QueryMsgFns};
+use mock_hook_consumer::msg::{ExecuteMsgFns, QueryMsgFns as _};
 use serde_json::json;
 
 use crate::error::ContractError;
@@ -48,6 +49,8 @@ where
         requestor: Requestor::Fixed(chain.sender_addr().into()),
         timeout: mock_timeout(timeout),
         verifier: verifier.addr().into(),
+        owner: None,
+        task_specific_whitelist: None,
     };
 
     let contract = setup(chain.clone(), msg);
@@ -162,6 +165,8 @@ where
             "Too Short".to_string(),
             Some(Duration::new_seconds(4)),
             payload.clone(),
+            None,
+            None,
             &[],
         )
         .unwrap_err();
@@ -174,7 +179,7 @@ where
     );
 
     let one = contract
-        .create("One".to_string(), None, payload.clone(), &[])
+        .create("One".to_string(), None, payload.clone(), None, None, &[])
         .unwrap();
     let task_one = one
         .event_attr_value("wasm-task_created_event", "task-id")
@@ -184,7 +189,7 @@ where
     assert_eq!(task_one, 1u64);
 
     let two = contract
-        .create("Two".to_string(), None, payload.clone(), &[])
+        .create("Two".to_string(), None, payload.clone(), None, None, &[])
         .unwrap();
     let task_two = get_task_id(&two);
     assert_eq!(task_two, TaskId::new(2u64));
@@ -599,13 +604,40 @@ where
         requestor: Requestor::OpenPayment(coin),
         timeout: mock_timeout(Duration::new_seconds(200)),
         verifier: verifier.addr().into(),
+        owner: None, // defaults to sender
+        task_specific_whitelist: Some(vec![mock_consumer.addr_str().unwrap()]),
     };
     let task_contract = setup(chain.clone(), msg);
 
     // Establish hooks
-    mock_consumer
-        .add_hooks(task_contract.addr_str().unwrap())
+    let task_id_for_specific_hook = TaskId::new(1);
+    task_contract
+        .add_hooks(
+            None,
+            TaskHookType::Created,
+            vec![mock_consumer.addr_str().unwrap()],
+        )
         .unwrap();
+    task_contract
+        .add_hooks(
+            Some(task_id_for_specific_hook), // Only task 1 will create another task on completion
+            TaskHookType::Completed,
+            vec![mock_consumer.addr_str().unwrap()],
+        )
+        .unwrap();
+    task_contract
+        .add_hooks(
+            None,
+            TaskHookType::Timeout,
+            vec![mock_consumer.addr_str().unwrap()],
+        )
+        .unwrap();
+
+    // Ensure the task-specific hook count is 1
+    let task_hooks = task_contract
+        .task_hooks(TaskHookType::Completed, Some(task_id_for_specific_hook))
+        .unwrap();
+    assert_eq!(task_hooks.hooks.len(), 1);
 
     // Ensure created counter starts at 0
     let counter = mock_consumer.created_count().unwrap();
@@ -646,8 +678,102 @@ where
 
     // Timeout the task
     // The consumer should error out, but the function should not block
-    let result = task_contract.call_as(&verifier).timeout(timeout_task_id);
-    assert!(result.is_ok());
+    task_contract
+        .call_as(&verifier)
+        .timeout(timeout_task_id)
+        .unwrap();
+
+    // Create another task
+    let payload = json!({"x": 5});
+    let task_id = make_task_with_funds(&task_contract, "Test Task", None, &payload, &funds);
+
+    // Complete this task
+    let result = json!({"y": 25});
+    task_contract
+        .call_as(&verifier)
+        .complete(task_id, result)
+        .unwrap();
+
+    // Ensure task count is only 4
+    // The task-specific hook only created another task for task 1
+    let task_list = task_contract.list(None, None).unwrap();
+    assert_eq!(task_list.tasks.len(), 4);
+
+    // Ensure the task-specific hook was removed
+    let task_hooks = task_contract
+        .task_hooks(TaskHookType::Completed, Some(task_id_for_specific_hook))
+        .unwrap();
+    assert!(task_hooks.hooks.is_empty());
+
+    // Register a hook from the mock-hook-consumer to test the task-specific whitelist (task that was created from mock_consumer)
+    mock_consumer
+        .register_hook(TaskHookType::Completed, new_task_id)
+        .unwrap();
+
+    // Other user can't register a hook on that same task
+    task_contract
+        .call_as(&chain.alt_signer(1))
+        .add_hooks(
+            Some(new_task_id),
+            TaskHookType::Completed,
+            vec![mock_consumer.addr_str().unwrap()],
+        )
+        .unwrap_err();
+
+    // Process this task
+    let result = json!({"y": 625});
+    task_contract
+        .call_as(&verifier)
+        .complete(new_task_id, result)
+        .unwrap();
+
+    // Ensure another task was created - 5
+    let task_list = task_contract.list(None, None).unwrap();
+    assert_eq!(task_list.tasks.len(), 5);
+
+    // Update task-specific whitelist
+    let whitelisted = chain.alt_signer(1);
+    task_contract
+        .update_task_specific_whitelist(Some(vec![whitelisted.addr().to_string()]), None)
+        .unwrap();
+
+    // Non-whitelisted account cannot create a task with atomic task hooks
+    task_contract
+        .call_as(&chain.alt_signer(2))
+        .create(
+            "Task with unauthorized atomic task hooks",
+            None,
+            payload.clone(),
+            None,
+            Some(vec![mock_consumer.addr_str().unwrap()]),
+            &funds,
+        )
+        .unwrap_err();
+
+    // Test atomic hooks
+    let task_id = TaskId::new(6);
+    task_contract
+        .call_as(&whitelisted)
+        .create(
+            "Task with atomic task hooks",
+            None,
+            payload.clone(),
+            None,
+            Some(vec![mock_consumer.addr_str().unwrap()]),
+            &funds,
+        )
+        .unwrap();
+
+    // Complete this task
+    let result = json!({"y": 25});
+    task_contract
+        .call_as(&verifier)
+        .complete(task_id, result)
+        .unwrap();
+
+    // Ensure another task was created on top of this - 7
+    let task_list = task_contract.list(None, None).unwrap();
+    assert_eq!(task_list.tasks.len(), 7);
 }
 
 pub fn timeout_refund_test<C>(chain: C, denom: String)
@@ -667,6 +793,8 @@ where
         requestor: Requestor::OpenPayment(coin.clone()),
         timeout: mock_timeout(Duration::new_seconds(200)),
         verifier: verifier.addr().into(),
+        owner: None,
+        task_specific_whitelist: None,
     };
     let task_contract = setup(chain.clone(), msg);
 
@@ -735,7 +863,14 @@ pub fn make_task<C: ChainState + TxHandler>(
     payload: &serde_json::Value,
 ) -> TaskId {
     let res = contract
-        .create(name.to_string(), timeout.into(), payload.clone(), &[])
+        .create(
+            name.to_string(),
+            timeout.into(),
+            payload.clone(),
+            None,
+            None,
+            &[],
+        )
         .unwrap();
     get_task_id(&res)
 }
@@ -749,7 +884,14 @@ pub fn make_task_with_funds<C: ChainState + TxHandler>(
     funds: &[Coin],
 ) -> TaskId {
     let res = contract
-        .create(name.to_string(), timeout.into(), payload.clone(), funds)
+        .create(
+            name.to_string(),
+            timeout.into(),
+            payload.clone(),
+            None,
+            None,
+            funds,
+        )
         .unwrap();
     get_task_id(&res)
 }

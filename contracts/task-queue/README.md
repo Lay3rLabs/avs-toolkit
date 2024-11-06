@@ -38,7 +38,6 @@ logic to ensure correctness and then call the task queue if it passes.
 ### Timeout Task
 
 Anyone can call to mark a task as timed out if the block time has passed the task-specified timeout.
-(TODO: consider if the payment is refunded in such a case)
 
 ## Queries
 
@@ -65,6 +64,44 @@ Run the test cases on a real network.
 3. `cargo run --example devnet --features dev`
 
 Ensure you have set `TEST_MNEMONIC` in `contracts/avs/tasks/.env` to an account with some tokens.
+
+## Task Hooks
+
+The contract supports hooks to notify other contracts about task-related events. This enables automated workflows and reactions to task lifecycle changes.
+
+### Hook Types
+
+- `Created`: Triggered when a new task is created
+- `Completed`: Triggered when a task is successfully completed
+- `Timeout`: Triggered when a task times out
+
+### Hook Scopes
+
+Hooks can be configured at two levels:
+- **Global Hooks**: Apply to all tasks in the system
+- **Task-Specific Hooks**: Apply only to individual tasks
+
+### Access Control
+
+- **Global Hooks**: Can only be managed by the contract owner
+- **Task-Specific Hooks**: Can be managed by:
+  - The contract owner
+  - Addresses in the task-specific whitelist (for their own tasks)
+
+### Task-Specific Whitelist
+
+The contract maintains a whitelist of addresses that can create task-specific hooks. This whitelist is managed by the contract owner and allows for delegated hook management while maintaining security.
+
+### Hook Messages
+
+When triggered, hooks send messages to their registered receiver contracts containing relevant task information such as:
+- Task ID
+- Event type (Created/Completed/Timeout)
+- Task status
+- Timestamp
+- Additional context (e.g., result data for completed tasks)
+
+The receiver contract must implement the appropriate message handling for these hook notifications: [Example](../mock-hook-consumer/README.md###Execution).
 
 ## TODO
 

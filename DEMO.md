@@ -91,6 +91,80 @@ cargo run task-queue add-task -b '{"x": 12}' -d 'test 1'
 cargo run task-queue view-queue
 ```
 
+### Task Hooks
+
+Task hooks allow contracts to receive notifications for task events. The task queue's owner can manage hooks for any receiver address, with the option to make hooks either global or specific to particular tasks. The task owner can allow task creators to add hooks to their own tasks through the task-specific whitelist.
+
+View current hooks:
+```bash
+# View global hooks for a specific type
+cargo run task-queue view-hooks --hook-type completed
+
+# View hooks for specific type and task
+cargo run task-queue view-hooks --hook-type completed --task-id TASK_ID
+
+# Available hook types: completed, timeout, created
+```
+
+Manage task-specific whitelist:
+```bash
+# Add users to the task-specific whitelist
+cargo run task-queue update-task-specific-whitelist --to-add ADDRESS_1,ADDRESS_2,ADDRESS_3
+
+# Remove users from the task-specific whitelist
+cargo run task-queue update-task-specific-whitelist --to-remove ADDRESS_1,ADDRESS_2
+
+# View the task-specific whitelist
+cargo run task-queue view-task-specific-whitelist
+```
+
+Register a hook for task events:
+```bash
+# Add global hooks for completed tasks
+cargo run task-queue add-hooks \
+    --hook-type completed \
+    --receivers CONTRACT_ADDRESS_1,CONTRACT_ADDRESS_2
+
+# Add task-specific hooks
+cargo run task-queue add-hooks \
+    --hook-type completed \
+    --receivers CONTRACT_ADDRESS \
+    --task-id TASK_ID
+
+# Add hooks for timeouts
+cargo run task-queue add-hooks \
+    --hook-type timeout \
+    --receivers CONTRACT_ADDRESS_HERE \
+    [--task-id TASK_ID]
+
+# Add hooks for future tasks
+cargo run task-queue add-hooks \
+    --hook-type created \
+    --receivers CONTRACT_ADDRESS_HERE \
+    [--task-id TASK_ID]
+```
+
+Remove hooks when no longer needed:
+```bash
+# Remove global hook
+cargo run task-queue remove-hook \
+    --hook-type completed \
+    --receiver CONTRACT_ADDRESS_HERE
+
+# Remove task-specific hook
+cargo run task-queue remove-hook \
+    --hook-type completed \
+    --receiver CONTRACT_ADDRESS_HERE \
+    --task-id TASK_ID
+```
+
+The receiver contract will be notified when:
+- `completed`: A task is successfully completed
+- `timeout`: A task expires before completion
+- `created`: A new task is added to the queue
+
+Note: Ensure your receiver contract can properly handle the hook messages.
+
 ## Clean Up Application (Optional)
 
 There is a global namespace for these applications, so you might get a conflict above

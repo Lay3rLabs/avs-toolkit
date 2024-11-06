@@ -52,6 +52,7 @@ async fn main() -> Result<()> {
                 timeout: task_timeout_seconds,
                 percentage: required_voting_percentage,
                 operators,
+                owner,
                 requestor,
                 threshold_percentage,
                 allowed_spread,
@@ -65,6 +66,7 @@ async fn main() -> Result<()> {
                     ctx.signing_client().await?,
                     ctx.chain_info()?.wasmatic.endpoints.clone(),
                     code_ids,
+                    owner,
                     Duration::new_seconds(task_timeout_seconds),
                     required_voting_percentage,
                     threshold_percentage,
@@ -126,13 +128,23 @@ async fn main() -> Result<()> {
                     body,
                     description,
                     timeout,
+                    with_completed_hooks,
+                    with_timeout_hooks,
                 } => {
                     // NOTE: I've left only this input argument as u64, because of `clap` not liking
                     // Timestamp as argument
                     let timeout = timeout.map(Duration::new_seconds);
 
                     let payload = serde_json::from_str(&body).context("failed to parse body")?;
-                    let _ = task_queue.add_task(payload, description, timeout).await?;
+                    let _ = task_queue
+                        .add_task(
+                            payload,
+                            description,
+                            timeout,
+                            with_timeout_hooks,
+                            with_completed_hooks,
+                        )
+                        .await?;
                 }
                 TaskQueueCommand::ViewQueue { start_after, limit } => {
                     let res = task_queue
@@ -144,6 +156,61 @@ async fn main() -> Result<()> {
                     res.report(|line| {
                         println!("{}", line);
                     })?;
+                }
+                TaskQueueCommand::AddHooks {
+                    hook_type,
+                    receivers,
+                    task_id,
+                } => {
+                    let _ = task_queue.add_hooks(task_id, hook_type, receivers).await?;
+                }
+                TaskQueueCommand::RemoveHook {
+                    hook_type,
+                    receiver,
+                    task_id,
+                } => {
+                    let _ = task_queue.remove_hook(task_id, hook_type, receiver).await?;
+                }
+                TaskQueueCommand::ViewHooks { task_id, hook_type } => {
+                    let res = task_queue.querier.view_hooks(task_id, hook_type).await?;
+
+                    tracing::info!("Task Queue Hooks");
+                    tracing::info!("Address: {}", task_queue.contract_addr);
+                    println!(
+                        "Registered hooks for type '{}': {}",
+                        hook_type,
+                        if res.hooks.is_empty() {
+                            "none".to_string()
+                        } else {
+                            res.hooks.join(", ")
+                        }
+                    );
+                }
+                TaskQueueCommand::ViewTaskSpecificWhitelist { start_after, limit } => {
+                    let res = task_queue
+                        .querier
+                        .view_task_specific_whitelist(start_after, limit)
+                        .await?;
+
+                    tracing::info!("Task Specific Whitelist");
+                    tracing::info!("Address: {}", task_queue.contract_addr);
+                    println!(
+                        "Task Specific Whitelist: {}",
+                        if res.addrs.is_empty() {
+                            "none".to_string()
+                        } else {
+                            res.addrs
+                                .into_iter()
+                                .map(|x| x.to_string())
+                                .collect::<Vec<_>>()
+                                .join(", ")
+                        }
+                    );
+                }
+                TaskQueueCommand::UpdateTaskSpecificWhitelist { to_add, to_remove } => {
+                    let _ = task_queue
+                        .update_task_specific_whitelist(to_add, to_remove)
+                        .await?;
                 }
             }
         }

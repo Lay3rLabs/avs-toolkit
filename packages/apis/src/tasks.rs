@@ -1,6 +1,7 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Coin, Env, Timestamp};
+use cosmwasm_std::{Addr, Coin, Env, Timestamp};
 use cw_orch::{ExecuteFns, QueryFns};
+use cw_ownable::{cw_ownable_execute, cw_ownable_query, Ownership};
 
 pub use crate::interfaces::tasks::{
     TaskExecuteMsg, TaskExecuteMsgFns, TaskQueryMsg, TaskQueryMsgFns, TaskStatus,
@@ -20,6 +21,18 @@ pub struct InstantiateMsg {
     pub timeout: TimeoutInfo,
     /// Which contract can verify results
     pub verifier: String,
+    /// The address that owns and manages the task queue.
+    ///
+    /// ## Privileges
+    /// - Can update task hooks
+    /// - Can remove task hooks
+    /// - Can update task specific whitelist
+    /// - Can transfer ownership
+    ///
+    /// Defaults to the message sender during initialization.
+    pub owner: Option<String>,
+    /// Optionally populate the task-specific whitelist at instantiation
+    pub task_specific_whitelist: Option<Vec<String>>,
 }
 
 #[cw_serde]
@@ -59,6 +72,7 @@ pub enum ExecuteMsg {
     Custom(CustomExecuteMsg),
 }
 
+#[cw_ownable_execute]
 #[cw_serde]
 #[derive(ExecuteFns)]
 #[cw_orch(disable_fields_sorting)]
@@ -72,13 +86,41 @@ pub enum CustomExecuteMsg {
         /// Machine-readable data for the AVS to use
         /// FIXME: use generic T to enforce a AVS-specific format
         payload: RequestType,
+        /// Optionally register timeout task hooks for a set of receivers
+        /// Requires the sender to be in the task-specific whitelist
+        with_timeout_hooks: Option<Vec<String>>,
+        /// Optionally register completed task hooks for a set of receivers
+        /// Requires the sender to be in the task-specific whitelist
+        with_completed_hooks: Option<Vec<String>>,
     },
     Timeout {
         /// The task ID to complete
         task_id: TaskId,
     },
-    /// Adds a hook to the caller for the given task hook type
-    AddHook(TaskHookType),
+    /// Adds hooks to a set of receivers for the given task hook type
+    AddHooks {
+        /// Optional task id for task-specific hooks. If None, adds a global hook.
+        task_id: Option<TaskId>,
+        /// The type of hook to add
+        hook_type: TaskHookType,
+        /// The receiver addresses of the hook messages
+        receivers: Vec<String>,
+    },
+    /// Remove a hook from a receiver
+    RemoveHook {
+        /// Optional task id to remove a task-specific hook. If None, removes a global hook.
+        task_id: Option<TaskId>,
+        /// The type of hook to remove (Created, Completed, or Timeout)
+        hook_type: TaskHookType,
+        /// The receiver address that will stop receiving hook messages
+        receiver: String,
+    },
+    /// Update task-specific whitelist
+    /// These users are allowed to add task hooks to their submissions
+    UpdateTaskSpecificWhitelist {
+        to_add: Option<Vec<String>>,
+        to_remove: Option<Vec<String>>,
+    },
 }
 
 impl From<CustomExecuteMsg> for ExecuteMsg {
@@ -104,6 +146,7 @@ pub enum QueryMsg {
     Custom(CustomQueryMsg),
 }
 
+#[cw_ownable_query]
 #[cw_serde]
 #[derive(QueryFns)]
 #[cw_orch(disable_fields_sorting)]
@@ -134,8 +177,16 @@ pub enum CustomQueryMsg {
     #[returns(ConfigResponse)]
     Config {},
     /// Gets the task hooks for the given task hook type
-    #[returns(cw_controllers::HooksResponse)]
-    TaskHooks(TaskHookType),
+    #[returns(crate::interfaces::task_hooks::HooksResponse)]
+    TaskHooks {
+        hook_type: TaskHookType,
+        task_id: Option<TaskId>,
+    },
+    #[returns(TaskSpecificWhitelistResponse)]
+    TaskSpecificWhitelist {
+        start_after: Option<String>,
+        limit: Option<u32>,
+    },
 }
 
 impl From<TaskQueryMsg> for QueryMsg {
@@ -180,6 +231,11 @@ pub struct ListOpenResponse {
 }
 
 #[cw_serde]
+pub struct TaskSpecificWhitelistResponse {
+    pub addrs: Vec<Addr>,
+}
+
+#[cw_serde]
 pub struct ListCompletedResponse {
     pub tasks: Vec<CompletedTaskOverview>,
 }
@@ -202,6 +258,7 @@ pub struct CompletedTaskOverview {
 
 #[cw_serde]
 pub struct ConfigResponse {
+    pub ownership: Ownership<Addr>,
     pub requestor: Requestor,
     pub timeout: TimeoutConfig,
     pub verifier: String,

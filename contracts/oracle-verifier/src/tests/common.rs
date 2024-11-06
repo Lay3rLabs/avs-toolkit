@@ -173,7 +173,14 @@ pub fn make_task<C: ChainState + TxHandler>(
     payload: &serde_json::Value,
 ) -> TaskId {
     let res = contract
-        .create(name.to_string(), timeout.into(), payload.clone(), &[])
+        .create(
+            name.to_string(),
+            timeout.into(),
+            payload.clone(),
+            None,
+            None,
+            &[],
+        )
         .unwrap();
     get_task_id(&res)
 }
@@ -197,6 +204,8 @@ where
         requestor: Requestor::Fixed(chain.sender_addr().into()),
         timeout: TimeoutInfo::new(Duration::new_seconds(600)),
         verifier: verifier_addr.to_string(),
+        owner: None,
+        task_specific_whitelist: None,
     };
     let tasker = TasksContract::new(chain);
     tasker.upload().unwrap();

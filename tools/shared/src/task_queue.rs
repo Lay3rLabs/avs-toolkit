@@ -3,7 +3,11 @@ use cosmwasm_std::Order;
 use lavs_apis::{
     events::{task_queue_events::TaskCreatedEvent, traits::TypedEvent as _},
     id::TaskId,
-    tasks::{CompletedTaskOverview, ListCompletedResponse, ListOpenResponse, OpenTaskOverview},
+    interfaces::task_hooks::{HooksResponse, TaskHookType},
+    tasks::{
+        CompletedTaskOverview, ListCompletedResponse, ListOpenResponse, OpenTaskOverview,
+        TaskSpecificWhitelistResponse,
+    },
     time::Duration,
 };
 use lavs_task_queue::msg::{ConfigResponse, CustomExecuteMsg, CustomQueryMsg, QueryMsg, Requestor};
@@ -40,6 +44,8 @@ impl TaskQueue {
         payload: serde_json::Value,
         description: String,
         timeout: Option<Duration>,
+        with_timeout_hooks: Option<Vec<String>>,
+        with_completed_hooks: Option<Vec<String>>,
     ) -> Result<(TaskId, TxResponse)> {
         let contract_config = self.querier.config().await?;
 
@@ -61,6 +67,8 @@ impl TaskQueue {
                     description,
                     timeout,
                     payload,
+                    with_completed_hooks,
+                    with_timeout_hooks,
                 },
                 payment,
                 None,
@@ -76,6 +84,78 @@ impl TaskQueue {
         tracing::debug!("Tx hash: {}", tx_resp.txhash);
 
         Ok((event.task_id, tx_resp))
+    }
+
+    pub async fn add_hooks<T: Into<TaskHookType>>(
+        &self,
+        task_id: Option<TaskId>,
+        hook_type: T,
+        receivers: Vec<String>,
+    ) -> Result<TxResponse> {
+        let hook_type = hook_type.into();
+        let tx_resp = self
+            .admin
+            .contract_execute(
+                &self.contract_addr,
+                &CustomExecuteMsg::AddHooks {
+                    task_id,
+                    hook_type,
+                    receivers,
+                },
+                vec![],
+                None,
+            )
+            .await?;
+
+        tracing::info!("Added task hook.");
+        tracing::debug!("Tx hash: {}", tx_resp.txhash);
+        Ok(tx_resp)
+    }
+
+    pub async fn remove_hook<T: Into<TaskHookType>>(
+        &self,
+        task_id: Option<TaskId>,
+        hook_type: T,
+        receiver: String,
+    ) -> Result<TxResponse> {
+        let hook_type = hook_type.into();
+        let tx_resp = self
+            .admin
+            .contract_execute(
+                &self.contract_addr,
+                &CustomExecuteMsg::RemoveHook {
+                    task_id,
+                    hook_type,
+                    receiver,
+                },
+                vec![],
+                None,
+            )
+            .await?;
+
+        tracing::info!("Removed task hook.");
+        tracing::debug!("Tx hash: {}", tx_resp.txhash);
+        Ok(tx_resp)
+    }
+
+    pub async fn update_task_specific_whitelist(
+        &self,
+        to_add: Option<Vec<String>>,
+        to_remove: Option<Vec<String>>,
+    ) -> Result<TxResponse> {
+        let tx_resp = self
+            .admin
+            .contract_execute(
+                &self.contract_addr,
+                &CustomExecuteMsg::UpdateTaskSpecificWhitelist { to_add, to_remove },
+                vec![],
+                None,
+            )
+            .await?;
+
+        tracing::info!("Updated task specific whitelist.");
+        tracing::debug!("Tx hash: {}", tx_resp.txhash);
+        Ok(tx_resp)
     }
 }
 
@@ -101,6 +181,12 @@ impl TaskQueueQuerier {
     ) -> Result<TaskQueueView> {
         let contract_config: ConfigResponse = self.config().await?;
 
+        let owner_addr = contract_config
+            .ownership
+            .owner
+            .map(|x| self.query_client.chain_config.parse_address(x.as_str()))
+            .transpose()?;
+
         let verifier_addr = self
             .query_client
             .chain_config
@@ -123,6 +209,7 @@ impl TaskQueueQuerier {
         Ok(TaskQueueView {
             verifier_addr,
             operator_addr,
+            owner_addr,
             operators,
             tasks,
         })
@@ -168,18 +255,55 @@ impl TaskQueueQuerier {
 
         Ok(all_tasks)
     }
+
+    pub async fn view_hooks<T: Into<TaskHookType>>(
+        &self,
+        task_id: Option<TaskId>,
+        hook_type: T,
+    ) -> Result<HooksResponse> {
+        self.query_client
+            .contract_smart(
+                &self.contract_addr,
+                &QueryMsg::Custom(CustomQueryMsg::TaskHooks {
+                    hook_type: hook_type.into(),
+                    task_id,
+                }),
+            )
+            .await
+    }
+
+    pub async fn view_task_specific_whitelist(
+        &self,
+        start_after: Option<String>,
+        limit: Option<u32>,
+    ) -> Result<TaskSpecificWhitelistResponse> {
+        self.query_client
+            .contract_smart(
+                &self.contract_addr,
+                &QueryMsg::Custom(CustomQueryMsg::TaskSpecificWhitelist { start_after, limit }),
+            )
+            .await
+    }
 }
 
 #[derive(Clone, Debug)]
 pub struct TaskQueueView {
     pub verifier_addr: Address,
     pub operator_addr: Address,
+    pub owner_addr: Option<Address>,
     pub operators: Vec<Operator>,
     pub tasks: Vec<TaskView>,
 }
 
 impl TaskQueueView {
     pub fn report(&self, log: impl Fn(&str)) -> Result<()> {
+        log(&format!(
+            "Owner: {}",
+            self.owner_addr
+                .as_ref()
+                .map(|x| x.to_string())
+                .unwrap_or("none".to_string())
+        ));
         log(&format!("Verifier: {}", self.verifier_addr));
         log(&format!("Operator: {}", self.operator_addr));
 

@@ -206,7 +206,7 @@ impl TaskQueueAddTaskUi {
                             state.add_task_loader.load(clone!(state => async move {
                                 let task_queue = TaskQueue::new(signing_client(), task_queue_addr).await;
                                 let payload = state.payload.get_cloned().unwrap_or_else(|| serde_json::Value::Object(serde_json::Map::new()));
-                                let res = task_queue.add_task(payload, description, state.timeout.get_cloned()).await;
+                                let res = task_queue.add_task(payload, description, state.timeout.get_cloned(), None, None).await;
 
                                 match res {
                                     Ok((task_id, tx_resp)) => {

@@ -1,12 +1,16 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cw_orch::{ExecuteFns, QueryFns};
-use lavs_apis::interfaces::task_hooks::TaskHookExecuteMsg;
+use lavs_apis::{
+    id::TaskId,
+    interfaces::task_hooks::{TaskHookExecuteMsg, TaskHookType},
+};
 
 #[cw_serde]
 #[derive(ExecuteFns)]
 pub enum ExecuteMsg {
-    AddHooks {
-        task_queue: String,
+    RegisterHook {
+        task_id: TaskId,
+        hook_type: TaskHookType,
     },
     #[serde(untagged)]
     TaskHook(TaskHookExecuteMsg),
