@@ -6,15 +6,15 @@ This shows how to deploy an AVS on the permissionless and setup stuff
 
 ```bash
 # Ensure the chain is up
-curl https://rpc.layer-p.net/status
+curl https://rpc.hack.layer.xyz/status
 
 # see blocks are being made.. run a few times
-curl https://rpc.layer-p.net/status | jq .result.sync_info
+curl https://rpc.hack.layer.xyz/status | jq .result.sync_info
 
 # ensure wasmatic opertators are set up with different addresses
-curl https://op1.layer-p.net/info | jq -r ".operators[0]"
-curl https://op2.layer-p.net/info | jq -r ".operators[0]"
-curl https://op3.layer-p.net/info | jq -r ".operators[0]"
+curl https://op1.hack.layer.xyz/info | jq -r ".operators[0]"
+curl https://op2.hack.layer.xyz/info | jq -r ".operators[0]"
+curl https://op3.hack.layer.xyz/info | jq -r ".operators[0]"
 ```
 
 ## Deploy AVS stuff
