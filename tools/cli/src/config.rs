@@ -40,7 +40,7 @@ impl Config {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ChainInfo {
     pub chain: ChainConfig,
-    pub faucet: FaucetConfig,
+    pub faucet: Option<FaucetConfig>,
     pub wasmatic: WasmaticConfig,
 }
 

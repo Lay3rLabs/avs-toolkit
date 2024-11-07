@@ -215,15 +215,20 @@ async fn main() -> Result<()> {
             }
         }
         Command::Faucet(faucet_args) => match faucet_args.command {
-            FaucetCommand::Tap { to, amount, denom } => {
-                let to = match to {
-                    Some(to) => ctx.chain_config()?.parse_address(&to)?,
-                    None => ctx.any_client().await?.as_signing().addr.clone(),
-                };
+            FaucetCommand::Tap { to, amount, denom } => match ctx.faucet_client().await? {
+                Some(faucet) => {
+                    let to = match to {
+                        Some(to) => ctx.chain_config()?.parse_address(&to)?,
+                        None => ctx.any_client().await?.as_signing().addr.clone(),
+                    };
 
-                let amount = amount.unwrap_or(FaucetCommand::DEFAULT_TAP_AMOUNT);
-                tap_faucet(ctx.faucet_client().await?, to, amount, denom).await?;
-            }
+                    let amount = amount.unwrap_or(FaucetCommand::DEFAULT_TAP_AMOUNT);
+                    tap_faucet(faucet, to, amount, denom).await?;
+                }
+                None => {
+                    tracing::error!("Faucet not configured");
+                }
+            },
         },
         Command::Wallet(wallet_args) => {
             let mut rng_lock = ctx.rng.lock().await;

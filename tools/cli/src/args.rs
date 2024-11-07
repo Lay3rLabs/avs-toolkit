@@ -106,14 +106,14 @@ pub enum DeployCommand {
         /// At least one operator must be set
         ///
         /// Tip: "wasmatic" is a special operator that will be set with the wasmatic address
-        #[clap(short, long, num_args(1..))]
+        #[clap(long, num_args(1..))]
         operators: Vec<String>,
         /// The task queue owner.
         ///
         /// Responsible for managing task hooks on the task queue
         ///
         /// Defaults to sender
-        #[clap(short, long)]
+        #[clap(long)]
         owner: Option<String>,
         /// The default task timeout, in seconds
         #[clap(short, long, default_value_t = 300)]
@@ -184,10 +184,10 @@ pub enum TaskQueueCommand {
         #[clap(short, long)]
         timeout: Option<u64>,
         /// Specify the completed task hook receivers
-        #[clap(short, long)]
+        #[clap(long)]
         with_completed_hooks: Option<Vec<String>>,
         /// Specify the timeout task hook receivers
-        #[clap(short, long)]
+        #[clap(long)]
         with_timeout_hooks: Option<Vec<String>>,
     },
 

@@ -7,7 +7,7 @@ use rand::{rngs::StdRng, SeedableRng};
 
 use crate::{
     args::{CliArgs, TargetEnvironment},
-    config::{ChainInfo, Config},
+    config::{ChainInfo, Config, FaucetConfig},
 };
 
 // The context is relatively cheap to clone, so we can pass it around
@@ -79,22 +79,33 @@ impl AppContext {
         QueryClient::new(self.chain_config()?.clone()).await
     }
 
-    pub async fn faucet_client(&self) -> Result<SigningClient> {
-        let signer = KeySigner::new_mnemonic_str(&self.chain_info()?.faucet.mnemonic, None)?;
-        SigningClient::new(self.chain_config()?.clone(), signer).await
+    pub async fn faucet_client(&self) -> Result<Option<SigningClient>> {
+        match &self.chain_info()?.faucet {
+            Some(faucet) => {
+                let signer = KeySigner::new_mnemonic_str(&faucet.mnemonic, None)?;
+                Ok(Some(
+                    SigningClient::new(self.chain_config()?.clone(), signer).await?,
+                ))
+            }
+            None => Ok(None),
+        }
     }
 
     pub async fn create_client_pool(&self) -> Result<Pool<SigningClientPoolManager>> {
+        let start_index = match &self.chain_info()?.faucet {
+            Some(FaucetConfig { mnemonic })
+                if self.args.concurrent_minimum_balance_from_faucet
+                    && &self.client_mnemonic()? == mnemonic =>
+            {
+                Some(1)
+            }
+            _ => None,
+        };
+
         let mut client_pool_manager = SigningClientPoolManager::new_mnemonic(
             self.client_mnemonic()?,
             self.chain_config()?.clone(),
-            // avoid accidentally trying to send funds to ourselves
-            match self.args.concurrent_minimum_balance_from_faucet
-                && self.client_mnemonic()? == self.chain_info()?.faucet.mnemonic
-            {
-                true => Some(1),
-                false => None,
-            },
+            start_index,
         );
 
         // set the pool minimum balance, if greater than 0
@@ -105,7 +116,7 @@ impl AppContext {
                         .with_minimum_balance(
                             self.args.concurrent_minimum_balance_threshhold,
                             self.args.concurrent_minimum_balance_amount,
-                            Some(self.faucet_client().await?),
+                            self.faucet_client().await?,
                             None,
                         )
                         .await?;

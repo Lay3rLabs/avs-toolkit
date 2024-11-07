@@ -22,23 +22,20 @@
     },
     "testnet": {
         "chain": {
-            "chain_id": "layer-permissionless-3",
-            "rpc_endpoint": "https://rpc.layer-p.net",
-            "grpc_endpoint": "https://grpc.layer-p.net:443",
-            "rest_endpoint": "https://api.layer-p.net",
+            "chain_id": "layer-hack-1",
+            "rpc_endpoint": "https://rpc.hack.layer.xyz",
+            "grpc_endpoint": "https://grpc.hack.layer.xyz:443",
+            "rest_endpoint": "https://api.hack.layer.xyz",
             "gas_price": 0.025,
-            "gas_denom": "uperm",
+            "gas_denom": "ulayer",
             "address_kind": {
                 "cosmos": {
                     "prefix": "layer"
                 }
             }
         },
-        "faucet": {
-            "mnemonic": "feel slide lunch main narrow illness goose foster income exotic trim brief install million slab myth marine uncover club eye evolve edit angle decrease"
-        },
         "wasmatic": {
-            "endpoints": ["https://op1.layer-p.net", "https://op2.layer-p.net", "https://op3.layer-p.net"]
+            "endpoints": ["https://op1.hack.layer.xyz", "https://op2.hack.layer.xyz", "https://op3.hack.layer.xyz"]
         }
     }
 }
