@@ -2,7 +2,6 @@ use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
 use layer_wasi::{Reactor, Request, WasiPollable};
-use serde_json::json;
 
 use crate::{
     session::{Session, SessionMessage},
@@ -29,7 +28,8 @@ pub struct GroqChatChoice {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GroqChatMessage {
     pub role: String,
-    pub content: String,
+    pub content: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub tool_calls: Option<Vec<GroqChatMessageToolCall>>,
 }
 
@@ -41,7 +41,7 @@ pub struct GroqChatMessageToolCall {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GroqChatMessageToolCallFunction {
     pub name: String,
-    pub arguments: serde_json::Map<String, serde_json::Value>,
+    pub arguments: String,
 }
 
 #[derive(Deserialize, Debug)]
@@ -65,12 +65,12 @@ impl From<&SessionMessage> for GroqChatMessage {
     fn from(value: &SessionMessage) -> Self {
         Self {
             role: value.role.clone(),
-            content: value.content.clone(),
+            content: Some(value.content.clone()),
             tool_calls: value.decision.map(|d| {
                 vec![GroqChatMessageToolCall {
                     function: GroqChatMessageToolCallFunction {
                         name: "make_decision".to_string(),
-                        arguments: json!({"decision": d}).as_object().unwrap().clone(),
+                        arguments: format!("{{\"decision\": {d}}}"),
                     },
                 }]
             }),
@@ -122,7 +122,11 @@ impl Provider for GroqProvider {
         dbg!("groq response: {:#?}", &raw);
 
         if res.status != 200 {
-            return Err(format!("unexpected status code: {}", res.status));
+            let body_text = String::from_utf8(res.body.clone()).unwrap();
+            return Err(format!(
+                "unexpected status code: {} body: {}",
+                res.status, body_text
+            ));
         }
 
         match res.json::<GroqChatResponse>() {
@@ -134,14 +138,23 @@ impl Provider for GroqProvider {
                     }
 
                     session.add_ai_message(
-                        &response.choices[0].message.content,
+                        &response.choices[0]
+                            .message
+                            .content
+                            .clone()
+                            .unwrap_or_default(),
                         response.choices[0]
                             .message
                             .tool_calls
                             .as_ref()
                             .map(|calls| {
                                 calls.len() == 1
-                                    && calls[0].function.arguments["decision"].as_bool().unwrap()
+                                    && serde_json::from_str::<serde_json::Value>(
+                                        &calls[0].function.arguments,
+                                    )
+                                    .unwrap()["decision"]
+                                        .as_bool()
+                                        .unwrap()
                             }),
                     );
 
