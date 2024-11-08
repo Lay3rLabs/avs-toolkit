@@ -4,7 +4,7 @@ use cw2::set_contract_version;
 use execute::*;
 use lavs_apis::interfaces::task_hooks::TaskHookExecuteMsg;
 
-use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use crate::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 use crate::state::{CW4_GROUP, DAO, DECISIONS, NEW_MEMBER_WEIGHT, TASK_QUEUE};
 
 // version info for migration info
@@ -45,9 +45,14 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
         }
         ExecuteMsg::Cw4Group(msg) => execute_cw4_group(deps, info, msg),
         ExecuteMsg::TaskHook(task_hook) => match task_hook {
-            TaskHookExecuteMsg::TaskCompletedHook(task) => {
-                task_completed_hook(deps, env, info, task)
-            }
+            TaskHookExecuteMsg::TaskCompletedHook(task) => Ok(task_completed_hook(
+                deps, env, info, task,
+            )
+            .unwrap_or_else(|e| {
+                Response::default()
+                    .add_attribute("action", "task_completed")
+                    .add_attribute("error", e.to_string())
+            })),
             _ => Err(StdError::generic_err("unexpected task hook")),
         },
     }
@@ -100,7 +105,7 @@ mod execute {
                     with_completed_hooks: Some(vec![env.contract.address.to_string()]),
                 },
             ))?,
-            funds: vec![],
+            funds: info.funds,
         });
 
         Ok(Response::default()
@@ -281,4 +286,11 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::TaskQueue {} => to_json_binary(&TASK_QUEUE.load(deps.storage)?),
         QueryMsg::NewMemberWeight {} => to_json_binary(&NEW_MEMBER_WEIGHT.load(deps.storage)?),
     }
+}
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> StdResult<Response> {
+    // Set contract to version to latest
+    set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+    Ok(Response::default())
 }

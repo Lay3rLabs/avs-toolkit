@@ -80,6 +80,7 @@ pub struct TaskInput {
 }
 
 #[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub enum TaskOutput {
     Success(TaskOutputSuccess),
     Error(String),
@@ -100,3 +101,6 @@ pub struct TaskOutputSuccess {
     /// finalized
     pub decision: Option<bool>,
 }
+
+#[cw_serde]
+pub struct MigrateMsg {}
