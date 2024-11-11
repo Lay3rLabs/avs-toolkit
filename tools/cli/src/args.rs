@@ -201,7 +201,7 @@ pub enum TaskQueueCommand {
 
     /// Adds hooks to the task queue
     AddHooks {
-        #[clap(short, long, value_enum)]
+        #[clap(long, value_enum)]
         hook_type: CliHookType,
         #[clap(short, long, num_args(1..))]
         receivers: Vec<String>,
@@ -211,7 +211,7 @@ pub enum TaskQueueCommand {
 
     /// Removes a task queue hook
     RemoveHook {
-        #[clap(short, long, value_enum)]
+        #[clap(long, value_enum)]
         hook_type: CliHookType,
         #[clap(short, long)]
         receiver: String,
@@ -223,16 +223,16 @@ pub enum TaskQueueCommand {
     ViewHooks {
         #[clap(short, long)]
         task_id: Option<TaskId>,
-        #[clap(short, long, value_enum)]
+        #[clap(long, value_enum)]
         hook_type: CliHookType,
     },
 
     /// Updates the task-specific whitelist for hook management from task creators
     /// These users can create hooks for their task
     UpdateTaskSpecificWhitelist {
-        #[clap(short, long)]
+        #[clap(long)]
         to_add: Option<Vec<String>>,
-        #[clap(short, long)]
+        #[clap(long)]
         to_remove: Option<Vec<String>>,
     },
 
