@@ -1,6 +1,6 @@
 use layer_wasi::Reactor;
 
-use crate::{session::Session, TaskInput};
+use crate::{session::Session, Env, TaskInput};
 
 pub mod groq;
 pub mod ollama;
@@ -15,5 +15,10 @@ pub trait Provider {
         Self: Sized;
 
     /// the function that processes the input and returns the session
-    async fn process(&self, reactor: &Reactor, input: &TaskInput) -> Result<Session, String>;
+    async fn process(
+        &self,
+        reactor: &Reactor,
+        env: &Env,
+        input: &TaskInput,
+    ) -> Result<Session, String>;
 }

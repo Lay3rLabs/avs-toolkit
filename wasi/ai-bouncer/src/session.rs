@@ -1,7 +1,11 @@
 use anyhow::Result;
+use base64::{prelude::BASE64_STANDARD, Engine};
+use layer_wasi::{Reactor, Request, WasiPollable};
 use serde::{Deserialize, Serialize};
 
 use serde_json::json;
+
+use crate::Env;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct SessionMessage {
@@ -15,8 +19,8 @@ pub struct SessionMessage {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Session {
-    /// the id of the session.
-    pub id: String,
+    /// the DAO address.
+    pub dao: String,
     /// the address of the user interacting with this session.
     pub address: String,
     /// the decision made by the AI in this session.
@@ -33,17 +37,36 @@ pub struct Session {
     pub tools: Vec<serde_json::Value>,
 }
 
+#[derive(Deserialize, Debug)]
+pub struct GetItemQueryResponse {
+    // base64-encoded object
+    pub data: String,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct GetItemQueryResponseData {
+    // stringified JSON object, if the item exists
+    pub item: Option<String>,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct AiBouncerWidgetData {
+    pub requirements: String,
+}
+
 impl Session {
-    pub fn path(session_id: &str) -> String {
-        format!("./sessions/{}.json", session_id)
+    pub fn path(dao: &str, address: &str) -> String {
+        format!("./sessions/{}_{}.json", dao, address)
     }
 
-    pub fn load(
-        session_id: &str,
-        address_if_new: Option<&str>,
+    pub async fn load(
+        reactor: &Reactor,
+        env: &Env,
+        dao: &str,
+        address: &str,
         model_if_new: &str,
     ) -> Result<Self, String> {
-        let path = Self::path(session_id);
+        let path = Self::path(dao, address);
         let path = std::path::Path::new(&path);
 
         let session = if path.exists() {
@@ -56,22 +79,64 @@ impl Session {
             std::fs::create_dir_all("./sessions")
                 .map_err(|e| format!("failed to create sessions directory: {e}"))?;
 
-            let address = address_if_new
-                .as_ref()
-                .ok_or("address is required on first message")?;
+            // query the DAO to get the requirements
+            // the encoded base64 is: {"get_item":{"key":"widget:ai_bouncer"}}
+            let requirements_query = format!(
+                "{}/cosmwasm/wasm/v1/contract/{}/smart/eyJnZXRfaXRlbSI6eyJrZXkiOiJ3aWRnZXQ6YWlfYm91bmNlciJ9fQ==",
+                env.lcd,
+                dao,
+            );
+
+            let req = Request::get(&requirements_query)?;
+            let res = reactor.send(req).await?;
+
+            let raw = String::from_utf8(res.body.clone());
+            dbg!("get item response: {:#?}", &raw);
+
+            if res.status != 200 {
+                return Err(format!("get item unexpected status code: {}", res.status));
+            }
+
+            let requirements = match res.json::<GetItemQueryResponse>() {
+                Ok(response) => {
+                    let data = BASE64_STANDARD
+                        .decode(&response.data)
+                        .map_err(|e| format!("failed to decode base64: {e}"))?;
+
+                    let data: GetItemQueryResponseData = serde_json::from_slice(&data)
+                        .map_err(|e| format!("failed to parse item response: {e}"))?;
+
+                    if let Some(item) = data.item {
+                        let data: AiBouncerWidgetData = serde_json::from_str(&item)
+                            .map_err(|e| format!("failed to parse item: {e}"))?;
+
+                        Ok(Some(data.requirements))
+                    } else {
+                        Ok(None)
+                    }
+                }
+                Err(e) => Err(format!(
+                    "get item response parsing error ({e}). body: {raw:?}"
+                )),
+            }?;
+
+            let system_message = match requirements {
+                Some(requirements) => format!(
+                    "You are a helpful bouncer deciding who is allowed to join an organization. Converse with the applicant, and make a decision using the make_decision tool only once you are confident you have enough information. Do not make a decision too early. If you cannot make a decision, ask follow up questions. The members of the organization provided the following requirements/guidelines for assessing applicants:\n\n{requirements}\n\nDecide based on the information you receive and the details provided by the organization."
+                ),
+                None => "You are a bouncer deciding who is allowed to join an organization. Converse with the applicant, and make a decision using the make_decision tool only once you are confident you have enough information. Do not make a decision too early. If you cannot make a decision, ask follow up questions. The members of the organization have not provided any guidelines, so use your best judgement.".to_string(),
+            };
 
             Session {
-                id: session_id.to_string(),
+                dao: dao.to_string(),
                 address: address.to_string(),
                 decision: None,
                 model: model_if_new.to_string(),
-                messages: vec![
-                    SessionMessage {
-                        role: "system".to_string(),
-                        content: "You are a bouncer, deciding who is allowed to join an organization based purely on good vibes. Engage in a conversation with the user, and make a decision using the make_decision tool only once you are confident you have enough information. You should not make a decision until exchanging at least a few messages back and forth.".to_string(),
-                        decision: None,
-                    },
-                ],
+                messages: vec![SessionMessage {
+                    role: "system".to_string(),
+                    content: system_message,
+                    decision: None,
+                }],
                 seed: 42,
                 temperature: 0.4,
                 tools: vec![json!({
@@ -137,7 +202,7 @@ impl Session {
     }
 
     pub fn save(&self) -> Result<(), String> {
-        let path = Self::path(&self.id);
+        let path = Self::path(&self.dao, &self.address);
         std::fs::write(path, serde_json::to_string(&self).unwrap())
             .map_err(|e| format!("failed to write session file: {e}"))
     }

@@ -20,8 +20,6 @@ pub struct InstantiateMsg {
 pub enum ExecuteMsg {
     /// trigger the AI Bouncer.
     Trigger {
-        /// the session ID of the address being evaluated.
-        session_id: String,
         /// the incrementing message index, starting at 0.
         message_id: u16,
         /// the next message in the conversation.
@@ -69,10 +67,10 @@ pub enum QueryMsg {
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TaskInput {
-    /// the session ID of the address being evaluated
-    pub session_id: String,
-    /// the address being evaluated. only needed on first message (where ID = 0)
-    pub address: Option<String>,
+    /// the DAO address
+    pub dao: String,
+    /// the address being evaluated
+    pub address: String,
     /// the incrementing message index, starting at 0
     pub message_id: u16,
     /// the next message in the conversation
@@ -89,8 +87,8 @@ pub enum TaskOutput {
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TaskOutputSuccess {
-    /// the session ID of the address being evaluated
-    pub session_id: String,
+    /// the DAO address
+    pub dao: String,
     /// the address being evaluated
     pub address: String,
     /// the message ID being responded to

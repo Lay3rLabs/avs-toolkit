@@ -32,10 +32,9 @@ pub fn instantiate(
 pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> StdResult<Response> {
     match msg {
         ExecuteMsg::Trigger {
-            session_id,
             message_id,
             message,
-        } => trigger(deps, env, info, session_id, message_id, message),
+        } => trigger(deps, env, info, message_id, message),
         ExecuteMsg::Unregister {} => unregister(deps),
         ExecuteMsg::UpdateDao { dao } => update_dao(deps, info, dao),
         ExecuteMsg::UpdateCw4Group { cw4_group } => update_cw4_group(deps, info, cw4_group),
@@ -70,21 +69,16 @@ mod execute {
         deps: DepsMut,
         env: Env,
         info: MessageInfo,
-        session_id: String,
         message_id: u16,
         message: String,
     ) -> StdResult<Response> {
         let task_queue = TASK_QUEUE.load(deps.storage)?;
-
-        let address = if message_id == 0 {
-            Some(info.sender.to_string())
-        } else {
-            None
-        };
+        let dao = DAO.load(deps.storage)?;
+        let address = info.sender;
 
         let payload = serde_json::to_value(TaskInput {
-            session_id: session_id.clone(),
-            address,
+            dao: dao.to_string(),
+            address: address.to_string(),
             message_id,
             message,
         })
@@ -94,10 +88,7 @@ mod execute {
             contract_addr: task_queue.to_string(),
             msg: to_json_binary(&lavs_apis::tasks::ExecuteMsg::Custom(
                 lavs_apis::tasks::CustomExecuteMsg::Create {
-                    description: format!(
-                        "AI Bouncer Session {} Message {}",
-                        session_id, message_id
-                    ),
+                    description: "AI Bouncer Message".to_string(),
                     timeout: None,
                     payload,
                     with_timeout_hooks: None,
@@ -110,7 +101,8 @@ mod execute {
 
         Ok(Response::default()
             .add_attribute("action", "trigger")
-            .add_attribute("session_id", session_id)
+            .add_attribute("dao", dao.to_string())
+            .add_attribute("address", address.to_string())
             .add_attribute("message_id", message_id.to_string())
             .add_message(msg))
     }

@@ -5,7 +5,7 @@ use layer_wasi::{Reactor, Request, WasiPollable};
 
 use crate::{
     session::{Session, SessionMessage},
-    TaskInput,
+    Env, TaskInput,
 };
 
 use super::Provider;
@@ -92,12 +92,20 @@ impl Provider for GroqProvider {
         Ok(Self { api_key })
     }
 
-    async fn process(&self, reactor: &Reactor, input: &TaskInput) -> Result<Session, String> {
+    async fn process(
+        &self,
+        reactor: &Reactor,
+        env: &Env,
+        input: &TaskInput,
+    ) -> Result<Session, String> {
         let mut session = Session::load(
-            &input.session_id,
-            input.address.as_deref(),
+            reactor,
+            env,
+            &input.dao,
+            &input.address,
             "llama3-groq-70b-8192-tool-use-preview",
-        )?;
+        )
+        .await?;
 
         session.validate_message_id(input.message_id)?;
         session.add_user_message(&input.message);

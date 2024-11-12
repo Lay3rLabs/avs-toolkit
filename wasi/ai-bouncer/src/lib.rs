@@ -15,37 +15,34 @@ impl Guest for Component {
     fn run_task(request: TaskQueueInput) -> Output {
         let provider =
             std::env::var("PROVIDER").or(Err("missing env var `PROVIDER`".to_string()))?;
+        let lcd = std::env::var("LCD").or(Err("missing env var `LCD`".to_string()))?;
 
-        let res = match serde_json::from_slice(&request.request) {
-            Ok(input) => block_on(|reactor| get_output(reactor, provider, input)),
+        let env = Env { provider, lcd };
+
+        match serde_json::from_slice(&request.request) {
+            Ok(input) => block_on(|reactor| get_output(reactor, env, input)),
             Err(e) => serde_json::to_vec(&TaskOutput::Error(format!(
                 "Could not deserialize input request from JSON: {}",
                 e
             )))
             .map_err(|e| e.to_string()),
-        };
-
-        res
+        }
     }
 }
 
-async fn get_output(
-    reactor: Reactor,
-    provider: String,
-    input: TaskInput,
-) -> Result<Vec<u8>, String> {
-    let session = match provider.as_str() {
+async fn get_output(reactor: Reactor, env: Env, input: TaskInput) -> Result<Vec<u8>, String> {
+    let session = match env.provider.as_str() {
         providers::ollama::OllamaProvider::NAME => {
             let provider = providers::ollama::OllamaProvider::new()?;
 
-            provider.process(&reactor, &input).await
+            provider.process(&reactor, &env, &input).await
         }
         providers::groq::GroqProvider::NAME => {
             let provider = providers::groq::GroqProvider::new()?;
 
-            provider.process(&reactor, &input).await
+            provider.process(&reactor, &env, &input).await
         }
-        _ => Err(format!("unknown provider: {provider}")),
+        _ => Err(format!("unknown provider: {}", env.provider)),
     };
 
     let output = session
@@ -53,7 +50,7 @@ async fn get_output(
             session.save()?;
 
             Ok(TaskOutput::Success(TaskOutputSuccess {
-                session_id: session.id,
+                dao: session.dao,
                 address: session.address,
                 message_id: input.message_id,
                 response: session.messages.last().unwrap().content.clone(),
@@ -65,13 +62,18 @@ async fn get_output(
     serde_json::to_vec(&output).map_err(|e| e.to_string())
 }
 
+pub struct Env {
+    pub provider: String,
+    pub lcd: String,
+}
+
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct TaskInput {
-    /// the session ID of the address being evaluated
-    pub session_id: String,
-    /// the address being evaluated. only needed on first message (where ID = 0)
-    pub address: Option<String>,
+    /// the DAO address
+    pub dao: String,
+    /// the address being evaluated
+    pub address: String,
     /// the incrementing message index, starting at 0
     pub message_id: u16,
     /// the next message in the conversation
@@ -88,8 +90,8 @@ pub enum TaskOutput {
 #[derive(Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct TaskOutputSuccess {
-    /// the session ID of the address being evaluated
-    pub session_id: String,
+    /// the DAO address
+    pub dao: String,
     /// the address being evaluated
     pub address: String,
     /// the message ID being responded to
