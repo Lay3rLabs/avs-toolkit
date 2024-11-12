@@ -184,10 +184,10 @@ pub enum TaskQueueCommand {
         #[clap(short, long)]
         timeout: Option<u64>,
         /// Specify the completed task hook receivers
-        #[clap(long)]
+        #[clap(long, value_delimiter = ',')]
         with_completed_hooks: Option<Vec<String>>,
         /// Specify the timeout task hook receivers
-        #[clap(long)]
+        #[clap(long, value_delimiter = ',')]
         with_timeout_hooks: Option<Vec<String>>,
     },
 
@@ -203,7 +203,7 @@ pub enum TaskQueueCommand {
     AddHooks {
         #[clap(long, value_enum)]
         hook_type: CliHookType,
-        #[clap(short, long, num_args(1..))]
+        #[clap(short, long, num_args(1..), value_delimiter = ',')]
         receivers: Vec<String>,
         #[clap(short, long)]
         task_id: Option<TaskId>,
@@ -230,9 +230,9 @@ pub enum TaskQueueCommand {
     /// Updates the task-specific whitelist for hook management from task creators
     /// These users can create hooks for their task
     UpdateTaskSpecificWhitelist {
-        #[clap(long)]
+        #[clap(long, value_delimiter = ',')]
         to_add: Option<Vec<String>>,
-        #[clap(long)]
+        #[clap(long, value_delimiter = ',')]
         to_remove: Option<Vec<String>>,
     },
 
